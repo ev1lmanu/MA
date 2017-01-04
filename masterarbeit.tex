@@ -1,0 +1,211 @@
+\input{chapters/header}
+\pagestyle{diplHeadings}
+
+\begin{document}
+
+\include{chapters/titlepage}
+
+\pagenumbering{Roman}
+\setcounter{page}{1}
+\pdfbookmark[1]{Inhaltsverzeichnis}{toc}
+\tableofcontents
+\cleardoublepage 
+
+\pagenumbering{arabic}
+\setcounter{page}{1} 
+\mainmatter  
+\setstretch{1.24}
+
+\include{chapters/einleitung}
+\include{chapters/problemstellung}
+\include{chapters/racket}
+\include{chapters/racket-onstage}
+
+%------------------------------------------------------------------------------------------------
+
+\section{CLOS: Onstage}
+Grundlage für dieses Kapitel ist das Buch ``Object-Oriented Programming in Common Lisp. A Programmer's Guide to CLOS''\cite{keene} von Sonya E. Keene. 
+
+Das Common Lisp Object System ist der Standard für objektorientierte Programmierung in der Sprache Common Lisp. Auch Racket bietet es an, in diesem Stil objektorientiert zu programmieren. Um anstatt des Racket-Objektsystems mit CLOS-Objekten zu arbeiten, muss lediglich die Sprache auf Swindle umgestellt werden:
+
+
+\begin{lstlisting}
+#lang swindle
+\end{lstlisting}
+
+Wir wollen nun versuchen, die Klassen Thing, Element, Animal und Pokemon auch in CLOS zu schreiben, um zu sehen, welche Unterschiede in der Syntax es gibt und wie Mehrfachvererbung hier umgesetzt ist. 
+
+Alle Code-Beispiele sind auch noch einmal zusammenhängend in Anhang \ref{clos-example} aufgeführt.
+
+\subsection{Einfache Klassen}
+Für die Definition von Klassen in CLOS gibt es das Makro \texttt{defclass}. Im Gegensatz zu dem Objektsystem von Racket erstellt das Makro eine benannte Klasse. Der Name wird beim Aufruf mit übergeben und damit erübrigt sich eine anschließende Benennung mit \texttt{define}. Auch in CLOS wird die Superklasse mit angegeben. Da es jedoch mehrere Superklassen geben kann, werden diese in einer Liste übergeben. Hat die Klasse keine Superklassen (außer der Rootklasse), so wird die leere Liste übergeben. Die explizite Angabe der Rootklasse als Superklasse nicht nicht nötig. Anschließend können noch die Slots der Klasse angegeben werden, aber für eine minimale Klasse ohne Superklasse(n) genügt der Name und die leere Liste: 
+
+\begin{lstlisting}
+((defclass thing ())
+\end{lstlisting}
+
+% Zur Objekterzeugung gibt es in CLOS zwei verschiedene Möglichkeiten, je nachdem ob \texttt{:automaker} als Klassen-Option gesetzt wurde oder nicht. 
+
+Objekte dieser Klasse können mit dem Schlüsselwort \texttt{make} erzeugt werden.
+
+\begin{lstlisting}
+> (make thing)
+\end{lstlisting}
+{\routput \#thing}
+
+Felder oder Slots, wie sie in CLOS üblicherweise genannt werden, werden nach der Superklasse angegeben. Ein großer Unterschied zu dem Objektsystem von Racket ist, dass innerhalb einer Klassendefinition \textit{nur} Slots definiert werden, keine Methoden. Methoden werden außerhalb der Klasse definiert. Wie genau das aussieht, sehen wir gleich. Zunächst sorgt dieser Umstand jedoch dafür, dass kein Schlüsselwort benötigt wird, um anzugeben, ob gerade ein Slot oder eine Methode definiert wird. Wir könnten also, für die Definition der Klasse Element beispielweise, einfach schreiben:
+
+\begin{lstlisting}
+(defclass element (thing)
+  attr)
+\end{lstlisting}
+
+Die Klasse hat genau einen Slot namens \texttt{attr}, der jedoch so noch nicht sehr nützlich ist.
+
+Damit mit diesem Slot auch interargiert werden kann, benötigt er noch Accessoren: einen Getter (in CLOS Reader genannt) und einen Setter (in CLOS Writer genannt). Außerdem möchte man gegebenenfalls einen Initialwert angeben können, den Slot dokumentieren und so weiter. All dies geschieht durch Slot-Optionen. Sie folgen nach dem Namen des Slots (der nun geklammert werden muss, damit klar ist, wann die Slot-Definition zuende ist) und beginnen mit einem Doppelpunkt. Um auf das Attribut \texttt{attr} beispielsweise lesend oder schreibend zugreifen zu können, kann die Slot-Option \texttt{:reader} oder \texttt{writer} gesetzt werden oder, falls beides möglich sein soll und man Code-Zeilen sparen will, auch die Option \texttt{:accessor}. Accessoren müssen benannt werden. Im Gegensatz zu dem Objektsystem von Racket muss sich der Name jedoch nicht vom Namen des Slots unterscheiden. Hier also die vollständige Definition der Klasse:
+
+\begin{lstlisting}
+(defclass element (thing)
+  (attr
+    :accessor attr
+    :initvalue 'water
+    :initarg :attr))
+\end{lstlisting}
+
+Zusätzlich zu den Accessoren wurde auch noch ein Initialwert definiert und ein Schlüsselwort, mit dem er bei der Objekterzeugung angegeben werden kann. Die Namen der Accessoren können direkt wie Methoden genutzt werden:
+
+\begin{lstlisting}
+> (attr (make element))
+\end{lstlisting}
+{\routput water}
+
+\begin{lstlisting}
+> (attr (make element :attr 'fire))
+\end{lstlisting}
+{\routput fire}
+
+Der Wert kann dann nach der Objekterzeugung mittels \texttt{set!} verändert werden:
+
+\begin{lstlisting}
+(define elem (make element))
+> (attr elem)
+\end{lstlisting}
+{\routput water}
+
+\begin{lstlisting}
+> (set! (attr elem) 'wind)
+> (attr elem)
+\end{lstlisting}
+{\routput wind}
+
+Um für die Abfrage des Zustands eines Objektes nicht immer alle sondierenden Methoden aufrufen zu müssen, bietet CLOS die Klassen-Option \texttt{:printer}, die bewirkt, dass bei Auswertung des Objektes ein formattierter String ausgegeben wird. Wir fügen es zu unserer Element-Klasse hinzu.
+
+\begin{lstlisting}
+(defclass element (thing)
+  (attr
+    :accessor attr
+    :initvalue 'water
+    :initarg :attr)
+  :printer #t) ; auf Klassenebene
+\end{lstlisting}
+
+Wenn wir jetzt ein Objekt erzeugen, oder das Auswertungsergebnis eines bereits erzeugten Objektes abfragen, so erhalten wir sofort auch die Belegung aller Slots:
+
+\begin{lstlisting}
+> (make element)
+\end{lstlisting}
+
+{\routput \#<element: attr=water>}
+
+Falls wir oft die Slots mit Werten initialisieren, so kann die Option \texttt{:automaker} gesetzt werden.
+
+\begin{lstlisting}
+(defclass element (thing)
+  (attr
+    :accessor attr
+    :initvalue 'water
+    :initarg :attr)
+  :printer #t
+  :automaker #t) ; auf Klassenebene
+\end{lstlisting}
+
+Sie bewirkt, dass sich die Syntax bei der Objekterzeugung verkürzt. Anstatt zu jedem Slot, der initialisiert wird, den Namen angeben zu müssen, können wir die Werte direkt nacheinander auflisten. Falls es mehrere Slots gibt, muss die Parameterreihenfolge mit der Reihenfolge der Slots in der Klassendeifnition übereinstimmen. Statt
+
+\begin{lstlisting}
+(make element :attr 'fire)
+\end{lstlisting}
+
+können wir nun verkürzt schreiben:
+
+\begin{lstlisting}
+(make-element 'fire)
+\end{lstlisting}
+
+Zusätzlich zu dem Schlüsselwort \texttt{make} zur Erzeugung von allgemeinen Objekten gibt es nun das Schlüsselwort \texttt{make-element} zur Erzeugung von Objekten der Klasse Element. Element-Objekte können natürlich auch weiterhin mit \texttt{make} erzeugt werden.
+
+Falls eine Klasse viele Slots hat und die Accessoren für alle Slots gleich dem Slot-Namen sein sollen, so kann man als Klassenoption \texttt{:autoaccessors} auf \texttt{:slot} setzen. Damit sparen wir uns beispiesweise bei der Definition der Klasse Animal, die zwei Slots für Geschlecht und Größe hat, eine Code-Zeile. Wenn wir zusätzlich \texttt{:automaker} benutzen, kann auch die \texttt{:initarg}-Option  weggelassen werden\footnote{Das hat natürlich zur Folge, dass nun bei der Objekterzeugung mit \texttt{make} die Slots nicht mehr initialisiert werden können.}.
+
+\begin{lstlisting}
+(defclass animal (thing)
+  (gender :initvalue 'male)
+  (size   :initvalue 'small)
+  :autoaccessors :slot
+  :automaker #t
+  :printer #t)
+\end{lstlisting}
+
+
+
+\begin{lstlisting}
+---------------------------------------------
+
+(print (make-animal))
+(printf "~n")
+(print (make-animal 'female 'medium))
+(printf "~n")
+
+(defclass pokemon (animal element)
+  (index :initvalue 0
+         :type <number>)
+  :autoaccessors :slot
+  :automaker #t
+  :printer #t)
+
+(define p1 (make-pokemon))
+(print p1)
+(printf "~n")
+(define p2 (make-pokemon 'fire 'female 'large 42))
+(print p2)
+(printf "~n")
+
+(defgeneric attack ((t thing))
+  :combination generic-list-combination)
+
+(defmethod attack ((e element))
+  (attr e))
+
+(defmethod attack ((a animal))
+  (size a))
+
+(print (attack p1))
+(printf "~n")
+(print (attack p2))
+\end{lstlisting}
+
+\section{Zwischen-Fazit}
+
+\section{CLOS: Backstage}
+
+% 
+% \chapter{Entwurf?}
+% https://docs.racket-lang.org/drracket/extending-drracket.html
+% \chapter{Implementation}
+% \chapter{Zusammenfassung und Ausblick}
+
+% -----------------------------------------------------------------------------------------
+
+\include{chapters/anhang}
+\include{chapters/literatur} % TODO
+\include{chapters/erklaerung}
+
+\end{document}

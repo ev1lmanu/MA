@@ -1,0 +1,160 @@
+
+\documentclass[pdftex,a4paper,11pt,DIV15,BCOR20mm,parskip,numbers=noenddot]{scrbook}
+
+\usepackage{default}
+\usepackage[ngerman]{babel} % Deutsche Formattierung
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc} % Zeichenkodierung
+\usepackage[pdftex]{color} % Farben
+\usepackage{setspace} % Das Paket setspace ermöglicht ein einfaches Umstellen von normalem, anderthalbfachen oder doppeltem Zeilenabstand.
+\usepackage[pdftex]{graphicx} % Bilder
+\usepackage[final]{listings}  % ermöglicht die Darstellung von (Programm-)Quellcode in der Arbeit
+\usepackage[normalem]{ulem} % ermöglicht das Unterstreichen von Text
+\usepackage{amsfonts} % ok-zeichen usw
+\usepackage{amsmath} % mathekrams
+\usepackage{scrpage2}
+\usepackage{babelbib} % Bibliographie
+\usepackage{array} % für tabellen
+\usepackage[style=base,margin=10pt,font=footnotesize,labelfont=bf]{caption} % Formattierung Bildunterschrift
+\usepackage{listings} % Quellcode
+\usepackage{float} % floating figures
+\usepackage{tikz} % Diagramme
+\usepackage{wrapfig} % Text neben Abbildungen
+\usepackage{pdflscape} % Seiten in Querformat
+\usepackage{geometry}
+\usepackage{soul}
+\usepackage{textcomp} % Quote Symbol
+
+% schrift auf palatino umstellen
+\usepackage{palatino}
+\setkomafont{sectioning}{\normalcolor\bfseries} 
+% \renewcommand{\familydefault}{\sfdefault}
+
+\definecolor{uhhred}{cmyk}{0,1,1,0}
+\definecolor{beige}{RGB}{194,116,31}
+\definecolor{green}{RGB}{41,128,38}
+\definecolor{brown}{RGB}{132,60,36}
+\definecolor{darkblue}{RGB}{38,38,128}
+
+\newcommand{\routput}{\vspace{-0.25cm}\hspace{5pt}\small\color{blue}\ttfamily} 
+\newcommand{\rsymbol}{\vspace{-0.25cm}\hspace{5pt}\small\color{blue}\ttfamily\textquotesingle}
+\newcommand{\rerror}{\vspace{-0.25cm}\hspace{5pt}\small\color{red}\ttfamily}
+    
+% Listing-Formattierung
+\lstset{
+    backgroundcolor=\color{white}, 		% white background
+    %     columns=fullflexible, 			% allow latex to break lines
+    numbers=none, 				% no line numbering
+    belowskip=-10pt, 				% remove blank space at the bottom of listing
+    basicstyle=\ttfamily\small\color{darkblue}, 
+    xleftmargin=5pt, % Padding
+    language=Lisp, 				% for highliting comments and literals
+    commentstyle=\color{beige}, 		% comment style
+    stringstyle=\color{green}, 			% literal style
+    numberstyle=\color{green},
+    alsoletter={\#, >},
+    keywordstyle=\ttfamily, 			% keyword style
+    keywordstyle=[2]\color{green},		% style for literals
+    keywordstyle=[3]\color{black},	% style for non-terminals
+    literate=
+	  *{(}{{{\color{brown}{(}}}}{1} 	% colored brackets
+	  {)}{{{\color{brown}{)}}}}{1}	 	
+	  {{[}}{{{\color{brown}{{[}}}}}{1}
+	  {{]}}{{{\color{brown}{{]}}}}}{1}
+	  {\{}{{{\color{brown}{\{}}}}{1}
+	  {\}}{{{\color{brown}{\}}}}}{1}
+% 	  {'}{{{\bfseries\color{green}{'}}}}{1},
+	  {'}{{{\bfseries\color{green}{\textquotesingle}}}}{1},
+%     % lists of keywords
+%     morekeywords={},
+    keywords=[2]{\#t, \#f},
+    keywords=[3]{\#lang, swindle, racket, >} 
+}
+  
+%   % Tikz styles
+%   \usetikzlibrary{shapes,arrows,decorations.markings}
+%   \tikzstyle{block} = [rectangle, draw, fill=gray!15, text width=11em, text centered, rounded corners, minimum height=3em]
+%   \tikzstyle{label} = [text centered]
+%   \tikzstyle{arrow} = [draw, -latex', thick, postaction={decorate}] 
+%   \tikzstyle{line} = [draw, -, thick]
+  
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd{\chapter}{\if@openright\cleardoublepage\else\clearpage\fi}{}{}{}
+\makeatother  
+	
+\usepackage{colortbl} % für farbige Tabellen
+\usepackage{longtable} % für mehrseitige Tabellen
+\renewcommand{\arraystretch}{1.25} % in Tabellen: Padding des Textes nach oben und unten in Prozent
+
+% Fußnoten werden im gesamten Dokument fortlaufend hochgezählt und nicht nur kapitelweise, vgl. http://www.golatex.de/nummerierung-der-fussnoten-durchgehend-im-gesamten-dokument-t2042.html
+\usepackage{chngcntr}
+\counterwithout{footnote}{chapter}
+
+\setlength{\emergencystretch}{1em} % Für den Fall, dass Zeilen im 1. Anlauf nicht richtig umgebrochen werden können, einen 'Notfallraum' einrichten (vgl. http://www.golatex.de/overfull-boxes-in-latex-t1979.html) 
+
+% entnommen aus http://www.siart.de/typografie/latextipps.xhtml#floats
+\renewcommand{\floatpagefraction}{0.8} % gibt den Bruchteil einer Seite, die für Gleitobjekte benutzt wird, an, der erreicht werden muss, bevor eine neue Seite angefangen wird. (Standard: 0.5; d.h. wenn ein Bild 51% der Seite einnimmt, wird extra für dieses Bild eine ganze Seite reserviert --> unschön)
+\renewcommand{\topfraction}      {0.8}
+\renewcommand{\bottomfraction}   {0.5} % \topfraction / \bottomfraction, gibt den Bruchteil einer Seite an, bis zu dem Gleitobjekte oben bzw. unten angeordnet werden sollen.
+\renewcommand{\textfraction}     {0.15} % gibt den Bruchteil einer Seite an, der mit Text belegt werden können muss.
+\makeatletter
+  \setlength{\@fptop}{0pt} % Wenn ein Float-Objekt allein auf einer Seite steht, soll es am oberen Rand der Seite erscheinen und nicht vertikal zentriert
+\makeatother
+
+  \usepackage[
+%   	pdfstartview={Fit},   
+%   	pdffitwindow=true,
+  	colorlinks,
+  	linkcolor=black,
+  	anchorcolor=black,
+  	citecolor=black,
+  	urlcolor=black,
+  	bookmarks, 
+  ]{hyperref}
+   
+% Zeilenabstand
+% \setstretch{1.24}   
+
+% Strafpunkte, die beim Seitenumbruch vergeben werden, falls die erste Zeile eines Absatzes allein auf der vorangehenden Seite verbleibt. vgl http://www.jr-x.de/publikationen/latex/tipps/zeilenumbruch.html
+\clubpenalty=150
+
+% Strafpunkte, die beim Seitenumbruch vergeben werden, falls die letzte Zeile gerade noch auf die nächste Seite umgebrochen wird. vgl http://www.jr-x.de/publikationen/latex/tipps/zeilenumbruch.html
+\widowpenalty=150  
+
+% Pagestyle definieren (nach Martins Template)
+\defpagestyle{diplHeadings}
+{ % es folgt: Definition des Seitenkopfes: 
+  % obere Linie
+	(0pt,0pt)
+	% linke Seite
+	{\upshape \rlap{\pagemark} \hfill \headmark \hfill} % auf einer linken Seite soll LINKS die Seitenzahl stehen und mittig die Headline (headmark)
+	% rechte Seite
+	{\upshape \hfill \headmark \hfill \llap{\pagemark}} % auf einer rechten Seite soll RECHTS die Seitenzahl stehen und mittig die Headline (headmark)
+	% falls Layout "one page"
+	{}
+	% untere Line
+	(\textwidth,1pt)
+}
+{ % es folgt: Definition des Seitenfußes: Wir wollen lediglich eine schwarze, über die komplette Seite gehende Linie erzeugen
+  % obere Linie
+	(\textwidth,1pt)
+	% linke Seite
+	{}
+	% rechte Seite
+	{}
+	% falls Layout "one page"
+	{}
+	% untere Linie
+	(0pt,0pt)
+}  
+% Pagestyle auch für Chapter-Anfang einrichten
+\renewcommand*{\chapterpagestyle}{diplHeadings}
+\renewcommand*{\chapterheadstartvskip}{\vspace*{-\topskip}}
+\automark[section]{chapter}
+
+
+% Ränder	
+\setlength{\textwidth}{15cm}        % Textbreite
+\setlength{\textheight}{24cm}       % Texthöhe
+\setlength{\topmargin}{-12mm}       % oberer Rand

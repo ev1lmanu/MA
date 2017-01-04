@@ -1,0 +1,20 @@
+\chapter{Problemstellung und Anforderungen}
+\section{Problemstellung}
+Konzepte, die im Modul ``Softwareentwicklung III'' vermittelt werden sollen und aus dem Objektsystem von Java noch nicht bekannt sind, umfassen: Mehrfachvererbung, Klassenpräzedenzlisten, Methodenkombination und Vor- und Nachmethoden.
+
+Es ist bisher nicht möglich, diese Paradigmen aus CLOS in vollem Umfang im Objektsystem von Racket zu verwenden. Beide Systeme verwenden außerdem unterschiedliche Objekte, die nicht ohne weiteres miteinander kommunizieren oder ineinander umgewandelt werden können. [Ggf. näher ausführen]
+
+Ziel dieser Arbeit soll es sein, die für die Lehre relevanten Konzepte aus CLOS in das Objektsystem von Racket zu integrieren. Dafür muss das \texttt{class}-Makro erweitert werden, sodass es möglich ist mehrere Superklassen anzugeben. Die Felder und Methoden aller Superklassen sollen an die Subklasse vererbt werden, bei gleichem Namen nach Klassenpräzedenz oder gegebenenfalls durch eine vom Nutzer gewählte Methodenkombination. Dafür werden generische Methoden benötigt. Schließlich soll es auch möglich sein, Vor- und Nachmethoden anzugeben.
+
+Es soll eine Racket-Erweiterung (bzw. Modul?) entstehen, die die genannten Features von CLOS auch im Objektsystem von Racket möglich macht. Die Umsetzung sollte in die Syntax von Object-Racket passen, gleichzeitig aber möglichst funktional und nah an dem Verhalten von CLOS sein, sodass sie sowohl für Neueinsteiger als auch Nutzer, die CLOS bereits kennen, intuitiv zu benutzen ist.
+
+% \section{Anforderungen}
+% Es sind folgende Konzepte von CLOS relevant:
+% \begin{enumerate}
+%  \item Klassen erlauben von mehreren anderen Klassen zu erben
+%  \item Klassenpräzedenzlisten erstellen und verwalten
+%  \item Slots und Methoden abhängig von Klassenpräzedenz erben
+%  \item generische Methoden erlauben
+%  \item Vor- und Nachmethoden erlauben
+%  \item ggf. Methodenkombination
+% \end{enumerate}
