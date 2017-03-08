@@ -31,14 +31,26 @@
 ; * creates a meta object for the class that stores all additional
 ;   information we need and adds it to the table of metaobjects
 (define (expand! supers args)
-  (let* ([meta (make-metaobject supers args)]
-         [obj (my-eval
-                (append
-                 '(class object% (super-new))
-                (send meta get-direct-slots)
-                (send meta get-direct-methods)))])
+  (let*
+       ; create meta object
+      ([meta (make-metaobject supers args)]
+       ; create actual class object
+       [obj (if (= 1 (length supers))
+                ; if there is only one superclass, let
+                ; racket handle object creation
+                (my-eval (append '(class) supers args))
+                ; else, put together the object ourselves
+                (my-eval
+                 (append '(class object% (super-new))
+                         (send meta get-direct-slots)
+                         (send meta get-direct-methods))))])
+    ; complete class precedence list
     (send meta add-self-to-cpl obj)
+    ; keep track of subclasses
+    (add-subclass obj (send meta get-direct-supers))
+    ; add the new class to the list
     (add-class obj meta)
+    ; return the class object
     obj))
 
 ; since classes have no name, we count them, so we
@@ -150,24 +162,35 @@
                                 elem-supers))
                        (cons elem result))))))
 
+; computes the list of effective slots
+; (all fields visible in the class)
 (define (compute-effective-slots cpl direct-slots)
-  direct-slots) ; TODO
+  (let ([slots '()])
+    (for*/list ([who (map find-class cpl)])
+      (set! slots (append slots
+                          (dynamic-send who 'get-direct-slots))))
+    (remove-duplicates slots)))
 
-(define (add-subclass obj direct-supers)
-  (void)) ; TODO
+; adds the class obj as subclass to all specified supers
+(define (add-subclass obj supers)
+  (for*/list ([who (map find-class supers)])
+    (dynamic-send who 'add-direct-subclass obj)))
 
 (define (compute-direct-methods args)
   '()) ; TODO
 
+; TODO: Klassen mit nur einer Oberklasse komplett von Racket erstellen lassen
+
 ;----------------------------- Tests -----------------------------
-#|
-(define test1 (my-class () (super-new)))
-(define test2 (my-class () (super-new)))
-(define test3 (my-class () (super-new)))
-(define test4 (my-class () (super-new)))
+
+(define test1 (my-class () (super-new) (field [a 1])))
+(define test2 (my-class () (super-new) (field [b 2])))
+(define test3 (my-class () (super-new) (field [c 3])))
+(define test4 (my-class () (super-new) (field [d 4])))
 (define test5 (my-class (test1 test2) (super-new)))
 (define test6 (my-class (test3 test4) (super-new)))
 (define test7 (my-class (test5 test6) (super-new)))
+(define test8 (my-class (test1) (super-new)))
 
 (define cpl (send (find-class test7) get-class-precedence-list))
 
@@ -180,5 +203,7 @@
 (send (sixth meta) get-number)  ;3
 (send (seventh meta) get-number);4
 (send (eighth meta) get-number) ;object%
-(send (ninth meta) get-number)  ;error
-|#
+;(send (ninth meta) get-number)  ;error
+
+(send (find-class test7) get-effective-slots)
+(send (find-class test1) get-direct-subclasses)
