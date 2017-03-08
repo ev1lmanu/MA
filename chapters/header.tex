@@ -39,12 +39,16 @@
 \newcommand{\routput}{\vspace{-0.25cm}\hspace{5pt}\small\color{blue}\ttfamily} 
 \newcommand{\rsymbol}{\vspace{-0.25cm}\hspace{5pt}\small\color{blue}\ttfamily\textquotesingle}
 \newcommand{\rerror}{\vspace{-0.25cm}\hspace{5pt}\small\color{red}\ttfamily}
+
+\newcommand{\q}{\textquotesingle}
+\newcommand{\qq}{\textquotedbl}
     
 % Listing-Formattierung
 \lstset{
     backgroundcolor=\color{white}, 		% white background
     %     columns=fullflexible, 			% allow latex to break lines
     numbers=none, 				% no line numbering
+    showstringspaces=false, 			% no gap character in strings
     belowskip=-10pt, 				% remove blank space at the bottom of listing
     basicstyle=\ttfamily\small\color{darkblue}, 
     xleftmargin=5pt, % Padding
@@ -63,12 +67,12 @@
 	  {{]}}{{{\color{brown}{{]}}}}}{1}
 	  {\{}{{{\color{brown}{\{}}}}{1}
 	  {\}}{{{\color{brown}{\}}}}}{1}
-% 	  {'}{{{\bfseries\color{green}{'}}}}{1},
-	  {'}{{{\bfseries\color{green}{\textquotesingle}}}}{1},
+	  {'}{{{\bfseries\color{green}{\textquotesingle}}}}{1}
+	  {\#'}{{{\color{green}{\#\bfseries\textquotesingle}}}}{1},
 %     % lists of keywords
 %     morekeywords={},
     keywords=[2]{\#t, \#f},
-    keywords=[3]{\#lang, swindle, racket, >} 
+    keywords=[3]{\#lang swindle, \#lang racket, >} 
 }
   
 %   % Tikz styles

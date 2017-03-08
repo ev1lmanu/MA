@@ -1,0 +1,53 @@
+\chapter{Entwurf} 
+Das Objektsystem von Racket soll um die Features Mehrfachvererbung, generische Methoden und Ergänzungsmethoden erweitert werden. 
+
+\section{Anforderungen}
+Es sollen dabei folgende Anforderungen beachtet werden:
+\begin{enumerate}
+ \item Bestehender Code in Object-Racket funktioniert genauso wie vorher. Die Erweiterung soll keinen Einfluss auf bestehenden Racket-Code haben. Alle Funktionalität, die das Objektsystem zur Zeit bietet, soll auch nach Hinzufügen der Features auf dieselbe Art funktionieren und das gleiche Ergebnis liefern.
+ \item Die Syntax passt sich in das Objektsystem von Racket ein. Neu hinzugefügte Makros und Funktionen sollen konsistent mit bestehenden Makros und Funktionen benannt werden und auf die gleiche Art und Weise aufrufbar sein. 
+ \item Die Benutzung ist für jemanden, der CLOS kennt, intuitiv. Die definierten Makros und Funktionen sollen möglichst ähnlich zu benutzen sein wie in CLOS und das gleiche Verhalten zeigen (unter Beachtung von 2.).
+\end{enumerate}
+
+\section{Gewünschtes Verhalten}
+
+\subsection{Mehrere Superklassen}
+Für Mehrfachvererbung muss es zunächst möglich sein, mehrere Superklassen anzugeben. Analog zu CLOS soll dies in einer Liste möglich sein. Die Spezifikation der Superklassen als Liste ist jedoch lediglich eine Alternative, die direkte Angabe der Superklasse soll weiterhin möglich sein. Wie in CLOS soll auch eine leere Liste angegeben werden können, in dem Fall wird automatisch die Rootklasse als Superklasse gesetzt. Die folgenden drei Aufrufe sollen zukünftig alle eine Klasse erzeugen, die \texttt{object\%} als (einzige) Superklasse hat (bisher ist in Racket nur die erste Form möglich):
+
+\begin{lstlisting}
+(class object% (super-new))
+(class () (super-new))
+(class (object%) (super-new))
+\end{lstlisting}
+
+In der Liste sollen auch mehrere Klassen angegeben werden können. Die Superklassen werden nach ihrer Präzedenz geordnet angegeben; diejenige mit der höchsten Präzedenz kommt zuerst, diejenige mit der niedrigsten Präzedenz zuletzt. 
+
+\begin{lstlisting}
+(class (my-class my-other-class ...) (super-new)) 
+\end{lstlisting}
+
+Die Funktion \texttt{super-new} sorgt dann dafür, dass die Konstruktoren aller angegebenen  Superklassen aufgerufen werden. Es soll weiterhin an jeder Stelle in Rumpf der Klasse angegeben werden können. 
+
+Gegebenenfalls ist auch eine alternative Definition mit Klassenparameter sinnvoll, sodass der Benutzer Kontrolle darüber hat, in welcher Reihenfolge die Konstruktoren der Superklasse aufgerufen werden. Dann muss jedoch auch mit dem Fall, dass der Benutzer nicht alle Superklassen aufruft, umgegangen werden -- beispielsweise durch Werfen eines Fehlers zur Auswertung oder beim Erstellen eines Objektes, oder durch automatisches Aufrufen aller fehlenden Superklassen am Ende des Rumpfes. Zudem muss abgewogen werden, ob diese Freiheit für den Benutzer die Implementation nicht zu stark verkompliziert.
+
+Falls mehr als eine Superklasse angegeben wird, so erbt die Klasse alle Felder und Methoden der beiden Oberklassen. Gibt es gleichbenannte Felder, so werden im Standardfall die Felder beziehungsweise Methoden der Klasse mit der höheren Präzedenz geerbt.
+
+\subsection{Generische Funktionen}
+Da Methoden im Objektsystem von Racket innerhalb von Klassen definiert werden, soll das auch für generische Funktionen gelten. Sie werden in der entsprechenden Oberklasse definiert. Für das attack-Beispiel aus der Racketeinführung wäre das die Klasse Thing, es kann jedoch im Zweifel auch die Klasse \texttt{object\%} erweitert werden. Methodendefinitionen starten in Racket mit \texttt{define/}, daher sollen generische Funktionen mit dem Schlüsselwort \texttt{define/generic} definiert werden. Die Syntax ist wie folgt:
+
+\texttt{(define/generic ({\textless}function-name{\textgreater} {\textless}args{\textgreater}) {\textless}combination{\textgreater})}
+
+Der Objekt-Parameter entfällt. Subklassen können (müssen aber nicht) die generische Funktion durch eine öffentliche Methode implementieren. Für Klassen, die die Methode nicht explizit definieren, wird die Methode durch Methodenkombination erzeugt. Falls die Methodenkombination wegen fehlender Methoden fehlschlägt, gibt es wie in CLOS einen Laufzeitfehler.
+
+Die in CLOS definierten Standardkombinationen sollen auch in Racket möglich sein: \texttt{+, min, max, list, append, begin, and, or}. %TODO sind das alle?
+Zusätzlich soll es möglich sein, eigene Kombinationen zu definieren. %TODO schaun, wie das in CLOS funktioniert, ggf. Musterlösung Blatt 9 oder Benjamin fragen
+
+
+\subsection{Vor- und Nachmethoden}
+Vor- und Nachmethoden (und ggf. auch Around-Methoden) sollen auf ähnliche Weise über \texttt{define/before}, \texttt{define/after} beziehungsweise \texttt{define/around} definierbar sein. 
+
+\texttt{(define/before ({\textless}method-name{\textgreater} {\textless}args{\textgreater}) {\textless}body{\textgreater})}\\
+\texttt{(define/after ({\textless}method-name{\textgreater} {\textless}args{\textgreater}) {\textless}body{\textgreater})}\\
+\texttt{(define/around ({\textless}method-name{\textgreater} {\textless}args{\textgreater}) {\textless}body{\textgreater})}
+
+Der Methodenname muss mit einer in der Klasse sichtbaren Primärmethode übereinstimmen. Falls die Klasse keine entsprechende Primärmethode definiert oder erbt, so gibt es einen Laufzeitfehler.

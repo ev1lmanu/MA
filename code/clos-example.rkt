@@ -7,25 +7,29 @@
     :accessor attr
     :initvalue 'water
     :initarg :attr)
-  :printer #t)
+  (color
+    :accessor color
+    :initvalue 'blue)
+  :printer #t
+  :automaker #t)
 
-; (print (make element))
-; (print (make element :attr 'fire))
+; (make element)
+; (make element :attr 'fire)
+; (make-element 'fire)
 (define elem (make element))
 (set! (attr elem) 'wind)
-; (print elem)
 
 (defclass animal (thing)
   (gender :initvalue 'male)
   (size  :initvalue 'small)
+  (color :initvalue 'brown)
   :autoaccessors :slot
   :automaker #t
   :printer #t)
 
-(print (make-animal))
-(printf "~n")
-(print (make-animal 'female 'medium))
-(printf "~n")
+; (make-animal)
+; (make-animal 'female)
+; (make-animal 'female 'normal 'foo)
 
 (defclass pokemon (animal element)
   (index :initvalue 0
@@ -35,11 +39,7 @@
   :printer #t)
 
 (define p1 (make-pokemon))
-(print p1)
-(printf "~n")
-(define p2 (make-pokemon 'fire 'female 'large 42))
-(print p2)
-(printf "~n")
+(define p2 (make-pokemon 'fire 'red 'female 'large 42))
 
 (defgeneric attack ((t thing))
   :combination generic-list-combination)
@@ -50,6 +50,25 @@
 (defmethod attack ((a animal))
   (size a))
 
-(print (attack p1))
-(printf "~n")
-(print (attack p2))
+; (attack p1)
+; (attack p2)
+
+(defclass trainer ())
+
+(defmethod daily-routine ((t trainer))
+  (println "He caught some pokemon."))
+(defmethod daily-routine :before ((t trainer))
+  (println "He walked out."))
+(defmethod daily-routine :after ((t trainer))
+  (println "He walked back home."))
+
+(defclass earlybird (trainer))
+
+(defmethod daily-routine ((e earlybird))
+  (println "He found two bird pokemon in the morning."))
+(defmethod daily-routine :before ((e earlybird))
+  (println "The sun just started rising."))
+(defmethod daily-routine :after ((e earlybird))
+  (println "There was still time before dinner."))
+
+; (daily-routine (make earlybird))

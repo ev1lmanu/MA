@@ -1,7 +1,13 @@
-\chapter{Einleitung}
-Funktionale Programmierung mit Racket ist Inhalt des Moduls ``Softwareentwicklung III'' an der Universität Hamburg. Ein Bestandteil des Moduls ist auch ein Einblick in objektorientierte Programmierung mit Racket. Die Studierenden sind bereits aus dem Modulen ``Softwareentwicklung I'' und ``Softwareentwicklung II'' mit Java vertraut. Das Objektsystem von Racket bietet damit kaum neue Lehrinhalte. Aus diesem Grund wird bisher Das Common Lisp Object System (CLOS), das in Racket als Paket zur Verfügung steht, behandelt. 
+\chapter{Einleitung} %TODO mehr ausformulieren
+An der Universität Hamburg gliedert sich die Lehre zur Softwareentwicklung in zwei Abschnitte. Im ersten Abschnitt werden in den Veranstaltungen ``Softwareentwicklung I'' und ``Softwareentwicklung II'' die Grundlagen für das Programmierverständnis gelegt. Die Studierenden erhalten einen ersten Einblick in imperative und objektorientierte Programmierung in Java nach dem Objects-First-Ansatz.
 
-Ziel dieser Arbeit ist es, ausgewählte Konzepte aus CLOS auch zu dem integrierten Objektsystem von Racket hinzuzufügen. Der Fokus liegt dabei auf Lehrinhalten des Moduls ``Softwareentwicklung III''.
+Anschließend bieten die optionalen Module ``Softwareentwicklung III: Funktionale Programmierung'' sowie ``Softwareentwicklung III: Logikprogrammierung'' zusätzlich die Möglichkeit, zwei weitere  Programmierparadigmen kennenzulernen: funktionale Programmierung am Beispiel von Racket und logikbasierte Programmierung am Beispiel von Prolog.
+
+Racket ist ein Dialekt der funktionalen Sprache Lisp. Genau wie Lisp hat Racket einen funktionalen Kern und ist gleichzeitig eine Mul\-ti\-pur\-pose-Spra\-che. Racket erlaubt es, neben dem funktionalen Stil auch imperative, obkjektorientierte und sogar logikbasierte Programme zu schreiben. Im Rahmen der Lehrveranstaltung werden daher auch diese Möglichkeiten aufgezeigt. 
+
+Racket bietet zwei Arten, objektorientiert zu programmieren: ein integriertes Objektsystem, das sehr ähnlich zu Java ist, und eine Implementation des Common Lisp Object Systems (CLOS), das eine eher funktionalen Sicht auf die Objektorientierung hat. 
+
+Da die Studierenden bereits aus `Softwareentwicklung I'' und ``Softwareentwicklung II'' mit Java vertraut sind, bietet das Objektsystem von Racket bietet kaum neue Lehrinhalte. Aus diesem Grund wird bisher CLOS, das in dem Racket-Dialekt Swindle implementiert ist, behandelt. 
 
 \section{Stand der Forschung} 
 \begin{itemize}
@@ -13,6 +19,13 @@ Ziel dieser Arbeit ist es, ausgewählte Konzepte aus CLOS auch zu dem integriert
  \item NICHT Gott und die Welt zitieren! Nur relevantes!
 \end{itemize}
 
+\section{Problemstellung} %TODO mehr ausformulieren
+Konzepte, die im Modul ``Softwareentwicklung III'' vermittelt werden und die aus dem Objektsystem von Java noch nicht bekannt sind, umfassen: Mehrfachvererbung, Klassenpräzedenzlisten, Methodenkombination und Ergänzungsmethoden.
+
+Es ist bisher nicht möglich, diese Paradigmen aus CLOS in vollem Umfang im Objektsystem von Racket zu verwenden. Beide Systeme verwenden außerdem unterschiedliche Objekte, die nicht ohne weiteres miteinander kommunizieren oder ineinander umgewandelt werden können.
+
+Im Rahmen dieser Arbeit soll eine Racket-Erweiterung entstehen, die Mehrfachvererbung auch im Objektsystem von Racket möglich macht. Der Fokus liegt dabei auf Lehrinhalten des Moduls ``Softwareentwicklung III''.
+
 
 \section{Vorgehen}
-Zunächst wird die \textbf{Problemstellung} näher ausgeführt. Ein Kapitel zu \textbf{Racket} erläutert, wie die beiden Objektsysteme benutzt werden und beleuchtet die Implementation beider Ansätze. Anschließend wird anhand eines \textbf{Entwurf}s darauf eingegangen, auf welche Weise eine Umsetzung der CLOS-Konzepte im Objekt-System von Racket erfolgen kann und eine entprechende \textbf{Implementation} vorgestellt. Zum Abschluss wird im Kapitel \textbf{Zusammenfassung und Ausblick} über die Umsetzung reflektiert und Möglichkeiten der Erweiterung diskutiert.
+Ein Kapitel zu \textbf{Racket} erläutert, wie die beiden Objektsysteme benutzt werden und beleuchtet die Implementation beider Ansätze. Anschließend wird anhand eines \textbf{Entwurf}s darauf eingegangen, auf welche Weise eine Umsetzung der CLOS-Konzepte im Objekt-System von Racket erfolgen kann und eine entprechende \textbf{Implementation} vorgestellt. Zum Abschluss wird im Kapitel \textbf{Zusammenfassung und Ausblick} über die Umsetzung reflektiert und Möglichkeiten der Erweiterung diskutiert.

@@ -16,191 +16,294 @@
 \mainmatter  
 \setstretch{1.24}
 
-\include{chapters/einleitung}
-\include{chapters/problemstellung}
+\include{chapters/einleitung} % TODO ausformulieren
 \include{chapters/racket}
-\include{chapters/racket-onstage}
+\include{chapters/racket-onstage} % TODO Ergänzungsmethoden, Beispiele begründen
+\include{chapters/clos-onstage}
 
-%------------------------------------------------------------------------------------------------
+\section{Zwischenfazit}
+Das Objektsystem von Racket bietet zwar Mixins und Traits, beide sind jedoch geschickt verpackte Einfachvererbung und werden sehr schnell sehr kompliziert, wenn die Anzahl an Klassen steigt und gleichbenannte Methoden und Felder vorkommen. CLOS hingegen bietet einen sehr intuitiven Umgang mit Mehrfachvererbung. Es gibt generische Methoden, Methodenkombination und Ergänzungsmethoden.
 
-\section{CLOS: Onstage}
-Grundlage für dieses Kapitel ist das Buch ``Object-Oriented Programming in Common Lisp. A Programmer's Guide to CLOS''\cite{keene} von Sonya E. Keene. 
+Da der Umgang mit Mehrfachvererbung, wie CLOS ihn bietet, auch im Objektsystem von Racket umgesetzt werden soll, schauen wir nun hinter die Kulissen. Zunächst wird die Implementation von CLOS beleuchtet und im Anschluss die Implementation des Racket-Objektsystems.
 
-Das Common Lisp Object System ist der Standard für objektorientierte Programmierung in der Sprache Common Lisp. Auch Racket bietet es an, in diesem Stil objektorientiert zu programmieren. Um anstatt des Racket-Objektsystems mit CLOS-Objekten zu arbeiten, muss lediglich die Sprache auf Swindle umgestellt werden:
+\include{chapters/entwurf}
+
+% -----------------------------------------------------------------------------------------
+
+\chapter{Makros} 
+\label{makros}
+Um die Implementation einer Sprache zu verstehen, zu verändern oder zu erweitern ist es unumlässlich, sich mit Makros auseinanderzusetzen. 
+
+Vorgehen... % TODO
+
+Dieses Kapitel basiert auf dem Guide ``Fear of Macros'' von Greg Hendershott \cite{fearofmacros} und dem Racket-Guide für Makros \cite{racketguide-macros}. Die Code-Beispiele in ``Fear of Macros'' sind sehr anschaulich und wurden für diese Arbeit nahezu unverändert übernommen.
 
 
-\begin{lstlisting}
-#lang swindle
-\end{lstlisting}
+\section{Transformers}
+\subsection{Was ist ein Syntaxtransformer?}
 
-Wir wollen nun versuchen, die Klassen Thing, Element, Animal und Pokemon auch in CLOS zu schreiben, um zu sehen, welche Unterschiede in der Syntax es gibt und wie Mehrfachvererbung hier umgesetzt ist. 
-
-Alle Code-Beispiele sind auch noch einmal zusammenhängend in Anhang \ref{clos-example} aufgeführt.
-
-\subsection{Einfache Klassen}
-Für die Definition von Klassen in CLOS gibt es das Makro \texttt{defclass}. Im Gegensatz zu dem Objektsystem von Racket erstellt das Makro eine benannte Klasse. Der Name wird beim Aufruf mit übergeben und damit erübrigt sich eine anschließende Benennung mit \texttt{define}. Auch in CLOS wird die Superklasse mit angegeben. Da es jedoch mehrere Superklassen geben kann, werden diese in einer Liste übergeben. Hat die Klasse keine Superklassen (außer der Rootklasse), so wird die leere Liste übergeben. Die explizite Angabe der Rootklasse als Superklasse nicht nicht nötig. Anschließend können noch die Slots der Klasse angegeben werden, aber für eine minimale Klasse ohne Superklasse(n) genügt der Name und die leere Liste: 
-
-\begin{lstlisting}
-((defclass thing ())
-\end{lstlisting}
-
-% Zur Objekterzeugung gibt es in CLOS zwei verschiedene Möglichkeiten, je nachdem ob \texttt{:automaker} als Klassen-Option gesetzt wurde oder nicht. 
-
-Objekte dieser Klasse können mit dem Schlüsselwort \texttt{make} erzeugt werden.
+Ein Makro ist im Grunde eine Funktion. Sie erhält ein Stück Syntax als Eingabe und gibt ein anderes Stück Syntax zurück. Sie \textit{transformiert} Syntax. Wir können einen solchen Syntax-Transformer mit \texttt{define-syntax} definieren:
 
 \begin{lstlisting}
-> (make thing)
+(define-syntax foo
+  (lambda (stx)
+    (syntax "I am foo")))
 \end{lstlisting}
-{\routput \#thing}
 
-Felder oder Slots, wie sie in CLOS üblicherweise genannt werden, werden nach der Superklasse angegeben. Ein großer Unterschied zu dem Objektsystem von Racket ist, dass innerhalb einer Klassendefinition \textit{nur} Slots definiert werden, keine Methoden. Methoden werden außerhalb der Klasse definiert. Wie genau das aussieht, sehen wir gleich. Zunächst sorgt dieser Umstand jedoch dafür, dass kein Schlüsselwort benötigt wird, um anzugeben, ob gerade ein Slot oder eine Methode definiert wird. Wir könnten also, für die Definition der Klasse Element beispielweise, einfach schreiben:
+Ein Aufruf von foo ergibt dann:
 
 \begin{lstlisting}
-(defclass element (thing)
-  attr)
+> (foo)
 \end{lstlisting}
+{\routput {\qq}I am foo{\qq}}
 
-Die Klasse hat genau einen Slot namens \texttt{attr}, der jedoch so noch nicht sehr nützlich ist.
-
-Damit mit diesem Slot auch interargiert werden kann, benötigt er noch Accessoren: einen Getter (in CLOS Reader genannt) und einen Setter (in CLOS Writer genannt). Außerdem möchte man gegebenenfalls einen Initialwert angeben können, den Slot dokumentieren und so weiter. All dies geschieht durch Slot-Optionen. Sie folgen nach dem Namen des Slots (der nun geklammert werden muss, damit klar ist, wann die Slot-Definition zuende ist) und beginnen mit einem Doppelpunkt. Um auf das Attribut \texttt{attr} beispielsweise lesend oder schreibend zugreifen zu können, kann die Slot-Option \texttt{:reader} oder \texttt{writer} gesetzt werden oder, falls beides möglich sein soll und man Code-Zeilen sparen will, auch die Option \texttt{:accessor}. Accessoren müssen benannt werden. Im Gegensatz zu dem Objektsystem von Racket muss sich der Name jedoch nicht vom Namen des Slots unterscheiden. Hier also die vollständige Definition der Klasse:
+Durch die Verwendung von \texttt{define-syntax} geschieht eine Transformer-Bindung. Wir teilen dem Racket-Compiler mit: ``Wann immer du im Quelltext ein Stück Syntax findest, das mit \texttt{foo} startet, gib es an meine Transformer-Funktion und ersetze es mit der Syntax, die ich dir zurück gebe.'' Racket gibt also alles, das aussieht wie \texttt{(foo ...)} an unsere Funktion und wir können neue Syntax zurückgeben, die stattdessen verwendet wird, ähnlich zu einer Suchen-und-Ersetzen-Operation.
 
 \begin{lstlisting}
-(defclass element (thing)
-  (attr
-    :accessor attr
-    :initvalue 'water
-    :initarg :attr))
+> (foo 1 2 3)
 \end{lstlisting}
+{\routput ``I am foo''}
 
-Zusätzlich zu den Accessoren wurde auch noch ein Initialwert definiert und ein Schlüsselwort, mit dem er bei der Objekterzeugung angegeben werden kann. Die Namen der Accessoren können direkt wie Methoden genutzt werden:
+Analog zu der Kurzschreibweise \texttt{(define (f x) ...)} anstelle von \texttt{(define (lambda (x) ...)} gibt es auch eine Kurzschreibweise für \texttt{define-syntax}:
 
 \begin{lstlisting}
-> (attr (make element))
+(define-syntax (also-foo stx)
+  (syntax "I am also foo"))
+  
+> (also-foo)
 \end{lstlisting}
-{\routput water}
+{\routput ``I am also foo''}
+
+Und auch für \texttt{syntax} gibt es die Abkürzung \texttt{\#\q} (analog zu \texttt{\q} und \texttt{quote}):
 
 \begin{lstlisting}
-> (attr (make element :attr 'fire))
+(define-syntax (quoted-foo stx)
+  #'"I am also foo, using #' instead of syntax")
+  
+> (also-foo)
 \end{lstlisting}
-{\routput fire}
+{\routput {\qq}I am also foo, using \#\q instead of syntax{\qq}}
 
-Der Wert kann dann nach der Objekterzeugung mittels \texttt{set!} verändert werden:
+Obwohl sich die Funktion nun nicht mehr stark von einem \texttt{define} unterscheidet, ist es immer noch eine Transformer-Funktion, die Syntax entgegennimmt und Syntax zurückgibt.
+
+\subsection{Syntax-Objekte}
+Bisher haben wir die Eingabe-Syntax einfach ignoriert und eine festgelegte Syntax zurückgegen. Übsicherweise soll jedoch die Eingabe-Syntax transformiert werden. Wenn wir Syntax definieren, erhalten wir ein Syntax-Objekt:
 
 \begin{lstlisting}
-(define elem (make element))
-> (attr elem)
+(define stx #'(+ 1 (* 2 3)))
+
+> stx
 \end{lstlisting}
-{\routput water}
+{\routput\#<syntax:2:14 (+ 1 (* 2 3))>}
+
+Ein Syntaxobjekt besteht aus einer Repräsentation des Ausdrucks, enthält aber auch Informationen über die Datei, Zeile und Spalte in der es definiert wurde sowie den Sichtbarkeitsbereich von Variablen (\emph{lexical scope}). All diese Informationen kann man mit entsprechenden Funktionen abfragen. Zwei dieser Funktionen, die auf Syntax arbeiten, sind \texttt{syntax->datum} und \texttt{syntax-e}. 
+
+\texttt{syntax->datum} wandelt die Syntax in einen quotierten Racket-Ausdruck um:
 
 \begin{lstlisting}
-> (set! (attr elem) 'wind)
-> (attr elem)
+> (syntax->datum stx)
 \end{lstlisting}
-{\routput wind}
+{\rsymbol (+ 1 (* 2 3))}
 
-Um für die Abfrage des Zustands eines Objektes nicht immer alle sondierenden Methoden aufrufen zu müssen, bietet CLOS die Klassen-Option \texttt{:printer}, die bewirkt, dass bei Auswertung des Objektes ein formattierter String ausgegeben wird. Wir fügen es zu unserer Element-Klasse hinzu.
+Analog lässt sich mit \texttt{datum->syntax} aus einem quotierten Racket-Ausdruck ein Syntax-Objekt erzeugen. Die Funktion benötigt zusätzlich zu der Syntax noch einen Kontext. Üblicherweise genügt es, als Kontext das ursprüngliche Syntaxobjekt anzugeben.
+
+\texttt{syntax-e} geht nur ein Level tief. Es kann eine Liste von Syntax-Objekten zurückgeben:
 
 \begin{lstlisting}
-(defclass element (thing)
-  (attr
-    :accessor attr
-    :initvalue 'water
-    :initarg :attr)
-  :printer #t) ; auf Klassenebene
+> (syntax-e lst)
 \end{lstlisting}
+{\rsymbol (\#<syntax:2:15 +> \#<syntax:2:17 1> \#<syntax:2:19 (* 2 3)>)}
 
-Wenn wir jetzt ein Objekt erzeugen, oder das Auswertungsergebnis eines bereits erzeugten Objektes abfragen, so erhalten wir sofort auch die Belegung aller Slots:
+Jedes dieser Syntax-Objekte kann dann rekursiv mit \texttt{sytax-e} weiter aufgelöst werden. Genau das macht \texttt{syntax->datum}.
+
+Beim Transformieren von Syntax nehmen wir üblicherweise die Bestandteile der Syntax, die uns gegeben wird, ändern ihre Reihenfolge, ersetzen einige von ihnen oder führen gänzlich neue Bestandteile ein.
+
+\subsection{Transformieren von Syntax}
+
+Ein simples Beispiel, das die Reihenfolge der Syntax umkehrt:
 
 \begin{lstlisting}
-> (make element)
+(define-syntax (reverse-me stx)
+  (datum->syntax stx (reverse (cdr (syntax->datum stx)))))
+  
+> (reverse-me "backwards" "am" "I" values)
 \end{lstlisting}
+{\routput {\qq}I{\qq} {\qq}am{\qq} {\qq}backwards{\qq}}
 
-{\routput \#<element: attr=water>}
+Die Transformer-Funktion erhält die Syntax \texttt{\#\q(reverse-me {\qq}backwards{\qq} {\qq}am{\qq} {\qq}I{\qq} values)}. Zuerst wird diese durch \texttt{syntax->datum} in einen quotierten Ausdruck umgewandelt. Mit \texttt{cdr} entfernen wir das erste Element (reverse-me) aus der Liste, geben diese als Parameter als \texttt{reverse} und erhalten die Liste \texttt{\q(values {\qq}I{\qq} {\qq}am{\qq} {\qq}backwards{\qq})}. Durch Übergeben an die Funktion \texttt{datum->syntax} erhalten wir daraus ein Syntax-Objekt. Dieses Objekt wird von der Transformer-Funktion zurückgegeben und diese Syntax wird anschließend vom Compiler ausgewertet.
 
-Falls wir oft die Slots mit Werten initialisieren, so kann die Option \texttt{:automaker} gesetzt werden.
+Der Syntax-Transformer wird zur Übersetzungszeit ausgewertet. Das bedeutet, dass die Teilstücke der Syntax zwar verschoben und ersetzt werden -- aber nicht ausgewertet. Das geschieht erst zur Laufzeit. Dadurch ermöglichen uns Makros beispielsweise die Definition eines eigenen \texttt{if} durch Benutzen von \texttt{cond}.
+
+Würden wir \texttt{if} als normale Racket-Funtion definieren, so würden alle Parameter ausgewertet, bevor sie überhaupt an die Funktion gegeben werden. Das wird spätestens dann sichtbar, wenn sie Seiteneffekte beinhalten oder in einem Zweig der Fallunterscheidung ein rekursiver Aufruf steckt. Durch die Definition als Makro haben wir die Möglichkeit das \texttt{if} bereits zur Übersetzungszeit durch ein \texttt{cond} zu ersetzten:
 
 \begin{lstlisting}
-(defclass element (thing)
-  (attr
-    :accessor attr
-    :initvalue 'water
-    :initarg :attr)
-  :printer #t
-  :automaker #t) ; auf Klassenebene
+(define-syntax (my-if stx)
+  (let ((xs (cdr (syntax->datum stx))))
+    (datum->syntax stx `(cond [,(car xs) ,(cadr xs)]
+                              [else ,(caddr xs)]))))
 \end{lstlisting}
 
-Sie bewirkt, dass sich die Syntax bei der Objekterzeugung verkürzt. Anstatt zu jedem Slot, der initialisiert wird, den Namen angeben zu müssen, können wir die Werte direkt nacheinander auflisten. Falls es mehrere Slots gibt, muss die Parameterreihenfolge mit der Reihenfolge der Slots in der Klassendeifnition übereinstimmen. Statt
+Durch das Quasiquote \texttt{`} werden nur die mit Komma markierten Teile der Liste ausgewertet.
+
+Eine Liste immer mit \texttt{car}, \texttt{cadr} und so weiter zu zerlegen ist jedoch sehr anstrengend zu fehleranfällig. Eleganter geht es mithilfe von Pattern-Matching. Racket bietet dafür die Funktion \texttt{match}. 
+
+Unsere Transformer-Funktion wird zur Übersetzungszeit ausgewertet. Zu diesem Zeitpunkt wird jedoch nur \texttt{racket/base} automatisch zur Verfügung gestellt, nicht das komplette \texttt{racket}. Alle Funktionen, die wir darüber hinaus benutzen wollen, müssen wir mit per Hand anfordern -- un zwar zur Übersetzungszeit. Dafür gibt es die \texttt{for-syntax}-Option von \texttt{require}:
 
 \begin{lstlisting}
-(make element :attr 'fire)
+(require (for-syntax racket/match))
+
+(define-syntax (my-if-using-match stx)
+  (match (syntax-e stx)
+    [(list name condition true-expr false-expr)
+     (datum->syntax stx `(cond [,condition ,true-expr]
+                               [else ,false-expr]))]))
 \end{lstlisting}
 
-können wir nun verkürzt schreiben:
+\subsection{Hilfsfunktionen}
+Wenn wir eine Hilfsfunktion für unser Makro benötigen, können wir sie nicht einfach mit \texttt{define} definieren und benutzen -- die Definition würde zur Laufzeit existieren, aber wir brauchen sie zur Übersetzungszeit. Eine Möglichkeit ist es, die Funktion in ein anderes Modul zu schreiben und dieses mit \texttt{for-syntax} einzubinden.
+
+Falls wir die Funktion stattdessen im selben Modul definieren wollen, können wir sie innerhalb eines \texttt{begin-for-syntax}-Blocks definieren oder alternativ die Kurzform \texttt{define-for-syntax} benutzen:
 
 \begin{lstlisting}
-(make-element 'fire)
+(begin-for-syntax
+  (define (my-helper-function ...) 
+    ...))
+  
+(define-for-syntax (my-helper-function ...)
+  ...)
 \end{lstlisting}
 
-Zusätzlich zu dem Schlüsselwort \texttt{make} zur Erzeugung von allgemeinen Objekten gibt es nun das Schlüsselwort \texttt{make-element} zur Erzeugung von Objekten der Klasse Element. Element-Objekte können natürlich auch weiterhin mit \texttt{make} erzeugt werden.
+\section{Pattern Matching}
+\subsection{define-syntax und syntax-case}
+Das Makrosystem von Racket bietet eine noch bequemere Funktion für Pattern Matching: \texttt{syntax-case}.
 
-Falls eine Klasse viele Slots hat und die Accessoren für alle Slots gleich dem Slot-Namen sein sollen, so kann man als Klassenoption \texttt{:autoaccessors} auf \texttt{:slot} setzen. Damit sparen wir uns beispiesweise bei der Definition der Klasse Animal, die zwei Slots für Geschlecht und Größe hat, eine Code-Zeile. Wenn wir zusätzlich \texttt{:automaker} benutzen, kann auch die \texttt{:initarg}-Option  weggelassen werden\footnote{Das hat natürlich zur Folge, dass nun bei der Objekterzeugung mit \texttt{make} die Slots nicht mehr initialisiert werden können.}.
+Anstatt
 
 \begin{lstlisting}
-(defclass animal (thing)
-  (gender :initvalue 'male)
-  (size   :initvalue 'small)
-  :autoaccessors :slot
-  :automaker #t
-  :printer #t)
+(require (for-syntax racket/match))
+(define-syntax (my-if-using-match stx)
+  (match (syntax-e stx)
+    [(list name condition true-expr false-expr)
+     (datum->syntax stx `(cond [,condition ,true-expr]
+                               [else ,false-expr]))]))
 \end{lstlisting}
 
-
+können wir schreiben:
 
 \begin{lstlisting}
----------------------------------------------
-
-(print (make-animal))
-(printf "~n")
-(print (make-animal 'female 'medium))
-(printf "~n")
-
-(defclass pokemon (animal element)
-  (index :initvalue 0
-         :type <number>)
-  :autoaccessors :slot
-  :automaker #t
-  :printer #t)
-
-(define p1 (make-pokemon))
-(print p1)
-(printf "~n")
-(define p2 (make-pokemon 'fire 'female 'large 42))
-(print p2)
-(printf "~n")
-
-(defgeneric attack ((t thing))
-  :combination generic-list-combination)
-
-(defmethod attack ((e element))
-  (attr e))
-
-(defmethod attack ((a animal))
-  (size a))
-
-(print (attack p1))
-(printf "~n")
-(print (attack p2))
+(define-syntax (my-if-using-syntax-case stx)
+  (syntax-case stx ()
+    [(_ condition true-expr false-expr)
+      #'(cond [condition true-expr]
+             [else false-expr])]))
 \end{lstlisting}
 
-\section{Zwischen-Fazit}
+Das Quasiquote ist nicht mehr nötig und auch \texttt{datum->syntax} entfällt. Stattdessen stellen wir ein Template bereit, welches Variablen aus dem Pattern benutzt. 
 
-\section{CLOS: Backstage}
+\subsection{define-syntax-rule}
 
-% 
-% \chapter{Entwurf?}
-% https://docs.racket-lang.org/drracket/extending-drracket.html
-% \chapter{Implementation}
-% \chapter{Zusammenfassung und Ausblick}
+Auch für \texttt{syntax-case} gibt es eine Kurzform für einfache Pattern-Matching-Fälle namens \texttt{define-syntax-rule}:
+
+\begin{lstlisting}
+(define-syntax-rule 
+  (my-if-using-syntax-rule condition true-expr false-expr) ; Pattern
+  (cond [condition true-expr]                              ; Template
+        [else false-expr]))
+\end{lstlisting}
+
+Diese Definition sieht so einfach aus, dass man denken könnte, es wäre eine normale Laufzeit-Funktion -- aber sie ist es nicht. Sie läuft zur Übersetzungszeit, nicht zur Laufzeit. 
+
+\subsection{Sichtbarkeit von Variablen}
+
+Sehr komfortable an dem Makro ist, dass es die Sichbarkeit von Variablen berücksichtigt. Nehmen wir beispielsweise das Makro, das zwei Werte vertauscht (nach \cite{racketguide-macros}):
+
+\begin{lstlisting}
+(define-syntax-rule (swap x y)
+  (let ([tmp x])
+    (set! x y)
+    (set! y tmp)))
+\end{lstlisting}
+
+Angenommen, in der lokalen Umgebung des Makroaufrufs gibt es bereits eine Variable namens \texttt{tmp}:
+
+\begin{lstlisting}
+(let ([tmp 1]
+      [other 2])
+  (swap tmp other)
+  (list tmp other))
+\end{lstlisting}
+
+Würden wir dahergehen und das Makro naiv expandieren, so würden die Werte nicht vertauscht werden:
+
+\begin{lstlisting}
+(let ([tmp 1]         ; tmp1
+      [other 2])
+  (let ([tmp tmp])    ; tmp2 verschattet tmp1
+    (set! tmp other)  ; tmp2 = 2
+    (set! other tmp)) ; other = tmp2 = 2
+  (list tmp other))   ; (tmp1, other)
+\end{lstlisting}
+
+Tatsächlich produziert Racket jedoch nicht die naive Expansion. Sobald Variablen im lokalen Kontext des Makroaufrufs mit Makro-Variablen übereinstimmen, werden die Variablen im Makro vor der Expansion umbenannt. Wir erhalten also:
+
+\begin{lstlisting}
+(let ([tmp 1]
+      [other 2])
+  (let ([tmp_1 tmp])
+    (set! tmp other)
+    (set! other tmp_1))
+  (list tmp other))
+\end{lstlisting}
+
+mit dem korrekten Ergebnis \texttt{(2,1)}.
+
+\subsection{syntax-rules}
+\texttt{define-syntax-rule} bindet ein Makro, das ein einzelnes Pattern abgleicht. Racket's Makro-System unterstützt mit \texttt{syntax-rules} jedoch auch Transformer für mehrere Patterns, die mit dem gleichen Bezeichner starten.
+
+Beispielsweise könnten wir ein Makro definieren, das sowohl zwei als auch drei Werte miteinander vertauschen kann (nach \cite{racketguide-macros}):
+
+\begin{lstlisting}
+(define-syntax rotate
+  (syntax-rules ()
+    [(rotate a b) (swap a b)]
+    [(rotate a b c) (begin
+                     (swap a b)
+                     (swap b c))]))
+\end{lstlisting}
+
+Es ist sogar möglich, Patterns beliebiger Länge in einem Makro zu matchen. Für eine beliebige Anzahl an Parametern können wir einfach \texttt{...} schreiben. Das Makro ähnelt dann einer rekursiven Funktion mit einem Standardfall (oder mehr) und einer Regel, wie mit dem Rest der Parameter zu verfahren ist (nach \cite{racketguide-macros}):
+
+\begin{lstlisting}
+(define-syntax rotate
+  (syntax-rules ()
+    [(rotate a) (void)]
+    [(rotate a b c ...) (begin
+                          (swap a b)
+                          (rotate b c ...))]))
+\end{lstlisting}
+
+% \subsection{with-syntax}
+% In einem Template können bisher nur Werte ersetzt werden, die vorher im Pattern bereits aufgetaucht sind. Oft wollen wir jedoch neue Teile definieren und benutzten. Das geht, indem \texttt{syntax-case} ineinander verschachtelt wird. Eine besser lesbare Kurzform für das Einführen einer neuen Pattern-Variable ist \texttt{with-syntax}. Es kann ähnlich wie ein \texttt{let} benutzt werden:
+
+\section{Fehlerbehandlung}
+Genau wie mit Standard-Funktionen gibt es auch bei Makros verschiedene Möglichkeiten mit einem fehlerhaftem Aufruf umzugehen: Ignorieren, Schreiben von fehlerbehandelndem Code oder \texttt{syntax-parse}. 
+
+\texttt{syntax-parse} erlaubt es uns, das Eingabe-Pattern auf Richtigkeit zu prüfen, ähnlich zu einer Typprüfung oder einem Vertrag.
+
+http://docs.racket-lang.org/syntax/stxparse.html %TODO
+
+% -----------------------------------------------------------------------------------------
+
+\chapter{CLOS: Backstage}
+% \section{Das Objektsystem von Racket: Backstage}
+\label{cpl}
+
+
+\chapter{Implementation}  % überwiegend eigener Teil
+
+\chapter{Analyse/Erprobung/Auswertung/Test}
+
+\chapter{Zusammenfassung und Ausblick}
 
 % -----------------------------------------------------------------------------------------
 
