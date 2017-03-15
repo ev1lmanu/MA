@@ -4,9 +4,24 @@
 
 ;; This module was created by Manuela Beckert as master thesis project. The corresponding (German) thesis is titled "Untersuchungen zur Integration von CLOS-Konzepten in das Objektsystem von Racket" and accessible at the library in the computer science department of the University of Hamburg, Germany.
 
+; enable us to use eval in the definitions window
+(define-namespace-anchor a)
+(define ns (namespace-anchor->namespace a))
+
+(define (my-eval x)
+  (eval x ns))
+
+; provide new version of the class macro
 (provide (rename-out [my-class class]))
 
-; redefine class macro
+; redefine class macro.
+; Instead of only a single superclass, this macro allows
+; to also specify a (possibly empty) list of superclasses.
+; Thus, there are three cases: That we got
+; * a single class
+; * an empty list (we'll treat this as object%)
+; * a non-empty list
+; TODO: class/derived
 (define-syntax my-class
   (syntax-rules ()
     [(my-class () . rest)
@@ -16,24 +31,22 @@
     [(my-class super . rest)
      (expand! '(super) 'rest)]))
 
-; enable us to use eval in the definitions window
-(define-namespace-anchor a)
-(define ns (namespace-anchor->namespace a))
-
-(define (my-eval x)
-  (eval x ns))
-
-; the entry point where everything begins!!
+; The entry point where everything begins!!
 ; * creates a class object and returns it
-; * all classes will simply have object% as "official"
-;   superclass, since we'll provide all inheritance behavior
-;   ourselves and do not want Object Racket to interfere with that
-; * creates a meta object for the class that stores all additional
-;   information we need and adds it to the table of metaobjects
+; * classes with a single superclass will be handled solely
+;   by Object Racket, we'll just collect some info on them
+; * classes with multiple suplerclasses will be put together
+;   here; they will have object% as "official" superclass
+;   because we'll do all the inheritance work already and
+;   Object Racket shall not do it again
+; * information that we'll need later about the class object
+;   will be stored in a meta object
 (define (expand! supers args)
   (let*
        ; create meta object
       ([meta (make-metaobject supers args)]
+       [slots (send meta get-effective-slots)]
+       [methods (send meta get-effective-methods)]
        ; create actual class object
        [obj (if (= 1 (length supers))
                 ; if there is only one superclass, let
@@ -41,9 +54,12 @@
                 (my-eval (append '(class) supers args))
                 ; else, put together the object ourselves
                 (my-eval
-                 (append '(class object% (super-new))
-                         (send meta get-direct-slots)
-                         (send meta get-direct-methods))))])
+                 (append '(class object%)
+                         slots
+                         methods
+                         ; add anything else that was passed in args
+                         ; (including the call to super-new)
+                         (remove* slots (remove* methods args)))))])
     ; complete class precedence list
     (send meta add-self-to-cpl obj)
     ; keep track of subclasses
@@ -57,7 +73,10 @@
 ; can distinguish them for debugging later
 (define num-of-classes -1)
 
-; class for meta objects
+(define (number-of obj)
+  (send (find-class obj) get-number))
+
+; class for meta objects.
 ; meta objects store additional information for a class object
 (define meta-class
   (class object% (super-new)
@@ -67,23 +86,26 @@
                      (set! num-of-classes (+ 1 num-of-classes))
                      num-of-classes)])
     (init-field direct-supers)
-    (init-field direct-slots)    ; fields (not inherited)
     (init-field class-precedence-list)
+    (init-field direct-slots)    ; fields (not inherited)
     (init-field effective-slots) ; fields (including inherited)
-    (init-field direct-subclasses)
     (init-field direct-methods)
+    (init-field effective-methods)
+    (init-field direct-subclasses)
 
     ;; getters
     (define/public (get-number) number) 
     (define/public (get-direct-supers) direct-supers)
-    (define/public (get-direct-slots)  direct-slots)
     (define/public (get-class-precedence-list) class-precedence-list)
+    (define/public (get-direct-slots)  direct-slots)
     (define/public (get-effective-slots) effective-slots)
-    (define/public (get-direct-subclasses) direct-subclasses)
     (define/public (get-direct-methods) direct-methods)
+    (define/public (get-effective-methods) effective-methods)
+    (define/public (get-direct-subclasses) direct-subclasses)
 
     ;; setters
     ; adds the class object to its CPL
+    ; (this is only called once after object creation)
     (define/public (add-self-to-cpl self)
       (set! class-precedence-list
             (cons self class-precedence-list)))
@@ -109,101 +131,157 @@
        [class-precedence-list (list object%)]
        [effective-slots '()]
        [direct-subclasses '()]
-       [direct-methods '()]))
+       [direct-methods '()]
+       [effective-methods '()]))
 
 (add-class object% meta-object%)
 
-; creates a metaobject, given the list of superclasses and
-; other arguments
+; creates a metaobject.
+; supers - the list of superclasses
+; args - other arguments passed to the class macro
 (define (make-metaobject supers args)
   (let* ([direct-supers (compute-direct-supers supers)]
-         [direct-slots  (compute-direct-slots args)]
          [cpl           (compute-cpl direct-supers)] 
+         [direct-slots  (compute-direct-slots args)]
          [effective-slots (compute-effective-slots cpl direct-slots)]
-         [direct-methods (compute-direct-methods args)])
+         [direct-methods (compute-direct-methods args)]
+         [effective-methods (compute-effective-methods cpl direct-methods)])
     
     (new meta-class 
          [direct-supers direct-supers]
          [direct-slots direct-slots]
          [class-precedence-list cpl]
          [effective-slots effective-slots]
-         [direct-subclasses '()]
-         [direct-methods direct-methods])))
+         [direct-methods direct-methods]
+         [effective-methods effective-methods]
+         [direct-subclasses '()])))
 
 ; compute the super class objects from the list of superclass names
 (define (compute-direct-supers supers)
-  (map (curryr eval ns) supers))
-
-; extracts fields from the list of arguments
-(define (compute-direct-slots args)
-  (filter (lambda (arg) (or (equal? (car arg) 'field)
-                            (equal? (car arg) 'init-field)))
-          args))
+  (map my-eval supers))
 
 ; compute the class precedence list
 ; * the class object itself will be created later, so it
 ;   cannot be added yet in this method
-; * this is way simpler than the topological sort in the CLOS
-;   implementation and I need to figure out whether that's a
+; * this is way simpler than the topological sort in AMOP or the 
+;   CLOS implementation and I need to figure out whether that's a
 ;   good thing or not
 (define (compute-cpl classes [result '()])
-  ; remove object% from the list, since we'll add it once at the end
+  ; remove object% from the list since we'll add it once at the end
   (let ([classes (filter (negate (curry eq? object%)) classes)])
     (if (empty? classes)
-        ; once we saw all classes, add object and return the list
+        ; once we saw all classes, add object% and return the list
         (reverse (cons object% result))
         ; add current class to result list and
         ; its superclasses to the list of classes to be processed
         (let* ([elem (car classes)]
                [elem-supers (send (find-class elem)
                                   get-direct-supers)])
-          (compute-cpl (remove-duplicates
-                        (append (cdr classes)
-                                elem-supers))
+          (compute-cpl (remove-duplicates (append (cdr classes)
+                                                  elem-supers))
                        (cons elem result))))))
 
-; computes the list of effective slots
-; (all fields visible in the class)
+;; slots and methods
+
+; define what a slot/method definition looks like
+(define (slot? s)
+  (if (member (car s) '(field init-field))
+      #t
+      #f))
+
+(define (method? m)
+  (if ;(string-prefix? (symbol->string (car m)) "define/")
+      (equal? (car m) 'define/public)
+      #t
+      #f))
+
+; extracts fields from the list of arguments
+(define (compute-direct-slots args)
+  (filter slot? args))
+
+; extracts methods from the list of arguments
+(define (compute-direct-methods args)
+  (filter method? args))
+
+; computes the list of effective slots and methods.
+; since both are very similar, the main logic is in
+; compute-effective-stuff. Just substitute "stuff"
+; for "slots" or "methods" in your head.
 (define (compute-effective-slots cpl direct-slots)
-  (let ([slots '()])
+  (compute-effective-stuff direct-slots 'get-direct-slots cpl))
+
+(define (compute-effective-methods cpl direct-methods)
+  (compute-effective-stuff direct-methods 'get-direct-methods cpl))
+
+(define (compute-effective-stuff direct-stuff get-direct-stuff cpl)
+  (let ([stuff direct-stuff])
+    ; add the slots/methods of all superclasses to the list
     (for*/list ([who (map find-class cpl)])
-      (set! slots (append slots
-                          (dynamic-send who 'get-direct-slots))))
-    (remove-duplicates slots)))
+      (set! stuff (append stuff 
+                          (dynamic-send who get-direct-stuff))))
+    ; only keep the first appearance of every slot/method
+    ; declaration
+    (filter-first-occurence stuff)))
+
+; Filters a list of slot or method definition so that
+; only the first declaration of each slot/method
+; is kept:
+; '((field (a 1)) (field (a 2)) (field b) (field (b 0)))
+;  -> '((field (a 1)) (field b))
+; TODO: This is probably very inefficient!!
+(define (filter-first-occurence xs)
+  (remove-duplicates (map (curryr first-occurence xs) xs)))
+
+(define (first-occurence elem xs)
+  (car (filter (lambda (x) (equal? (get-symbol x)
+                                   (get-symbol elem)))
+               xs)))
+
+(define (get-symbol x)
+  (if (symbol? (cadr x))
+      (cadr x)
+      (caadr x)))
+
+;; subclasses
 
 ; adds the class obj as subclass to all specified supers
 (define (add-subclass obj supers)
   (for*/list ([who (map find-class supers)])
     (dynamic-send who 'add-direct-subclass obj)))
 
-(define (compute-direct-methods args)
-  '()) ; TODO
-
-; TODO: Klassen mit nur einer Oberklasse komplett von Racket erstellen lassen
-
 ;----------------------------- Tests -----------------------------
 
-(define test1 (my-class () (super-new) (field [a 1])))
-(define test2 (my-class () (super-new) (field [b 2])))
-(define test3 (my-class () (super-new) (field [c 3])))
-(define test4 (my-class () (super-new) (field [d 4])))
-(define test5 (my-class (test1 test2) (super-new)))
-(define test6 (my-class (test3 test4) (super-new)))
-(define test7 (my-class (test5 test6) (super-new)))
-(define test8 (my-class (test1) (super-new)))
+#|      0 - object%
+      __|__ 
+     / / \ \
+    1  2 3  4
+   / \/   \/ \
+  8   5   6  /
+       \ /__/
+        7
+|#
+
+(display "------------ Tests ------------\n")
+
+;                        supers                            slots            methods
+(define test1 (my-class ()                  (super-new)   (field [a 1])    (define/public (foo) 'yes)))
+(define test2 (my-class ()                  (super-new)   (field [b 2])    (define/public (foo) 'no)))
+(define test3 (my-class ()                  (super-new)   (field [c 3])    (define/public (foo) 'nono)))
+(define test4 (my-class ()                  (super-new)   (field [a 4])    (define/public (bar) 'no)))
+(define test5 (my-class (test1 test2)       (super-new)))
+(define test6 (my-class (test3 test4)       (super-new)))
+(define test7 (my-class (test5 test6 test4) (super-new)                    (define/public (bar) 'yes)))
+(define test8 (my-class (test1)             (super-new)))
 
 (define cpl (send (find-class test7) get-class-precedence-list))
 
-(define meta (map find-class cpl))
-(send (first meta) get-number)  ;7
-(send (second meta) get-number) ;5
-(send (third meta) get-number)  ;6
-(send (fourth meta) get-number) ;1
-(send (fifth meta) get-number)  ;2
-(send (sixth meta) get-number)  ;3
-(send (seventh meta) get-number);4
-(send (eighth meta) get-number) ;object%
-;(send (ninth meta) get-number)  ;error
-
+(display "object% subclasses: ")
+(map number-of (send (find-class object%) get-direct-subclasses))
+(display "class 1 subclasses: ")
+(map number-of (send (find-class test1) get-direct-subclasses))
+(display "class 7 cpl:        ")
+(map number-of cpl)
+(display "class 7 slots:      ")
 (send (find-class test7) get-effective-slots)
-(send (find-class test1) get-direct-subclasses)
+(display "class 7 methods:    ")
+(send (find-class test7) get-effective-methods)
