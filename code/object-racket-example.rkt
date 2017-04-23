@@ -1,41 +1,30 @@
 #lang racket
 
 ; ------------ Klassen und Objekte ---------------
-(define thing (class object% (super-new)))
+(define Thing (class object% (super-new)))
 
-; (new thing)
+; (new Thing)
 
-(define element (class thing (super-new)
+(define Element (class Thing (super-new)
                   (init-field [attr 'water])
-                  (define/public (get-attr) attr)
-                  (define/public (set-attr value) (set! attr value))))
+                  (define/public (hot?) (equal? attr 'fire))))
 
-(define elem (new element))
-; (send elem get-attr)
-; (send elem set-attr 'wind)
+(define elem (new Element))
+; (get-field attr elem)
+; (set-field! elem attr 'wind)
+; (send elem hot?)
 
-(define elem2 (new element [attr 'fire]))
-; (send elem2 get-attr)
-
-(define animal (class thing (super-new)
+(define Animal (class Thing (super-new)
                  (init-field [gender 'male]
-                             [size 'small])
-                 (define/public (get-gender) gender)
-                 (define/public (get-size) size)))
-; (new animal)
-; (send (new animal) get-gender)
-; (send (new animal) get-size)
-; (send (new animal [gender 'female] [size 'huge]) get-size)
-; (send (new animal [gender 'female] [size 'huge]) get-gender)
+                             [size 'small])))
 
-(define pet (class animal (super-new)
-              (init-field [name 'unknown])
-              (define/public (get-name) name)))
+(define Pet (class Animal (super-new)
+              (init-field [name 'unknown])))
 
-(define harry (new pet [name 'harry] [size 'normal]))
-; (send harry get-name)
-; (send harry get-gender)
-; (send harry get-size)
+(define harry (new Pet [name 'harry] [size 'normal]))
+; (get-field name harry)
+; (get-field gender harry)
+; (get-field size harry)
 
 
 ; --------------- Mixins ------------------
@@ -43,73 +32,67 @@
 (define (generate-subclass superclass)
   (class superclass (super-new)))
 
-(define (element-mixin %)
+(define (Element-mixin %)
   (class % (super-new)
     (init-field [attr 'water])
-    (define/public (get-attr) attr)
 ;    (define/public (attack) attr) ; !
     (define/override (attack) (list (super attack) attr))
     ))
 
-(define (animal-mixin %)
+(define (Animal-mixin %)
   (class % (super-new)
     (init-field [gender 'male]
                 [size 'small])
-    (define/public (get-gender) gender)
-    (define/public (get-size) size)
     (define/public (attack) size)))
 
-(define element2 (element-mixin
+(define Element2 (Element-mixin
                   (class object% (super-new)
                     (define/public (attack) null))))
-; (send (new element2) get-attr)
+; (get-field attr (new Element2))
 
-(define animal2 (animal-mixin thing))
-; (send (new animal2 [size 'huge] [gender 'female]) get-size)
+(define Animal2 (Animal-mixin Thing))
+; (get-field size (new Animal [size 'huge] [gender 'female]))
 
-(define pokemon (element-mixin (animal-mixin thing)))
-; (define pokemon (animal-mixin (element-mixin thing))) ; !
+(define Pokemon (Element-mixin (Animal-mixin Thing)))
+; (define Pokemon (Animal-mixin (Element-mixin Thing))) ; !
 
-; (send (new pokemon) get-size)
-; (send (new pokemon) get-attr)
-; (send (new pokemon) attack)
-(define p (new pokemon [size 'large]
+; (get-field size (new Pokemon))
+; (get-field attr (new Pokemon))
+; (get-field gender (new Pokemon))
+; (send (new Pokemon) attack)
+(define p (new Pokemon [size 'large]
                        [gender 'female]
                        [attr 'fire]))
-; (send p get-size)
-; (send p get-gender)
-; (send p get-attr)
+; (get-field size p)
+; (get-field gender p)
+; (get-field attr p)
 ; (send p attack)
 
 ; --------------- Traits ------------------
 
 (require racket/trait)
 
-(define element-trait
+(define Element-trait
   (trait (field [attr 'water])
-         (define/public (get-attr) attr)
          (define/public (attack) attr)))
 
-(define animal-trait
+(define Animal-trait
   (trait (field [gender 'male]
                 [size 'small])
-         (define/public (get-gender) gender)
-         (define/public (get-size) size)
-         (define/public (attack) size)
-         ))
+         (define/public (attack) size)))
 
-(define pokemon-trait
+(define Pokemon-trait
   ; combine the following traits
   (trait-sum
    ; create a trait with an additional method element-attack
    ; that is a duplicate of attack with trait-alias
    ; and remove the original attack method with trait-exclude
-   (trait-exclude (trait-alias element-trait  
+   (trait-exclude (trait-alias Element-trait  
                               attack         
                               element-attack)
                  attack)
    ; same for animal
-   (trait-exclude (trait-alias animal-trait  
+   (trait-exclude (trait-alias Animal-trait  
                               attack         
                               animal-attack)
                  attack)
@@ -118,17 +101,16 @@
           (define/public (attack)
             (list (animal-attack) (element-attack))))))
 
-(define pokemon-mixin (trait->mixin pokemon-trait))
+(define Pokemon-mixin (trait->mixin Pokemon-trait))
 
-(define pokemon2 (pokemon-mixin
+(define Pokemon2 (Pokemon-mixin
                   (class object% (super-new)
                     (init-rest args)
                     (when (not (empty? args))
                       (display args))
                     )))
 
-(define p2 (new pokemon2))
+(define p2 (new Pokemon2))
 ; (send p2 attack)
-; (define p3 (new pokemon2 [size 'large] [gender 'female] [attr 'fire]))
-(define p4 (make-object pokemon2 'large 'female 'fire))
+(define p3 (make-object Pokemon2 'large 'female 'fire))
                

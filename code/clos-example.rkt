@@ -1,8 +1,8 @@
 #lang swindle
 
-(defclass thing ())
+(defclass Thing ())
 
-(defclass element (thing)
+(defclass Element (Thing)
   (attr
     :accessor attr
     :initvalue 'water
@@ -13,13 +13,13 @@
   :printer #t
   :automaker #t)
 
-; (make element)
-; (make element :attr 'fire)
-; (make-element 'fire)
-(define elem (make element))
+; (make Element)
+; (make Element :attr 'fire)
+; (make-Element 'fire)
+(define elem (make Element))
 (set! (attr elem) 'wind)
 
-(defclass animal (thing)
+(defclass Animal (Thing)
   (gender :initvalue 'male)
   (size  :initvalue 'small)
   (color :initvalue 'brown)
@@ -27,48 +27,48 @@
   :automaker #t
   :printer #t)
 
-; (make-animal)
-; (make-animal 'female)
-; (make-animal 'female 'normal 'foo)
+; (make-Animal)
+; (make-Animal 'female)
+; (make-Animal 'female 'normal 'foo)
 
-(defclass pokemon (animal element)
+(defclass Pokemon (Animal Element)
   (index :initvalue 0
          :type <number>)
   :autoaccessors :slot
   :automaker #t
   :printer #t)
 
-(define p1 (make-pokemon))
-(define p2 (make-pokemon 'fire 'red 'female 'large 42))
+(define p1 (make-Pokemon))
+(define p2 (make-Pokemon 'fire 'red 'female 'large 42))
 
-(defgeneric attack ((t thing))
+(defgeneric attack ((t Thing))
   :combination generic-list-combination)
 
-(defmethod attack ((e element))
+(defmethod attack ((e Element))
   (attr e))
 
-(defmethod attack ((a animal))
+(defmethod attack ((a Animal))
   (size a))
 
 ; (attack p1)
 ; (attack p2)
 
-(defclass trainer ())
+(defclass Trainer ())
 
-(defmethod daily-routine ((t trainer))
-  (println "He caught some pokemon."))
-(defmethod daily-routine :before ((t trainer))
+(defmethod daily-routine ((t Trainer))
+  (println "He caught some Pokemon."))
+(defmethod daily-routine :before ((t Trainer))
   (println "He walked out."))
-(defmethod daily-routine :after ((t trainer))
+(defmethod daily-routine :after ((t Trainer))
   (println "He walked back home."))
 
-(defclass earlybird (trainer))
+(defclass Earlybird (Trainer))
 
-(defmethod daily-routine ((e earlybird))
-  (println "He found two bird pokemon in the morning."))
-(defmethod daily-routine :before ((e earlybird))
+(defmethod daily-routine ((e Earlybird))
+  (println "He found two bird Pokemon in the morning."))
+(defmethod daily-routine :before ((e Earlybird))
   (println "The sun just started rising."))
-(defmethod daily-routine :after ((e earlybird))
+(defmethod daily-routine :after ((e Earlybird))
   (println "There was still time before dinner."))
 
-; (daily-routine (make earlybird))
+; (daily-routine (make Earlybird))
