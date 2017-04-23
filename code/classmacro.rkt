@@ -1,15 +1,10 @@
 #lang racket
 #|
-This module is a prototype for extending the class macro for multiple inheritance.
+This module is a prototype for extending the class macro for multiple inheritance without touching the underlying implementation of Racket's object system.
 
-The purpose of this module is use in teaching, so it focuses on supporting existing class options what will be relevant for the lecture or training excercises instead of covering all possible syntax constructs and use cases.
+As long as only single inheritance is used there should be no noticable difference between using this module and not using it. When the macro is used with multiple superclasse, the class will inherit fields and methods from all superclasses depending on the precedence of the classes or the specified combination. The result is a normal Racket object. The actual superclass will be object% and the code of all inherited fields and methods will be injected into the class macro by hand. 
 
-TODO: Describe functionality that has been added
-
-It uses a very simple metaobject protocol (MOP) that loosely follows "The Art of of the Metaobject Protocol" (AMOP) by Gregor Kiczales, Jim des Rivières and Daniel G. Bobrow. Instead of defining an own hidden layer, it uses the existing Racket object system as basis though:
-
-Whenever a Racket class is created, we'll keep track of it and store some additional info about it. We'll want to know for example which superclasses the class has or which fields and methods it defines, so we can later use them to decide which of them will be (multiple) inherited.
-All that info is stored in form of a(nother) Racket object that we call meta-object. The meta-object keeps track of everything that we won't be (easily) able to ask the class later, after it has been created. The class that defines those meta-objects is consequently called meta-class. The mapping of a class object to its meta-object is stored in a hashmap.
+The implementation uses a very simple metaobject protocol (MOP) that loosely follows "The Art of of the Metaobject Protocol" (AMOP) by Gregor Kiczales, Jim des Rivières and Daniel G. Bobrow. Instead of defining an own hidden layer, it uses the existing Racket object system as basis though: Whenever a Racket class is created, we'll keep track of it and store some additional info about it in form of a(nother) Racket object that we call meta-object. The meta-object keeps track of everything that we won't be (easily) able to ask the class after creation. The class that defines those meta-objects is consequently called meta-class. 
 
 This module was created by Manuela Beckert as master thesis project. The corresponding (German) thesis is titled "Untersuchungen zur Integration von CLOS-Konzepten in das Objektsystem von Racket" and will be accessible at the library in the computer science department of the University of Hamburg, Germany. 
 |#
