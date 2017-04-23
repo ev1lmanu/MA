@@ -131,3 +131,4 @@
 ; (send p2 attack)
 ; (define p3 (new pokemon2 [size 'large] [gender 'female] [attr 'fire]))
 (define p4 (make-object pokemon2 'large 'female 'fire))
+               

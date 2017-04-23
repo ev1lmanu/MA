@@ -1,22 +1,15 @@
 #lang racket
 #|
-This module is a prototype for extending the class macro for multiple inheritance.
+This module extends the class macro for multiple inheritance.
 
-The purpose of this module is use in teaching, so it focuses on supporting existing class options what will be relevant for the lecture or training excercises instead of covering all possible syntax constructs and use cases.
+It uses a very simple metaobject protocol (MOP) that loosely follows "The Art of of the Metaobject Protocol" (AMOP) by Gregor Kiczales, Jim des Rivières and Daniel G. Bobrow. Instead of defining an own hidden layer, it uses the existing Racket object system as basis though.
 
-TODO: Describe functionality that has been added
-
-It uses a very simple metaobject protocol (MOP) that loosely follows "The Art of of the Metaobject Protocol" (AMOP) by Gregor Kiczales, Jim des Rivières and Daniel G. Bobrow. Instead of defining an own hidden layer, it uses the existing Racket object system as basis though:
-
-Whenever a Racket class is created, we'll keep track of it and store some additional info about it. We'll want to know for example which superclasses the class has or which fields and methods it defines, so we can later use them to decide which of them will be (multiple) inherited.
-All that info is stored in form of a(nother) Racket object that we call meta-object. The meta-object keeps track of everything that we won't be (easily) able to ask the class later, after it has been created. The class that defines those meta-objects is consequently called meta-class. The mapping of a class object to its meta-object is stored in a hashmap.
-
-This module was created by Manuela Beckert as master thesis project. The corresponding (German) thesis is titled "Untersuchungen zur Integration von CLOS-Konzepten in das Objektsystem von Racket" and will be accessible at the library in the computer science department of the University of Hamburg, Germany. 
+This module was created by Manuela Beckert as master thesis project. The corresponding (German) thesis is titled "Untersuchungen zur Integration von CLOS-Konzepten in das Objektsystem von Racket" and accessible at the library in the computer science department of the University of Hamburg, Germany.
 |#
 
 ; enable us to use eval in the definitions window
-(define-namespace-anchor anchor)
-(define ns (namespace-anchor->namespace anchor))
+(define-namespace-anchor a)
+(define ns (namespace-anchor->namespace a))
 (define (my-eval x) (eval x ns))
 
 ; provide new version of the class macro
@@ -29,7 +22,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; * a single class
 ; * an empty list (we'll treat this as object%)
 ; * a non-empty list
-; TODO: class*, class/derived ?
+; TODO: class/derived
 (define-syntax my-class
   (syntax-rules ()
     [(my-class () . rest)
@@ -53,8 +46,8 @@ This module was created by Manuela Beckert as master thesis project. The corresp
   (let*
        ; create meta object
       ([meta (make-metaobject supers args)]
-       [slots (get-field effective-slots meta)]
-       [methods (get-field effective-methods meta)]
+       [slots (send meta get-effective-slots)]
+       [methods (send meta get-effective-methods)]
        ; create actual class object
        [obj (if (= 1 (length supers))
                 ; if there is only one superclass, let
@@ -74,7 +67,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     ; TODO: needed?
     (send meta add-self-to-cpl obj)
     ; keep track of subclasses
-    (add-subclass obj (get-field direct-supers meta))
+    (add-subclass obj (send meta get-direct-supers))
     ; add the new class to the list of observed classes
     (add-class obj meta)
     ; return the class object
@@ -85,16 +78,14 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define num-of-classes -1)
 
 (define (number-of obj)
-  (get-field number (find-class obj)))
+  (send (find-class obj) get-number))
 
 ; class for meta objects.
 ; meta objects store additional information for a class object
-(define meta-class%
+(define meta-class
   (class object% (super-new)
     
     ;; fields
-    ;; getters: (get-field  field obj)
-    ;; setters: (set-field! field obj value)
     (field [number (begin 
                      (set! num-of-classes (+ 1 num-of-classes))
                      num-of-classes)])
@@ -105,7 +96,23 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     (init-field direct-methods)        ;  that's accessible in the
     (init-field effective-methods)     ;  class, including inherited
     (init-field direct-subclasses)     ;  fields, methods, etc.
-    
+
+    ;; getters
+    ; TODO: Decide which getters could also be accessed with get-field
+    ;       (get-field field-name obj)
+    ;       Explicitly defining the getters here makes it easier to
+    ;       pass them as a function, but maybe that's not needed for
+    ;       all of them (or at all)
+    (define/public (get-number) number) 
+    (define/public (get-direct-supers) direct-supers)
+    (define/public (get-class-precedence-list) class-precedence-list)
+    (define/public (get-direct-slots)  direct-slots)
+    (define/public (get-effective-slots) effective-slots)
+    (define/public (get-direct-methods) direct-methods)
+    (define/public (get-effective-methods) effective-methods)
+    (define/public (get-direct-subclasses) direct-subclasses)
+
+    ;; setters
     ; adds the class object to its CPL
     ; (this is only called once after object creation)
     (define/public (add-self-to-cpl self)
@@ -127,7 +134,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 ; add object% and its meta object to the table
 (define meta-object%
-  (new meta-class%
+  (new meta-class
        [direct-supers '()]
        [direct-slots '()]
        [class-precedence-list (list object%)]
@@ -144,11 +151,12 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (make-metaobject supers args)
   (let* ([direct-supers (map my-eval supers)]
          [cpl           (compute-cpl direct-supers)] 
-         [direct-slots  (compute-direct-slots args)]
+         [direct-slots  (filter slot? args)]
          [effective-slots (compute-effective-slots cpl direct-slots)]
          [direct-methods (filter method? args)]
          [effective-methods (compute-effective-methods cpl direct-methods)])
-    (new meta-class% 
+    
+    (new meta-class 
          [direct-supers direct-supers]
          [direct-slots direct-slots]
          [class-precedence-list cpl]
@@ -172,7 +180,8 @@ This module was created by Manuela Beckert as master thesis project. The corresp
         ; add current class to result list and
         ; its superclasses to the list of classes to be processed
         (let* ([elem (car classes)]
-               [elem-supers (get-field direct-supers (find-class elem))])
+               [elem-supers (send (find-class elem)
+                                  get-direct-supers)])
           (compute-cpl (remove-duplicates (append (cdr classes)
                                                   elem-supers))
                        (cons elem result))))))
@@ -192,34 +201,22 @@ This module was created by Manuela Beckert as master thesis project. The corresp
   ;(string-prefix? (symbol->string (car m)) "define/")
   (equal? (car m) 'define/public))
 
-; extract slot definitions from args
-(define (compute-direct-slots args)
-  (let ([slots (filter slot? args)])
-    (if (empty? slots)
-        '()
-        (apply append (map split-1 slots)))))
-
-; splits field-declarations with multiple values
-; (field [a 1] [b 2]) -> ((field [a 1]) (field [b 2])
-(define (split-1 slot)
-  (map (curry list (car slot)) (cdr slot)))
-
 ; computes the list of effective slots and methods.
 ; since both are very similar, the main logic is in
 ; compute-effective-stuff. Just substitute "stuff"
 ; for "slots" or "methods" in your head.
 (define (compute-effective-slots cpl direct-slots)
-  (compute-effective-stuff direct-slots 'direct-slots cpl))
+  (compute-effective-stuff direct-slots 'get-direct-slots cpl))
 
 (define (compute-effective-methods cpl direct-methods)
-  (compute-effective-stuff direct-methods 'direct-methods cpl))
+  (compute-effective-stuff direct-methods 'get-direct-methods cpl))
 
-(define (compute-effective-stuff direct-stuff direct-stuff-field cpl)
+(define (compute-effective-stuff direct-stuff get-direct-stuff cpl)
   (let ([stuff direct-stuff])
     ; add the slots/methods of all superclasses to the list
-    (for*/list ([metas (map find-class cpl)])
+    (for*/list ([who (map find-class cpl)])
       (set! stuff (append stuff 
-                          (dynamic-get-field direct-stuff-field metas))))
+                          (dynamic-send who get-direct-stuff))))
     ; only keep the first appearance of every slot/method
     ; declaration
     (filter-first-occurence stuff)))
@@ -264,35 +261,25 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 (display "------------ Tests ------------\n")
 
-;                        supers                            slots               methods
-(define test1 (my-class ()                  (super-new)   (field [a 1])       (define/public (foo) a)))
-(define test2 (my-class ()                  (super-new)   (field [b 2])       (define/public (foo) 'no)))
-(define test3 (my-class ()                  (super-new)   (field [c 3] [d 3]) (define/public (foo) 'nono)))
-(define test4 (my-class ()                  (super-new)   (field [a 4])       (define/public (bar) 'no)))
+;                        supers                            slots            methods
+(define test1 (my-class ()                  (super-new)   (field [a 1])    (define/public (foo) 'yes)))
+(define test2 (my-class ()                  (super-new)   (field [b 2])    (define/public (foo) 'no)))
+(define test3 (my-class ()                  (super-new)   (field [c 3])    (define/public (foo) 'nono)))
+(define test4 (my-class ()                  (super-new)   (field [a 4])    (define/public (bar) 'no)))
 (define test5 (my-class (test1 test2)       (super-new)))
-(display "whaaaat")
 (define test6 (my-class (test3 test4)       (super-new)))
-(define test7 (my-class (test5 test6 test4) (super-new)                       (define/public (bar) 'yes)))
-(define test8 (my-class (test1)             (super-new)   (inherit-field a)   (define/public (baz) a)))
-(define cpl (get-field class-precedence-list (find-class test7)))
+(define test7 (my-class (test5 test6 test4) (super-new)                    (define/public (bar) 'yes)))
+(define test8 (my-class (test1)             (super-new)))
 
-(display "object% subclasses:  ")
-(map number-of (get-field direct-subclasses (find-class object%)))
-(display "class 1 subclasses:  ")
-(map number-of (get-field direct-subclasses (find-class test1)))
-(display "class 7 cpl:         ")
+(define cpl (send (find-class test7) get-class-precedence-list))
+
+(display "object% subclasses: ")
+(map number-of (send (find-class object%) get-direct-subclasses))
+(display "class 1 subclasses: ")
+(map number-of (send (find-class test1) get-direct-subclasses))
+(display "class 7 cpl:        ")
 (map number-of cpl)
-(display "class 7 slots:       ")
-(get-field effective-slots (find-class test7))
-(display "class 7 methods:     ")
-(get-field effective-methods (find-class test7))
-(display "object of 7 - a:     ")
-(get-field a (new test7))
-(display "object of 7 - foo(): ")
-(send (make-object test7) foo)
-(display "class 8 slots:       ")
-(get-field effective-slots (find-class test8))
-(display "object of 8 - a:     ")
-(get-field a (new test8))
-(display "object of 8 - baz(): ")
-(send (new test8) baz)
+(display "class 7 slots:      ")
+(send (find-class test7) get-effective-slots)
+(display "class 7 methods:    ")
+(send (find-class test7) get-effective-methods)
