@@ -110,14 +110,15 @@ Objekte der Klasse Pet besitzen dann alle drei Attribute:
 \subsection{Mehrfachvererbung in Racket}
 Zuvor wurde behauptet, mit Racket könne man keine Mehrfachvererbung modellieren. Tatsächlich gibt es zwei Arten von Klassen in Racket, deren Verhalten auf den ersten Blick wie Mehrfachvererbung aussieht: Mixins und Traits. Es werden deshalb beide kurz vorgestellt, um aufzuzeigen, welche Probleme und Grenzen sie haben.
 
-Dafür verwenden wir unsere vorher definierten Klassen Element und Animal. Beide haben unterschiedliche Felder und Methoden. Wir wollen versuchen, die Felder und Methoden aus beiden in einer neuen Klasse namens Pokemon zu vereinigen (Abbildung \ref{hirarchy}). Das ginge natürlich ganz simpel, indem eine der beiden Klassen in Pokemon umbenannt wird und von der anderen erbt, deshalb wollen wir außerdem fordern, dass beide Klassen auch einzeln verwendet können. 
+Dafür verwenden wir unsere vorher definierten Klassen Element und Animal. Beide haben unterschiedliche Felder und Methoden. Wir wollen versuchen, die Felder und Methoden aus beiden in einer neuen Klasse namens Pokemon zu vereinigen. % (Abbildung \ref{hirarchy}). 
+Das ginge natürlich ganz simpel, indem eine der beiden Klassen in Pokemon umbenannt wird und von der anderen erbt, deshalb wollen wir außerdem fordern, dass beide Klassen auch einzeln verwendet können. 
 
-\begin{figure}[h]
- \centering
- \includegraphics[width=0.35\textwidth]{pictures/hirarchy}
- \caption{Vererbungshierarchie für die Klasse Pokemon.}
- \label{hirarchy}
-\end{figure}
+% \begin{figure}[h]
+%  \centering
+%  \includegraphics[width=0.35\textwidth]{pictures/hirarchy}
+%  \caption{Vererbungshierarchie für die Klasse Pokemon.}
+%  \label{hirarchy}
+% \end{figure}
 
 
 \subsubsection{Mixins}

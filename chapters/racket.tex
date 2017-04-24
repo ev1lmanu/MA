@@ -14,9 +14,23 @@ Die Syntax von Racket ist sehr ähnlich zu Common Lisp. Ausdrücke werden geklam
 Racket unterstützt auch objektorientierte Programmierung auf zwei verschiedene Arten. Zunächst gibt das Racket-Objektsystem. Racket-Klassen sind sehr ähnlich zu Klassen in Java, C\# oder den meisten objektorientierten Programmiersprachen\cite{neu-edu2}. Ein Programm kann Klassen definieren, instanziieren, mit den erzeugten Objekten interagieren und Klassen erweitern. Besonders ist, dass Klassen auch wie Funktionswerte behandelt werden können. Es ist möglich, eine Klasse zur Laufzeit zu erweitern, eine Klasse an eine Funktion zu geben oder in einer Datenstruktur zu speichern und anschließend abzufragen\cite{neu-edu}. 
 
 Zusätzlich gibt es den Racket-Dialekt Swindle, in dem das Common Lisp Object System (CLOS) implementiert ist. Im Gegensatz zum eingebauten Objektsystem von Racket bietet CLOS Funktionalitäten wie Mehrfachvererbung, Methodenkombination oder Ergänzungsmethoden. Durch die Implementation als Metaobject-Protocol bietet es dem Programmierer zudem viel Freiheit bei der Erweiterung und Veränderung der Repräsentation von Klassen und Objekten.
-
-Um ein Gefühl für die beiden Objektsysteme zu bekommen, soll zunächst betrachtet werden, wie sie benutzt werden können. Andschließend wird ein Blick auf die Implementation beider Ansätze geworfen. Die Autoren des Buches ``The Art of the Metaobject Protocol''\cite{amop} vergleichen das Vorgehen sehr treffend mit eine Theateraufführung: Auf der Bühne (onstage) findet das Theaterstück statt - das Programm, oder etwas allgemeiner, das, was der Programmierer von der Sprache sieht. Hinter der Bühne (backstage) befindet sich die darunterliegende Implementation, die die entprechenden Makros definiert und mit für den Programmierer nicht sichtbaren Objekten und Funktionen arbeitet. Wir wollen beide Ansätze erst ``onstage'' betrachten bevor wir einen Blick hinter die Kulissen werfen.
+Um ein Gefühl für die beiden Objektsysteme zu bekommen, soll zunächst betrachtet werden, wie sie benutzt werden können. %Andschließend wird ein Blick auf die Implementation beider Ansätze geworfen. Die Autoren des Buches ``The Art of the Metaobject Protocol''\cite{amop} vergleichen das Vorgehen sehr treffend mit eine Theateraufführung: Auf der Bühne (onstage) findet das Theaterstück statt - das Programm, oder etwas allgemeiner, das, was der Programmierer von der Sprache sieht. Hinter der Bühne (backstage) befindet sich die darunterliegende Implementation, die die entprechenden Makros definiert und mit für den Programmierer nicht sichtbaren Objekten und Funktionen arbeitet. Wir wollen beide Ansätze erst ``onstage'' betrachten bevor wir einen Blick hinter die Kulissen werfen.
 
 Der Fokus dieser Arbeit liegt auf der Implementation von Mehrfachvererbung im Objektsystem von Racket. Natürlich bieten sowohl das Objektsystem von Racket als auch CLOS neben Vererbung auch noch viele weitere nützliche Funktionen und Eigenschaften; diese sind jedoch nicht zielführend für diese Arbeit und es würde eine eigene Ausarbeitung benötigen, sie alle aufzulisten. Im Folgenden wird daher nur auf diejenigen Bestandteile beider Ansätze eingegangen, die direkt oder indirekt mit Mehrfachvererbung zu tun haben. 
 
 Die Installation von Racket beinhaltet eine integrierte Enwicklungsumgebung namens DrRacket. Für das Syntaxhighlighting der Quelltextbeispiele in dieser Arbeit wurde das Standard-Farbschema von DrRacket verwendet. Anfragen an die Interaktionskonsole wurden mit \texttt{>} markiert und das Ergebnis in der Zeile darunter aufgeführt. 
+
+\subsection{Beispielproblem}
+
+Beide Objektsysteme sollen anhand eines Beispielproblems beschrieben werden. Es soll zunächst das Verhalten einfacher Klassen und Einfachvererbung beschrieben werden und darauf aufbauend die Konzepte von Mehrfachvererbung, die in den Objektsystemen vorhanden sind. Ziel wird es daher sein, die folgende Vererbungshierarchie zu implementieren:
+
+\begin{figure}[h]
+ \centering
+ \includegraphics[width=0.35\textwidth]{pictures/hirarchy}
+ \caption{Vererbungshierarchie für die Klasse Pokemon.}
+ \label{hirarchy}
+\end{figure}
+
+Die Klasse Thing soll eine einfache Basisklasse sein und uns die Möglichkeit geben, die Syntax der Klassendefinition beider Ansätze zu vergleichen. Da Thing ledigleich eine leere Klasse ist, wollen wir im Anschluss zwei Klassen erstellen, deren Felder und Methoden später vererbt werden können: Element und Animal. Anhand von Element betrachten wir dabei zunächst, wie Felder und Methoden definiert werden können. Anhand der Klasse Animal und ihrer Subklasse Pet können wir das Konzep der Vererbung veranschaulichen. 
+
+Schlussendlich wird anhand der Klasse Pokemon gezeigt, welche Möglichkeiten der Mehrfachvererbung es gibt.
