@@ -25,7 +25,7 @@ Als Rückgabewert erhält man ein Klassenobjekt und kann dieses für den später
 (define Thing (class object% (super-new)))
 \end{lstlisting}
 
-Objekte von Klassen lassen sich mit dem Schlüsselwort \texttt{new} erzeugen:
+Objekte von Klassen lassen sich mit den Schlüsselwörtern \texttt{new}, \texttt{make-object} und \texttt{instantiate} erzeugen, je nachdem ob Initialisierungsargumente durch Name, Position oder auf beide Arten angegeben werden sollen. Wir verwenden im Folgenden \texttt{new} und initialisieren damit Felder durch Angabe des Namens:
 
 \begin{lstlisting}
 (new Thing)
@@ -104,8 +104,6 @@ Objekte der Klasse Pet besitzen dann alle drei Attribute:
 > (get-field size harry)
 \end{lstlisting} 
 {\rsymbol normal}
-
-% TODO The make-object procedure creates a new object with by-position initialization arguments, the new form creates a new object with by-name initialization arguments, and the instantiate form creates a new object with both by-position and by-name initialization arguments.
 
 \subsection{Mehrfachvererbung in Racket}
 Zuvor wurde behauptet, mit Racket könne man keine Mehrfachvererbung modellieren. Tatsächlich gibt es zwei Arten von Klassen in Racket, deren Verhalten auf den ersten Blick wie Mehrfachvererbung aussieht: Mixins und Traits. Es werden deshalb beide kurz vorgestellt, um aufzuzeigen, welche Probleme und Grenzen sie haben.
@@ -354,7 +352,82 @@ Die Konfliktlösung bei Traits ist für einen ersten Einblick in Mehrfachvererbu
 
 \subsection{Ergänzungsmethoden}
 
-TODO: Absatz zu Ergänzungsmethoden. %TODO
+Es wurde bereits erwähnt, dass sich neue Methoden als öffentlich (\texttt{define/public}) oder privat (\texttt{define/private}) einführen lassen und geerbte Methoden aus der Superklasse mittels \texttt{define/override} überschrieben werden können. Wir wollen die Methodenarten, die Racket bietet, einmal genauer betrachten. 
 
-TODO: abschließender Satz zu Problemen mit Object-Racket. %TODO
+Zusätzlich zum Überschreiben von Methoden bietet Racket auch die Möglichkeit, Methoden zu erzänzen. Die angegebene Klassenoption nach \texttt{define/} bestimmt, ob die definierte Methode eine geerbte Methode überschreibt oder ergänzt und auch, ob es möglich ist, diese Methode in einer Subklasse zu überschreiben oder zu ergänzen (Tabelle \ref{methods}).
+
+\begin{table}[h]
+ \centering
+\begin{tabular}{|c|c|c|c|c|c}
+ \hline
+                & overrides & augments & can be     & can be    \\
+                & method    & method   & overridden & augmented \\ \hline
+ public         &           &          &     x      &           \\ \hline
+ pubment        &           &          &            &    x      \\ \hline
+ public-final   &           &          &            &           \\ \hline
+ override       &     x     &          &     x      &           \\ \hline
+ overment       &     x     &          &            &    x      \\ \hline
+ override-final &     x     &          &            &           \\ \hline
+ augride        &           &    x     &     x      &           \\ \hline
+ augment        &           &    x     &            &    x      \\ \hline
+ augment-final  &           &    x     &            &           \\ \hline
+\end{tabular}
+\caption{Methodenarten in Object Racket}
+\label{methods}
+\end{table}
+
+Wird eine geerbte Methode mittels einer der drei \texttt{define/over*} Optionen überschrieben, so kann im Methodenrumpf mit \texttt{super} die Methode der Superklasse aufgerufen werden. Das erlaubt es, das Ergebnis der Supermethode weiter zu verwenden, zum Beispiel als Teil einer Berechnung:
+
+
+
+Um eine Methode zu ergänzen, muss sie in der Superklasse mit einer Methode des Schemas \texttt{define/*ment} definiert sein. Wir können sie dann mit einer Methode des Schemas \texttt{define/aug*} um Funktionalität ergänzen. Ergänzung erfolgt nach dem Prinzip von Schablonen- und Einschubmethode. Die Oberklasse gibt innerhalb der Methode durch einen Aufruf von \texttt{inner} an, an welcher Stelle die Methode der Subklasse aufgerufen werden soll (Schablonenmethode) und die erbende Klasse implementiert diese Methode (Einschubmethode):
+
+\begin{lstlisting}
+(define Trainer (class object% (super-new)
+                  (define/pubment (daily-routine)
+                    (inner (void) daily-routine)
+                    (display "He went out to catch some Pokemon.\n")
+                    (inner (void) daily-routine))))
+
+(define Earlybird (class Trainer (super-new)
+                    (define/augment (daily-routine)
+                      (display "The trainer was bored.\n"))))
+                      
+> (send (new Trainer) daily-routine)
+\end{lstlisting}
+{\routput He went out to catch some Pokemon.}
+
+\begin{lstlisting}                
+> (send (new Earlybird) daily-routine)
+\end{lstlisting}
+{\routput The trainer was bored.}\\
+{\routput He went out to catch some Pokemon.}
+
+{\routput The trainer was bored.}
+
+Das erste Argument von \texttt{inner} ist der Default-Wert. Er wird ausgewertet, wenn es keine ergänzende Methode gibt. In diesem Beispiel soll einfach gar nichts geschehen. Das zweite Argument ist der Name der ergänzenden Methode. Er muss mit dem Funktionsnamen übereinstimmen. Anschließend können noch Funktionsargumente übergeben werden. Der \texttt{inner}-Aufruf kann an einer beliebigen Stelle im Methodenrumpf stehen. Es ist auch möglich, mehrere \texttt{inner}-Aufrufe zu platzieren, dann wird die Methode der Subklasse mehrmals ausgeführt. 
+
+Liefert die Sublasse einen Rückgabewert, so kann dieser weiter verwendet werden:
+
+\begin{lstlisting}
+(define Subprinter (class object% (super-new)
+                     (define/pubment (number)
+                       (println (inner 23 number)))))
+
+(define Sub (class Subprinter (super-new)
+              (define/augment (number) 42)))
+
+> (send (new Subprinter) number)
+\end{lstlisting}
+{\routput 23}
+
+\begin{lstlisting}
+> (send (new Sub) number)
+\end{lstlisting}
+{\routput 42}
+
+Durch \texttt{overment} ist eine Methode sogar in der Lage, gleichzeitig das Ergebnis der Superklasse und das Ergebnisse der Subklasse abzufragen und weiterzuverweneden. In einer größeren Vererbungshierarchie können dann lange Ketten von sich überschreibenden und ergänzenden Methoden entstehen. Je abwechslungreicher die verwendeten Methodenoptionen in einer Vererbungshierarchie sind, desto schwieriger kann es jedoch am Ende sein nachzuvollziehen, was die effektive Methode für ein Objekt der untersten Subklasse nun eigentlich in welcher Reihenfolge tut.
+
+
+%TODO abschließender Satz zu Problemen mit Object-Racket. 
 

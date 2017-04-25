@@ -20,9 +20,11 @@ Der Fokus dieser Arbeit liegt auf der Implementation von Mehrfachvererbung im Ob
 
 Die Installation von Racket beinhaltet eine integrierte Enwicklungsumgebung namens DrRacket. Für das Syntaxhighlighting der Quelltextbeispiele in dieser Arbeit wurde das Standard-Farbschema von DrRacket verwendet. Anfragen an die Interaktionskonsole wurden mit \texttt{>} markiert und das Ergebnis in der Zeile darunter aufgeführt. 
 
-\subsection{Beispielproblem}
+\section{Beispielproblem} 
 
-Beide Objektsysteme sollen anhand eines Beispielproblems beschrieben werden. Es soll zunächst das Verhalten einfacher Klassen und Einfachvererbung beschrieben werden und darauf aufbauend die Konzepte von Mehrfachvererbung, die in den Objektsystemen vorhanden sind. Ziel wird es daher sein, die folgende Vererbungshierarchie zu implementieren:
+%TODO Beispielproblem überarbeiten 
+
+Beide Objektsysteme sollen anhand eines Beispielproblems beschrieben werden. Es soll zunächst das Verhalten einfacher Klassen und Einfachvererbung gezeigt werden und darauf aufbauend die Konzepte von Mehrfachvererbung, die in den Objektsystemen vorhanden sind. Ziel wird es daher sein, die folgende Vererbungshierarchie zu implementieren:
 
 \begin{figure}[h]
  \centering
@@ -31,6 +33,6 @@ Beide Objektsysteme sollen anhand eines Beispielproblems beschrieben werden. Es 
  \label{hirarchy}
 \end{figure}
 
-Die Klasse Thing soll eine einfache Basisklasse sein und uns die Möglichkeit geben, die Syntax der Klassendefinition beider Ansätze zu vergleichen. Da Thing ledigleich eine leere Klasse ist, wollen wir im Anschluss zwei Klassen erstellen, deren Felder und Methoden später vererbt werden können: Element und Animal. Anhand von Element betrachten wir dabei zunächst, wie Felder und Methoden definiert werden können. Anhand der Klasse Animal und ihrer Subklasse Pet können wir das Konzep der Vererbung veranschaulichen. 
+Die Klasse Thing soll eine einfache Basisklasse sein und uns die Möglichkeit geben, die Syntax der Klassendefinition beider Ansätze zu vergleichen. Da Thing ledigleich eine leere Klasse ist, wollen wir im Anschluss zwei Klassen erstellen, deren Felder und Methoden später vererbt werden können: Element und Animal. Anhand von Element betrachten wir dabei zunächst, wie Felder und Methoden definiert werden können. Anhand der Klasse Animal und ihrer Subklasse Pet können wir das Konzept der Vererbung veranschaulichen. Es wird dann mit der Klasse Pokemon gezeigt, welche Möglichkeiten der Mehrfachvererbung es gibt.
 
-Schlussendlich wird anhand der Klasse Pokemon gezeigt, welche Möglichkeiten der Mehrfachvererbung es gibt.
+Zusätzlich soll für beide Objektsysteme geprüft werden, welche Möglichkeiten es gibt, Methoden einer Superklasse in einer Subklasse zu ergänzen. 

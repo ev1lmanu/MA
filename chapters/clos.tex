@@ -220,11 +220,11 @@ Nehmen wir beispielsweise eine Klasse für Pokemontrainer. Der tägliche Job ein
 (defclass Trainer ())
 
 (defmethod daily-routine ((t Trainer))
-  (println "He caught some Pokemon."))
+  (display "He caught some Pokemon.\n"))
 (defmethod daily-routine :before ((t Trainer))
-  (println "He walked out."))
+  (display "He walked out.\n"))
 (defmethod daily-routine :after ((t Trainer))
-  (println "He walked back home."))
+  (display "He walked back home.\n"))
 \end{lstlisting}
 
 Weiterhin soll es unter den Pokemontrainern Frühaufsteher geben. Wir halten das Verhalten ebenfalls in drei Methoden fest.
@@ -233,11 +233,11 @@ Weiterhin soll es unter den Pokemontrainern Frühaufsteher geben. Wir halten das
 (defclass Earlybird (Trainer))
 
 (defmethod daily-routine ((e Earlybird))
-  (println "He found two bird Pokemon in the morning."))
+  (display "He found two bird Pokemon in the morning.\n"))
 (defmethod daily-routine :before ((e Earlybird))
-  (println "The sun just started rising."))
+  (display "The sun just started rising.\n"))
 (defmethod daily-routine :after ((e Earlybird))
-  (println "There was still time before dinner."))
+  (display "There was still time before dinner.\n"))
 \end{lstlisting}
 
 Im Unterschied zu einer simplen Redefinition oder Erweiterung einer Methode, wird bei Vor- und Nachmethoden sichergestellt, dass keine andere Vor- oder Nachmethode und auch nicht die Primärmethode die Ausführung verhindern kann.

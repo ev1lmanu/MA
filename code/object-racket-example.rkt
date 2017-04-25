@@ -113,4 +113,5 @@
 (define p2 (new Pokemon2))
 ; (send p2 attack)
 (define p3 (make-object Pokemon2 'large 'female 'fire))
-               
+
+; ------------- Ergänzungsmethoden ----------------
