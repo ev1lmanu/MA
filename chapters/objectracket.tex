@@ -358,10 +358,15 @@ Zusätzlich zum Überschreiben von Methoden bietet Racket auch die Möglichkeit,
 
 \begin{table}[h]
  \centering
-\begin{tabular}{|c|c|c|c|c|c}
+\begin{tabular}{|c'c|c|c|c|c}
  \hline
-                & overrides & augments & can be     & can be    \\
-                & method    & method   & overridden & augmented \\ \hline
+		& \multicolumn{1}{p{2cm}|}{\centering overrides method} 
+		& \multicolumn{1}{p{2cm}|}{\centering augments method}
+		& \multicolumn{1}{p{2cm}|}{\centering can be overridden}
+		& \multicolumn{1}{p{2cm}|}{\centering can be augmented}
+		\\ \thickhline
+%                 & overrides & augments & can be     & can be    \\
+%                 & method    & method   & overridden & augmented \\ \thickhline
  public         &           &          &     x      &           \\ \hline
  pubment        &           &          &            &    x      \\ \hline
  public-final   &           &          &            &           \\ \hline
@@ -378,53 +383,69 @@ Zusätzlich zum Überschreiben von Methoden bietet Racket auch die Möglichkeit,
 
 Wird eine geerbte Methode mittels einer der drei \texttt{define/over*} Optionen überschrieben, so kann im Methodenrumpf mit \texttt{super} die Methode der Superklasse aufgerufen werden. Das erlaubt es, das Ergebnis der Supermethode weiter zu verwenden, zum Beispiel als Teil einer Berechnung:
 
+\begin{lstlisting}
+(define TheNumber (class object% (super-new)
+                     (define/public (number)
+                       (display "The number is ")
+                       23)))
 
+(define Sub (class TheNumber (super-new)
+              (define/override (number)
+                (display "Actually ")
+                (+ (super number) 19))))
+
+(send (new TheNumber) number)
+\end{lstlisting}
+{\routput The number is 23}
+\begin{lstlisting}
+(send (new Sub) number)
+\end{lstlisting}
+{\routput Actually The number is 42}
 
 Um eine Methode zu ergänzen, muss sie in der Superklasse mit einer Methode des Schemas \texttt{define/*ment} definiert sein. Wir können sie dann mit einer Methode des Schemas \texttt{define/aug*} um Funktionalität ergänzen. Ergänzung erfolgt nach dem Prinzip von Schablonen- und Einschubmethode. Die Oberklasse gibt innerhalb der Methode durch einen Aufruf von \texttt{inner} an, an welcher Stelle die Methode der Subklasse aufgerufen werden soll (Schablonenmethode) und die erbende Klasse implementiert diese Methode (Einschubmethode):
 
 \begin{lstlisting}
-(define Trainer (class object% (super-new)
-                  (define/pubment (daily-routine)
-                    (inner (void) daily-routine)
-                    (display "He went out to catch some Pokemon.\n")
-                    (inner (void) daily-routine))))
+(define TheNumber (class object% (super-new)
+                  (define/pubment (number)
+                    (inner (void) number)
+                    (display "The number is ")
+                    23)))
 
-(define Earlybird (class Trainer (super-new)
-                    (define/augment (daily-routine)
-                      (display "The trainer was bored.\n"))))
+(define Sub (class TheNumber (super-new)
+                    (define/augment (number)
+                      (display "Believe it! "))))
                       
-> (send (new Trainer) daily-routine)
+> (send (new TheNumber) number)
 \end{lstlisting}
-{\routput He went out to catch some Pokemon.}
+{\routput The number is 23}
 
 \begin{lstlisting}                
-> (send (new Earlybird) daily-routine)
+> (send (new Sub) number)
 \end{lstlisting}
-{\routput The trainer was bored.}\\
-{\routput He went out to catch some Pokemon.}
+{\routput Believe it! The number is 23}
 
-{\routput The trainer was bored.}
-
-Das erste Argument von \texttt{inner} ist der Default-Wert. Er wird ausgewertet, wenn es keine ergänzende Methode gibt. In diesem Beispiel soll einfach gar nichts geschehen. Das zweite Argument ist der Name der ergänzenden Methode. Er muss mit dem Funktionsnamen übereinstimmen. Anschließend können noch Funktionsargumente übergeben werden. Der \texttt{inner}-Aufruf kann an einer beliebigen Stelle im Methodenrumpf stehen. Es ist auch möglich, mehrere \texttt{inner}-Aufrufe zu platzieren, dann wird die Methode der Subklasse mehrmals ausgeführt. 
+Das erste Argument von \texttt{inner} ist der Default-Wert. Er wird ausgewertet, wenn es keine ergänzende Methode gibt. In diesem Beispiel soll einfach gar nichts geschehen. Das zweite Argument ist der Name der ergänzenden Methode. Er muss mit dem Funktionsnamen übereinstimmen. Anschließend können noch Funktionsargumente übergeben werden. Der \texttt{inner}-Aufruf kann prinzipiell an einer beliebigen Stelle im Methodenrumpf stehen. Falls die Methode einen Wert zurückgibt, so muss dies aber natürlich nach dem letzten \texttt{inner}-Aufruf geschehen. Es ist auch möglich, mehrere \texttt{inner}-Aufrufe zu platzieren, dann wird die Methode der Subklasse mehrmals ausgeführt. 
 
 Liefert die Sublasse einen Rückgabewert, so kann dieser weiter verwendet werden:
 
 \begin{lstlisting}
-(define Subprinter (class object% (super-new)
+(define TheNumber (class object% (super-new)
                      (define/pubment (number)
-                       (println (inner 23 number)))))
+                       (display "The number is ")
+                       (display (inner 23 number)))))
 
-(define Sub (class Subprinter (super-new)
-              (define/augment (number) 42)))
+(define Sub (class TheNumber (super-new)
+              (define/augment (number)
+                42)))
 
-> (send (new Subprinter) number)
+> (send (new TheNumber) number)
 \end{lstlisting}
-{\routput 23}
+{\routput The number is 23}
 
 \begin{lstlisting}
 > (send (new Sub) number)
 \end{lstlisting}
-{\routput 42}
+{\routput The number is 42}
 
 Durch \texttt{overment} ist eine Methode sogar in der Lage, gleichzeitig das Ergebnis der Superklasse und das Ergebnisse der Subklasse abzufragen und weiterzuverweneden. In einer größeren Vererbungshierarchie können dann lange Ketten von sich überschreibenden und ergänzenden Methoden entstehen. Je abwechslungreicher die verwendeten Methodenoptionen in einer Vererbungshierarchie sind, desto schwieriger kann es jedoch am Ende sein nachzuvollziehen, was die effektive Methode für ein Objekt der untersten Subklasse nun eigentlich in welcher Reihenfolge tut.
 

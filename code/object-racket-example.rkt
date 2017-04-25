@@ -27,7 +27,7 @@
 ; (get-field size harry)
 
 
-; --------------- Mixins ------------------
+; ------------------ Mixins ---------------------
 
 (define (generate-subclass superclass)
   (class superclass (super-new)))
@@ -68,7 +68,7 @@
 ; (get-field attr p)
 ; (send p attack)
 
-; --------------- Traits ------------------
+; ------------------ Traits ---------------------
 
 (require racket/trait)
 
@@ -114,4 +114,42 @@
 ; (send p2 attack)
 (define p3 (make-object Pokemon2 'large 'female 'fire))
 
-; ------------- Ergänzungsmethoden ----------------
+; ------------ Ergänzungsmethoden ---------------
+
+(define TheNumber (class object% (super-new)
+                     (define/public (number)
+                       (display "The number is ")
+                       23)))
+
+(define Sub (class TheNumber (super-new)
+              (define/override (number)
+                (display "Actually ")
+                (+ (super number) 19))))
+
+; (send (new TheNumber) number)
+; (send (new Sub) number)
+
+(define TheNumber2 (class object% (super-new)
+                  (define/pubment (number)
+                    (inner (void) number)
+                    (display "The number is ")
+                    23)))
+
+(define Sub2 (class TheNumber2 (super-new)
+                    (define/augment (number)
+                      (display "Believe it! "))))
+
+; (send (new TheNumber2) number)
+; (send (new Sub2) number)
+
+(define TheNumber3 (class object% (super-new)
+                     (define/pubment (number)
+                       (display "The number is ")
+                       (display (inner 23 number)))))
+
+(define Sub3 (class TheNumber3 (super-new)
+              (define/augment (number)
+                42)))
+
+; (send (new TheNumber3) number)
+; (send (new Sub3) number)

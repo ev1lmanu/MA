@@ -74,6 +74,14 @@
     keywords=[2]{\#t, \#f},
     keywords=[3]{\#lang swindle, \#lang racket, >} 
 }
+
+\makeatletter
+\newcommand{\thickhline}{%
+    \noalign {\ifnum 0=`}\fi \hrule height 1.2pt
+    \futurelet \reserved@a \@xhline
+}
+\newcolumntype{'}{@{\hskip\tabcolsep\vrule width 1.2pt\hskip\tabcolsep}}
+\makeatother
   
 %   % Tikz styles
 %   \usetikzlibrary{shapes,arrows,decorations.markings}
