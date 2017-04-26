@@ -9,6 +9,8 @@ The implementation uses a very simple metaobject protocol (MOP) that loosely fol
 This module was created by Manuela Beckert as master thesis project. The corresponding (German) thesis is titled "Untersuchungen zur Integration von CLOS-Konzepten in das Objektsystem von Racket" and will be accessible at the library in the computer science department of the University of Hamburg, Germany. 
 |#
 
+; ---------------------- MACRO -----------------------
+
 ; enable us to use eval in the definitions window
 (define-namespace-anchor anchor)
 (define ns (namespace-anchor->namespace anchor))
@@ -49,17 +51,19 @@ This module was created by Manuela Beckert as master thesis project. The corresp
        ; create meta object
       ([meta (make-metaobject supers args)]
        ; create actual class object
-       [obj (make-object do-not-touch? supers args meta)])
+       [obj (make-classobject do-not-touch? supers args meta)])
     ; add the new class to the list of observed classes
     (add-class obj meta)
     ; return the class object
     obj))
 
+; --------------------- CLASSES ----------------------
+
 ; since classes have no name, we count them, so we
 ; can distinguish them for debugging
 (define num-of-classes -1)
 
-; class for meta objects.
+; class for class meta objects.
 ; meta objects store additional information for a class object
 (define meta-class%
   (class object% (super-new)
@@ -68,10 +72,10 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     (field [number (begin 
                      (set! num-of-classes (+ 1 num-of-classes))
                      num-of-classes)])
-    (init-field direct-supers)         ; super classes as meta objects
-    (init-field class-precedence-list) ; 
-    (init-field direct-slots)          ; own slots
-    (init-field inherited-slots)           ; inherited slots
+    (init-field direct-supers)         ; as meta objects
+    (init-field class-precedence-list) ; of super classes only
+    (init-field direct-slots)
+    (init-field inherited-slots)
     (init-field direct-methods)
     (init-field inherited-methods) 
     
@@ -94,13 +98,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 ; add object% and its meta object to the table
 (define meta-object%
-  (new meta-class%
-       [direct-supers '()]
-       [direct-slots '()]
-       [class-precedence-list (list object%)]
-       [inherited-slots '()]   ; object% has no fields or methods
-       [direct-methods '()] 
-       [inherited-methods '()]))
+  (make-object meta-class% '() '() '() '() '() '()))
 
 (add-class object% meta-object%)
 
@@ -108,19 +106,15 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; supers - the list of superclasses
 ; args - other arguments passed to the class macro
 (define (make-metaobject supers args)
-  (let* ([direct-supers (map (compose find-class my-eval) supers)]
-         [cpl           (compute-cpl direct-supers)] 
-         [direct-slots  (compute-direct-slots args)]
+  (let* ([direct-supers     (map (compose find-class my-eval) supers)]
+         [cpl               (compute-cpl direct-supers)] 
+         [direct-slots      (compute-direct-slots args)]
          [inherited-slots   (compute-inherited-slots cpl)]
-         [direct-methods (filter method? args)]
-         [inherited-methods  (compute-inherited-methods cpl direct-methods)])
-    (new meta-class% 
-         [direct-supers direct-supers]
-         [direct-slots direct-slots]
-         [class-precedence-list cpl]
-         [inherited-slots inherited-slots]
-         [direct-methods direct-methods]
-         [inherited-methods inherited-methods])))
+         [direct-methods    (filter method? args)]
+         [inherited-methods (compute-inherited-methods cpl direct-methods)])
+    
+    (make-object meta-class% direct-supers cpl direct-slots
+         inherited-slots direct-methods inherited-methods)))
 
 ; compute the class precedence list
 ; * TODO: this is way simpler than the topological sort in AMOP or  
@@ -223,7 +217,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
       (caadr x)))
 
 ;; object
-(define (make-object do-not-touch? supers args meta)
+(define (make-classobject do-not-touch? supers args meta)
   (if do-not-touch?
       ; if we're not allowed to touch it, 
       ; let racket handle object creation
@@ -238,7 +232,50 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                          (list superclass)
                          args)))))
 
-;----------------------------- Tests -----------------------------
+; ----------------- GENERIC FUNCTIONS -----------------------
+
+; class for generic function objects
+(define generic-function%
+  (class object% (super-new)
+    (init-field name)
+    (init-field number-of-params)
+    (init-field meta-class)
+    (init-field combination)
+    (field [methods '()])
+
+    (define/public (add-method method)
+      (cons method methods))))
+
+; table that maps each generic function name to its object
+(define generic-function-table (make-hash))
+
+(define (find-generic name)
+  (hash-ref generic-function-table name))
+
+(define (add-generic name metaclass)
+  (hash-set! generic-function-table name metaclass))
+
+; Creates the generic function object and adds it to the list
+; If it already exists, an error will be signaled
+; gf: '(define/generic (name args...) combination)
+; combination: quoted operator
+; meta-class: class metaobject
+; 
+(define (make-generic-function gf meta-class)
+  (let ([name (first (second gf))]
+        [number-of-params (length (cdr (second gf)))]
+        [combination (third gf)]) 
+    (if (hash-has-key? name)
+        (error "duplicate definition of generic function" name)
+        (hash-set! generic-function-table 
+                   name
+                   (make-object generic-function% name
+                     number-of-params meta-class combination)))))
+                   
+                      
+                      
+
+;------------------------ Tests -----------------------------
 
 #|      0 - object%
       __|__ 
