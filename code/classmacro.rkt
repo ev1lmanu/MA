@@ -1,10 +1,27 @@
 #lang racket
 #|
+
+This module introduces the following additional class options:
+* specifying a list of superclasses
+* defining a method combination
+
+    (class (first second ...)
+        ...
+        (define/generic (methodname args...) combination)
+        ...
+    )
+
+The superclass specifier can be either a single class (as in standard Object Racket) or an unquoted, possibly empty list of classes.
+
+The combination can be any operator that can be applied to a list of arguments, e.g. +, list, append.
+
+-----------------------------------------------------
+
 This module is a prototype for extending the class macro for multiple inheritance without touching the underlying implementation of Racket's object system.
 
 As long as only single inheritance is used there should be no noticable difference between using this module and not using it. When the macro is used with multiple superclasse, the class will inherit fields and methods from all superclasses depending on the precedence of the classes or the specified combination. The result is a normal Racket object. The actual superclass will be object% and the code of all inherited fields and methods will be injected into the class macro by hand. 
 
-The implementation uses a very simple metaobject protocol (MOP) that loosely follows "The Art of of the Metaobject Protocol" (AMOP) by Gregor Kiczales, Jim des Rivières and Daniel G. Bobrow. Instead of defining an own hidden layer, it uses the existing Racket object system as basis though: Whenever a Racket class is created, we'll keep track of it and store some additional info about it in form of a(nother) Racket object that we call meta-object. The meta-object keeps track of everything that we won't be (easily) able to ask the class after creation. The class that defines those meta-objects is consequently called meta-class. 
+The implementation uses a metaobject protocol (MOP) that loosely follows "The Art of of the Metaobject Protocol" (AMOP) by Gregor Kiczales, Jim des Rivières and Daniel G. Bobrow. Instead of defining an own hidden layer, it uses the existing Racket object system as basis though: Whenever a Racket class is created, we'll keep track of it and store some additional info about it in form of a(nother) Racket object that we call meta-object. The meta-object keeps track of everything that we won't be (easily) able to ask the class after creation. The class that defines those meta-objects is consequently called meta-class. 
 
 This module was created by Manuela Beckert as master thesis project. The corresponding (German) thesis is titled "Untersuchungen zur Integration von CLOS-Konzepten in das Objektsystem von Racket" and will be accessible at the library in the computer science department of the University of Hamburg, Germany. 
 |#
@@ -47,15 +64,15 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; * information that we'll need later about the class object
 ;   will be stored in a meta object
 (define (expand! do-not-touch? supers args)
-  (let*
-       ; create meta object
-      ([meta (make-metaobject supers args)]
-       ; create actual class object
-       [obj (make-classobject do-not-touch? supers args meta)])
-    ; add the new class to the list of observed classes
-    (add-class obj meta)
-    ; return the class object
-    obj))
+  ; create meta object
+  (let ([meta (make-metaobject supers args)])
+    (update-generic-functions meta)
+    ; create actual class object
+    (let ([obj (make-classobject do-not-touch? supers args meta)])
+      ; add the new class to the list of observed classes
+      (add-class obj meta)
+      ; return the class object
+      obj)))
 
 ; --------------------- CLASSES ----------------------
 
@@ -77,7 +94,8 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     (init-field direct-slots)
     (init-field inherited-slots)
     (init-field direct-methods)
-    (init-field inherited-methods) 
+    (init-field inherited-methods)
+    (init-field generic-functions)
     
     ; effective slots
     (define/public (effective-slots)
@@ -98,7 +116,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 ; add object% and its meta object to the table
 (define meta-object%
-  (make-object meta-class% '() '() '() '() '() '()))
+  (make-object meta-class% '() '() '() '() '() '() '()))
 
 (add-class object% meta-object%)
 
@@ -111,10 +129,13 @@ This module was created by Manuela Beckert as master thesis project. The corresp
          [direct-slots      (compute-direct-slots args)]
          [inherited-slots   (compute-inherited-slots cpl)]
          [direct-methods    (filter method? args)]
-         [inherited-methods (compute-inherited-methods cpl direct-methods)])
+         [inherited-methods (compute-inherited-methods cpl direct-methods)]
+         [generic-functions (filter generic? args)])
     
+    ; create meta object
     (make-object meta-class% direct-supers cpl direct-slots
-         inherited-slots direct-methods inherited-methods)))
+         inherited-slots direct-methods inherited-methods
+         generic-functions)))
 
 ; compute the class precedence list
 ; * TODO: this is way simpler than the topological sort in AMOP or  
@@ -150,6 +171,9 @@ This module was created by Manuela Beckert as master thesis project. The corresp
   ; -> problem: we only keep instances of the class with
   ;    highest precence
   (equal? (car m) 'define/public))
+
+(define (generic? m)
+  (equal? (car m) 'define/generic))
 
 ; extract slot definitions from args
 (define (compute-direct-slots args)
@@ -218,19 +242,22 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 ;; object
 (define (make-classobject do-not-touch? supers args meta)
-  (if do-not-touch?
-      ; if we're not allowed to touch it, 
-      ; let racket handle object creation
-      (my-eval (append '(class) supers args))
-      ; else, put together the superclass
-      (let ([superclass
-             (my-eval (append '(class object% (super-new))
-                              (get-field inherited-slots meta)
-                              (get-field inherited-methods meta)))])
-        ; and use it for the new class
-        (my-eval (append '(class)
-                         (list superclass)
-                         args)))))
+  ; if method is part of a method combination, replace it
+  ; with the combination result
+  (let ([args (map (curry replace-combination-method meta) args)])
+    (if do-not-touch?
+        ; if we're not allowed to touch it, 
+        ; let racket handle object creation
+        (my-eval (append '(class) supers args))
+        ; else, put together the superclass
+        (let ([superclass
+               (my-eval (append '(class object% (super-new))
+                                (get-field inherited-slots meta)
+                                (get-field inherited-methods meta)))])
+          ; and use it for the new class
+          (my-eval (append '(class)
+                           (list superclass)
+                           args))))))
 
 ; ----------------- GENERIC FUNCTIONS -----------------------
 
@@ -238,13 +265,23 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define generic-function%
   (class object% (super-new)
     (init-field name)
-    (init-field number-of-params)
+    (init-field params)
     (init-field meta-class)
-    (init-field combination)
-    (field [methods '()])
+    (init-field combination)        ; quoted operator
+    (field [methods (make-hasheq)]) ; (meta, (λ ...)) 
 
-    (define/public (add-method method)
-      (cons method methods))))
+    (define/public (number-of-params)
+      (length params))
+    
+    (define/public (add-method meta method)
+      (hash-set! methods meta method))
+
+    ; returns a list of all applicable function
+    ; (as quoted lambda functions), sorted by cpl
+    (define/public (get-applicable-methods meta)
+      (let ([cpl (cons meta (get-field class-precedence-list meta))])
+        (map (curry hash-ref methods)
+             (filter (curry hash-has-key? methods) cpl))))))
 
 ; table that maps each generic function name to its object
 (define generic-function-table (make-hash))
@@ -252,8 +289,28 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (find-generic name)
   (hash-ref generic-function-table name))
 
-(define (add-generic name metaclass)
-  (hash-set! generic-function-table name metaclass))
+(define (add-generic name meta)
+  (hash-set! generic-function-table name meta))
+
+(define (is-generic? name)
+  (hash-has-key? generic-function-table name))
+
+; Updates generic functions
+(define (update-generic-functions meta)
+    ; keep track of new generic functions
+    (map (curryr make-generic-function meta)
+         (get-field generic-functions meta))
+    ; add  new methods to existing generic functions
+    (for ([method (get-field direct-methods meta)])
+      ; for each new method
+      (let ([name (second method)])
+        ; if a generic function for it exists
+        (when (is-generic? name)
+              ; add new method to generic function
+              (send (find-generic name)
+                    add-method
+                    meta
+                    (method->λ method))))))
 
 ; Creates the generic function object and adds it to the list
 ; If it already exists, an error will be signaled
@@ -261,19 +318,46 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; combination: quoted operator
 ; meta-class: class metaobject
 ; 
-(define (make-generic-function gf meta-class)
+(define (make-generic-function gf meta)
   (let ([name (first (second gf))]
-        [number-of-params (length (cdr (second gf)))]
+        [params (cdr (second gf))]
         [combination (third gf)]) 
-    (if (hash-has-key? name)
+    (if (hash-has-key? generic-function-table name)
         (error "duplicate definition of generic function" name)
         (hash-set! generic-function-table 
                    name
                    (make-object generic-function% name
-                     number-of-params meta-class combination)))))
-                   
-                      
-                      
+                     params meta combination)))))
+
+; Converts a method expression into a quoted lambda function
+; '(define/public (foo x y) (+ x y)) -> '(λ (x y) (+ x y))
+(define (method->λ method)
+  (list 'λ (cdr (second method)) (cddr method)))
+
+(define (replace-combination-method meta arg)
+  (if (and (method? arg)
+           (is-generic? (second arg)))
+      (combine-method meta (second arg))
+      arg))
+
+; Returns a (quoted) function that combines all applicable methods.
+; The parameters (params) of the resulting lambda function are
+; first applied to all applicable methods. On the resulting values
+; we'll apply the combination function. 
+(define (combine-method meta name)
+  (let* ([gf (find-generic name)]
+         [params (get-field params gf)]
+         [combination (get-field combination gf)]
+         [functions (send gf get-applicable-methods)])
+    (list 'define/public
+          name
+          params
+          ; '+  '(3 4 5)  -> '(+ 3 4 5)
+          (list 'apply
+                combination
+                ; '(f g h)  '(1 2) -> '((f 1 2) (g 1 2) (h 1 2))
+                '(map (curry apply params) functions)))))
+  
 
 ;------------------------ Tests -----------------------------
 
@@ -319,3 +403,6 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (get-field a (new test8))
 (display "object 8 - baz(): ")
 (send (new test8) baz)
+(display"\n")
+(display "(method->λ '(define/public (foo x y) (+ x y))) -> ")
+(method->λ '(define/public (foo x y) (+ x y)))
