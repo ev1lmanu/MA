@@ -83,7 +83,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
          [direct-slots      (compute-direct-slots args)]
          [inherited-slots   (compute-inherited-slots cpl)]
          [direct-methods    (filter method? args)]
-         [inherited-methods (compute-inherited-methods cpl direct-methods)]
+         [inherited-methods (compute-inherited-methods cpl)]
          [generic-functions (filter defgeneric? args)])
 
     ; create meta object
@@ -103,14 +103,21 @@ This module was created by Manuela Beckert as master thesis project. The corresp
         (let ([superclass
                (my-eval (append '(class object% (super-new))
                                 (get-field inherited-slots meta)
-                                (map (curry replace-combination-method meta)
-                                     (append (filter is-generic? args)
-                                             (get-field inherited-methods meta)))))])
+                                ; only add methods that are not part of a
+                                ; method combination
+                                (filter (negate is-generic?)
+                                        (get-field inherited-methods meta))))])
           ; and use it for the new class
           (my-eval (append '(class)
                            (list superclass)
-                           ; since combined methods are already part of
-                           ; the superclass, remove them here
+                           ; add combination methods
+                           (map (curry combine-method meta)
+                                (remove-duplicates
+                                 (map get-name
+                                      (filter is-generic?
+                                              (append (get-field direct-methods meta)
+                                                      (get-field inherited-methods meta))))))
+                           ; other args
                            (filter (negate is-generic?) args)))))))
 
 ; --------------------- CLASSES ----------------------
@@ -135,12 +142,12 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     (init-field direct-methods)
     (init-field inherited-methods)
     (init-field generic-functions)
-    
-    ; effective slots
+
+    ; effective slots (for testing)
     (define/public (effective-slots)
       (append direct-slots inherited-slots))
 
-    ; effective methods
+    ; effective methods (for testing)
     (define/public (effective-methods)
       (append direct-methods inherited-methods))))
 
@@ -209,31 +216,17 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (split-1 slot)
   (map (curry list (car slot)) (cdr slot)))
 
-; computes the list of effective slots and methods.
+; computes the list of inherited slots and methods.
 ; since both are very similar, the main logic is in
 ; compute-super-stuff. Just substitute "stuff"
 ; for "slots" or "methods" in your head.
 (define (compute-inherited-slots cpl)
-  (compute-super-stuff 'direct-slots cpl))
+  (compute-inherited-stuff 'direct-slots cpl))
 
-(define (compute-inherited-methods cpl direct-methods)
-  (let ([direct-symbols (map get-symbol direct-methods)])
-    ; remove methods that are re-declared with define/public
-    ; in the current class
-    ; Why we need to do this: We are only keeping track of methods
-    ; declared with define/public. This means that a subclass cannot
-    ; declare them again as public, but must use override - but then
-    ; we won't track this overridden method. Even if we did change
-    ; the method? function to include redefinitions, we then would
-    ; not only need to track the definition of the redefinition, but
-    ; the method will depend on the definition of its super method
-    ; and then things will get ugly...
-    ; So to allow methods to be redeclared and accessible for method
-    ; combination we'll allow redeclaration with define/public
-    (filter (lambda (x) (not (member (get-symbol x) direct-symbols)))
-            (compute-super-stuff 'direct-methods cpl))))
+(define (compute-inherited-methods cpl)
+  (compute-inherited-stuff 'direct-methods cpl))
 
-(define (compute-super-stuff direct-stuff-field cpl)
+(define (compute-inherited-stuff direct-stuff-field cpl)
   (let ([stuff '()])
     ; add the slots/methods of all superclasses to the list
     (for*/list ([metas cpl])
@@ -309,18 +302,18 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 ; Updates generic functions
 (define (update-generic-functions meta)
-    ; keep track of new generic functions
-    (map (curryr make-generic-function meta)
-         (get-field generic-functions meta))
-    ; add  new methods to existing generic functions
-    (for ([method (get-field direct-methods meta)])
-      ; for each new method, if a generic function for it exists
-        (when (is-generic? method)
-              ; add new method to generic function
-              (send (get-generic (get-name method))
-                    add-method
-                    meta
-                    (method->λ method)))))
+  ; keep track of new generic functions
+  (map (curryr make-generic-function meta)
+       (get-field generic-functions meta))
+  ; add  new methods to existing generic functions
+  (for ([method (get-field direct-methods meta)])
+    ; for each new method, if a generic function for it exists
+    (when (is-generic? method)
+      ; add new method to generic function
+      (send (get-generic (get-name method))
+            add-method
+            meta
+            (method->λ method)))))
 
 ; Creates the generic function object and adds it to the list
 ; If it already exists, an error will be signaled
@@ -346,12 +339,6 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ;    (display m)
 ;    (display "\n")
     m))
-
-(define (replace-combination-method meta arg)
-  (if (and (method? arg)
-           (is-generic? arg))
-      (combine-method meta (car (second arg)))
-      arg))
 
 ; Returns a (quoted) function that combines all applicable methods.
 ; The parameters (params) of the resulting lambda function are
@@ -394,11 +381,11 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define test1 (my-class ()                  (super-new)   (field [a 1])       (define/public (foo) a)))
 (define test2 (my-class ()                  (super-new)   (field [b 2])       (define/public (foo) b)))
 (define test3 (my-class ()                  (super-new)   (field [c 3] [d 3]) (define/public (foo) c)))
-(define test4 (my-class ()                  (super-new)   (field [a 4])       (define/public (bar) 'no)))
+(define test4 (my-class ()                  (super-new)   (field [a 4])       (define/public (bar) 'bar)))
 (define test5 (my-class (test1 test2)       (super-new)))
-(define test6 (my-class (test3 test4)       (super-new)                       (define/public (bar) 'yes)))
+(define test6 (my-class (test3 test4)       (super-new)))
 (define test7 (my-class (test5 test6 test4) (super-new)))
-(define test8 (my-class (test1)             (super-new)   (inherit-field a)   (define/public (baz) a) (define/public (foo) 'yes)))
+(define test8 (my-class (test1)             (super-new)   (inherit-field a)   (define/public (baz) a)))
 
 (define cpl (get-field class-precedence-list (find-class test7)))
 
@@ -429,28 +416,27 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                       (define/public (foo) 1)
                       (define/generic (bar x y) list)
                       (define/public (bar x y) (+ x y))
-                      (define/generic (number) list)
-                      ))
-
-(define two (my-class (one) (super-new)
-                      (define/public (bar x y) (* x y))
-                      (define/public (number) 'two)
-                      ))
-
-(define three (my-class (one) (super-new)
-                        (define/public (number) 'three)
-                        ))
-
-(define four (my-class (two three) (super-new)
-                       (define/public (number) 'four)))
+                      (define/generic (number) list)))
 
 (display "one foo:     ")
 (send (new one) foo)
 (display "one bar:     ")
 (send (new one) bar 1 2)
+
+(define two (my-class (one) (super-new)
+                      (define/public (bar x y) (* x y))
+                      (define/public (number) 'two)))
+
 (display "two foo:     ")
 (send (new two) foo)
 (display "two bar:     ")
 (send (new two) bar 1 2)
+
+(define three (my-class (one) (super-new)
+                        (define/public (number) 'three)))
+
+(define four (my-class (two three) (super-new)
+                       (define/public (number) 'four)))
+
 (display "four number: ")
 (send (new four) number)
