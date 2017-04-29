@@ -74,6 +74,43 @@ This module was created by Manuela Beckert as master thesis project. The corresp
       ; return the class object
       obj)))
 
+; creates a metaobject.
+; supers - the list of superclasses
+; args - other arguments passed to the class macro
+(define (make-metaobject supers args)
+  (let* ([direct-supers     (map (compose find-class my-eval) supers)]
+         [cpl               (compute-cpl direct-supers)] 
+         [direct-slots      (compute-direct-slots args)]
+         [inherited-slots   (compute-inherited-slots cpl)]
+         [direct-methods    (filter method? args)]
+         [inherited-methods (compute-inherited-methods cpl direct-methods)]
+         [generic-functions (filter generic? args)])
+
+    ; create meta object
+    (make-object meta-class% direct-supers cpl direct-slots
+         inherited-slots direct-methods inherited-methods
+         generic-functions)))
+
+;; creates a class object
+(define (make-classobject do-not-touch? supers args meta)
+  ; remove define/generic and if a method is part of a method 
+  ; combination, replace it with the combination result
+  (let ([args (map (curry replace-combination-method meta)
+                   (filter (negate generic?) args))])
+    (if do-not-touch?
+        ; if we're not allowed to touch it, 
+        ; let racket handle object creation
+        (my-eval (append '(class) supers args))
+        ; else, put together the superclass
+        (let ([superclass
+               (my-eval (append '(class object% (super-new))
+                                (get-field inherited-slots meta)
+                                (get-field inherited-methods meta)))])
+          ; and use it for the new class
+          (my-eval (append '(class)
+                           (list superclass)
+                           args))))))
+
 ; --------------------- CLASSES ----------------------
 
 ; since classes have no name, we count them, so we
@@ -119,23 +156,6 @@ This module was created by Manuela Beckert as master thesis project. The corresp
   (make-object meta-class% '() '() '() '() '() '() '()))
 
 (add-class object% meta-object%)
-
-; creates a metaobject.
-; supers - the list of superclasses
-; args - other arguments passed to the class macro
-(define (make-metaobject supers args)
-  (let* ([direct-supers     (map (compose find-class my-eval) supers)]
-         [cpl               (compute-cpl direct-supers)] 
-         [direct-slots      (compute-direct-slots args)]
-         [inherited-slots   (compute-inherited-slots cpl)]
-         [direct-methods    (filter method? args)]
-         [inherited-methods (compute-inherited-methods cpl direct-methods)]
-         [generic-functions (filter generic? args)])
-    
-    ; create meta object
-    (make-object meta-class% direct-supers cpl direct-slots
-         inherited-slots direct-methods inherited-methods
-         generic-functions)))
 
 ; compute the class precedence list
 ; * TODO: this is way simpler than the topological sort in AMOP or  
@@ -240,24 +260,6 @@ This module was created by Manuela Beckert as master thesis project. The corresp
       (cadr x)
       (caadr x)))
 
-;; object
-(define (make-classobject do-not-touch? supers args meta)
-  ; if method is part of a method combination, replace it
-  ; with the combination result
-  (let ([args (map (curry replace-combination-method meta) args)])
-    (if do-not-touch?
-        ; if we're not allowed to touch it, 
-        ; let racket handle object creation
-        (my-eval (append '(class) supers args))
-        ; else, put together the superclass
-        (let ([superclass
-               (my-eval (append '(class object% (super-new))
-                                (get-field inherited-slots meta)
-                                (get-field inherited-methods meta)))])
-          ; and use it for the new class
-          (my-eval (append '(class)
-                           (list superclass)
-                           args))))))
 
 ; ----------------- GENERIC FUNCTIONS -----------------------
 
@@ -279,9 +281,12 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     ; returns a list of all applicable function
     ; (as quoted lambda functions), sorted by cpl
     (define/public (get-applicable-methods meta)
-      (let ([cpl (cons meta (get-field class-precedence-list meta))])
-        (map (curry hash-ref methods)
-             (filter (curry hash-has-key? methods) cpl))))))
+      (let* ([cpl (cons meta (get-field class-precedence-list meta))]
+             [applicable  (map (curry hash-ref methods)
+             (filter (curry hash-has-key? methods) cpl))])
+        (if (empty? applicable)
+            (error "no applicable methods found for generic function" name)
+            applicable)))))
 
 ; table that maps each generic function name to its object
 (define generic-function-table (make-hash))
@@ -303,7 +308,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     ; add  new methods to existing generic functions
     (for ([method (get-field direct-methods meta)])
       ; for each new method
-      (let ([name (second method)])
+      (let ([name (car (second method))])
         ; if a generic function for it exists
         (when (is-generic? name)
               ; add new method to generic function
@@ -319,7 +324,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; meta-class: class metaobject
 ; 
 (define (make-generic-function gf meta)
-  (let ([name (first (second gf))]
+  (let ([name (car (second gf))]
         [params (cdr (second gf))]
         [combination (third gf)]) 
     (if (hash-has-key? generic-function-table name)
@@ -332,12 +337,15 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; Converts a method expression into a quoted lambda function
 ; '(define/public (foo x y) (+ x y)) -> '(λ (x y) (+ x y))
 (define (method->λ method)
-  (list 'λ (cdr (second method)) (cddr method)))
+  (let ([m (list 'λ (cdr (second method)) (third method))])
+;    (display m)
+;    (display "\n")
+    m))
 
 (define (replace-combination-method meta arg)
   (if (and (method? arg)
-           (is-generic? (second arg)))
-      (combine-method meta (second arg))
+           (is-generic? (car (second arg))))
+      (combine-method meta (car (second arg)))
       arg))
 
 ; Returns a (quoted) function that combines all applicable methods.
@@ -348,15 +356,20 @@ This module was created by Manuela Beckert as master thesis project. The corresp
   (let* ([gf (find-generic name)]
          [params (get-field params gf)]
          [combination (get-field combination gf)]
-         [functions (send gf get-applicable-methods)])
-    (list 'define/public
-          name
-          params
-          ; '+  '(3 4 5)  -> '(+ 3 4 5)
-          (list 'apply
-                combination
-                ; '(f g h)  '(1 2) -> '((f 1 2) (g 1 2) (h 1 2))
-                '(map (curry apply params) functions)))))
+         [functions (send gf get-applicable-methods meta)]
+         [f (list 'define/public
+                  (cons name params)
+                  ; '+  '(3 4 5)  -> '(+ 3 4 5)
+                  (list 'apply
+                        combination
+                        ; '(f g h)  '(1 2) -> '((f 1 2) (g 1 2) (h 1 2))
+                        (list 'map
+                              (list 'curryr
+                                    'apply
+                                    (cons 'list params))
+                              (cons 'list functions))))])
+    (println f)
+    f))
   
 
 ;------------------------ Tests -----------------------------
@@ -373,7 +386,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 (display "------------ Tests ------------\n")
 
-;                        supers                            slots               methods
+#|;                        supers                            slots               methods
 (define test1 (my-class ()                  (super-new)   (field [a 1])       (define/public (foo) a)))
 (define test2 (my-class ()                  (super-new)   (field [b 2])       (define/public (foo) b)))
 (define test3 (my-class ()                  (super-new)   (field [c 3] [d 3]) (define/public (foo) c)))
@@ -381,7 +394,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define test5 (my-class (test1 test2)       (super-new)))
 (define test6 (my-class (test3 test4)       (super-new)                       (define/public (bar) 'yes)))
 (define test7 (my-class (test5 test6 test4) (super-new)))
-(define test8 (my-class (test1)             (super-new)   (inherit-field a)   (define/public   (baz) a) (define/public (foo) 'yes)))
+(define test8 (my-class (test1)             (super-new)   (inherit-field a)   (define/public (baz) a) (define/public (foo) 'yes)))
 
 (define cpl (get-field class-precedence-list (find-class test7)))
 
@@ -405,4 +418,14 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (send (new test8) baz)
 (display"\n")
 (display "(method->λ '(define/public (foo x y) (+ x y))) -> ")
-(method->λ '(define/public (foo x y) (+ x y)))
+(method->λ '(define/public (foo x y) (+ x y)))|#
+
+(define one (my-class () (super-new)
+                      (define/generic (foo) list)
+                      (define/public (foo) 1)
+                      (define/generic (bar x) list)
+                      (define/public (bar x) x)
+                      ))
+
+(send (new one) foo)
+(send (new one) bar 2)
