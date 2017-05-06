@@ -38,7 +38,6 @@ Dieses Kapitel basiert auf dem Guide ``Fear of Macros'' von Greg Hendershott \ci
 
 
 \section{Transformers}
-\subsection{Was ist ein Syntaxtransformer?}
 
 Ein Makro ist im Grunde eine Funktion. Sie erhält ein Stück Syntax als Eingabe und gibt ein anderes Stück Syntax zurück. Sie \textit{transformiert} Syntax. Wir können einen solchen Syntax-Transformer mit \texttt{define-syntax} definieren:
 
@@ -84,7 +83,7 @@ Durch die Verwendung von \texttt{define-syntax} geschieht eine Transformer-Bindu
 
 % Obwohl sich die Funktion nun nicht mehr stark von einem \texttt{define} unterscheidet, ist es immer noch eine Transformer-Funktion, die Syntax entgegennimmt und Syntax zurückgibt.
 
-\subsection{Syntax-Objekte}
+\section{Syntax-Objekte}
 Übsicherweise soll die Eingabe-Syntax transformiert werden. Wenn wir Syntax definieren, erhalten wir ein Syntax-Objekt:
 
 \begin{lstlisting}

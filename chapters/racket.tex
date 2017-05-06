@@ -1,5 +1,5 @@
 \chapter{Objektsysteme in Racket}
-Racket ist ein Dialekt von Lisp, der auf Scheme basiert\cite{racketguide-dialects}. Es ist jedoch keine rein funktionale Sprache, sondern unterstützt verschiedene Lisp-Dialekte und  Programmierparadigmen. 
+Racket ist ein Dialekt von Lisp, der auf Scheme basiert. Es ist jedoch keine rein funktionale Sprache, sondern unterstützt verschiedene Lisp-Dialekte und  Programmierparadigmen. 
 %Damit gibt Racket Programmierern und Forschern die Werkzeuge, die sie benötigen, um neue Sprachen zu erkunden und zu entwickeln\cite{racketguide-dialects} und wird beispielsweise auch an der Universität Hamburg in der Forschung genutzt.
 
 Racket wird in der Softwareentwicklungslehre genutzt, da es im Gegensatz zu Common Lisp sehr einsteigerfreundlich ist. Die Veranstaltungsteilnehmer lernen zum ersten Mal eine funktionale Sprache kennen und sollen einen möglichst einfachen Einstieg erhalten. Hierzu bietet Racket eine übersichtliche Syntax und eine plattformunabhängige Entwicklungsumgebung, die vergleichbare Fehlermeldungen liefert.
@@ -11,7 +11,7 @@ Um Common Lisp zu lernen, wurde daher Scheme entwickelt. Analog zu BlueJ, einer 
 
 Die Syntax von Racket ist sehr ähnlich zu Common Lisp. Ausdrücke werden geklammert, Kommentare mit einem Semikolon eingeleitet. Einige Standardfunktionen haben leicht abgewandelte Namen. So werden in Racket beispielsweise sowohl Funktionen als auch Variablen mit dem Schlüsselwort \texttt{define} definiert, anstelle von \texttt{defun}, \texttt{defvar} und \texttt{defparameter} in Common Lisp. Prädikate enden auf \texttt{?} (zum Beispiel \texttt{equal?}) und Methoden, die Variablen oder Objekte verändern auf \texttt{!} (zum Beispiel \texttt{set!}). Einer der größeren Unterschiede liegt in der Art, wie Makros definiert werden; darauf wird im Kapitel \ref{makros} noch näher eingegangen.
 
-Racket unterstützt auch objektorientierte Programmierung auf zwei verschiedene Arten. Zunächst gibt das Racket-Objektsystem. Racket-Klassen sind sehr ähnlich zu Klassen in Java, C\# oder den meisten objektorientierten Programmiersprachen\cite{neu-edu2}. Ein Programm kann Klassen definieren, instanziieren, mit den erzeugten Objekten interagieren und Klassen erweitern. Besonders ist, dass Klassen auch wie Funktionswerte behandelt werden können. Es ist möglich, eine Klasse zur Laufzeit zu erweitern, eine Klasse an eine Funktion zu geben oder in einer Datenstruktur zu speichern und anschließend abzufragen\cite{neu-edu}. 
+Racket unterstützt auch objektorientierte Programmierung auf zwei verschiedene Arten. Zunächst gibt das Racket-Objektsystem. Racket-Klassen sind sehr ähnlich zu Klassen in Java, C\# oder den meisten objektorientierten Programmiersprachen\cite{neu-edu}. Ein Programm kann Klassen definieren, instanziieren, mit den erzeugten Objekten interagieren und Klassen erweitern. Besonders ist, dass Klassen auch wie Funktionswerte behandelt werden können. Es ist möglich, eine Klasse zur Laufzeit zu erweitern, eine Klasse an eine Funktion zu geben oder in einer Datenstruktur zu speichern und anschließend abzufragen\cite{neu-edu}. 
 
 Zusätzlich gibt es den Racket-Dialekt Swindle, in dem das Common Lisp Object System (CLOS) implementiert ist. Im Gegensatz zum eingebauten Objektsystem von Racket bietet CLOS Funktionalitäten wie Mehrfachvererbung, Methodenkombination oder Ergänzungsmethoden. Durch die Implementation als Metaobject-Protocol bietet es dem Programmierer zudem viel Freiheit bei der Erweiterung und Veränderung der Repräsentation von Klassen und Objekten.
 Um ein Gefühl für die beiden Objektsysteme zu bekommen, soll zunächst betrachtet werden, wie sie benutzt werden können. %Andschließend wird ein Blick auf die Implementation beider Ansätze geworfen. Die Autoren des Buches ``The Art of the Metaobject Protocol''\cite{amop} vergleichen das Vorgehen sehr treffend mit eine Theateraufführung: Auf der Bühne (onstage) findet das Theaterstück statt - das Programm, oder etwas allgemeiner, das, was der Programmierer von der Sprache sieht. Hinter der Bühne (backstage) befindet sich die darunterliegende Implementation, die die entprechenden Makros definiert und mit für den Programmierer nicht sichtbaren Objekten und Funktionen arbeitet. Wir wollen beide Ansätze erst ``onstage'' betrachten bevor wir einen Blick hinter die Kulissen werfen.
@@ -20,19 +20,21 @@ Der Fokus dieser Arbeit liegt auf der Implementation von Mehrfachvererbung im Ob
 
 Die Installation von Racket beinhaltet eine integrierte Enwicklungsumgebung namens DrRacket. Für das Syntaxhighlighting der Quelltextbeispiele in dieser Arbeit wurde das Standard-Farbschema von DrRacket verwendet. Anfragen an die Interaktionskonsole wurden mit \texttt{>} markiert und das Ergebnis in der Zeile darunter aufgeführt. 
 
-\section{Beispielproblem} 
+\section{Ein Beispiel für Mehrfachvererbung} 
 
-%TODO Beispielproblem überarbeiten 
-
-Beide Objektsysteme sollen anhand eines Beispielproblems beschrieben werden. Es soll zunächst das Verhalten einfacher Klassen und Einfachvererbung gezeigt werden und darauf aufbauend die Konzepte von Mehrfachvererbung, die in den Objektsystemen vorhanden sind. Ziel wird es daher sein, die folgende Vererbungshierarchie zu implementieren:
+Wir wollen beide Ansätze in Hinblick auf Syntax, Benutzung und Vererbung miteinander vergleichen. Dazu soll in beiden die folgende Vererbungshierarchie implementiert werden:
 
 \begin{figure}[h]
  \centering
- \includegraphics[width=0.35\textwidth]{pictures/hirarchy}
+ \includegraphics[scale=0.8]{pictures/hirarchy}
  \caption{Vererbungshierarchie für die Klasse Pokemon.}
  \label{hirarchy}
 \end{figure}
 
-Die Klasse Thing soll eine einfache Basisklasse sein und uns die Möglichkeit geben, die Syntax der Klassendefinition beider Ansätze zu vergleichen. Da Thing ledigleich eine leere Klasse ist, wollen wir im Anschluss zwei Klassen erstellen, deren Felder und Methoden später vererbt werden können: Element und Animal. Anhand von Element betrachten wir dabei zunächst, wie Felder und Methoden definiert werden können. Anhand der Klasse Animal und ihrer Subklasse Pet können wir das Konzept der Vererbung veranschaulichen. Es wird dann mit der Klasse Pokemon gezeigt, welche Möglichkeiten der Mehrfachvererbung es gibt.
+Zunächst können wir mit der Klasse Thing sehen, wie eine einfache Klasse definiert wird. Anhand von Thing und den Klassen Element und Animal betrachten wir, wie Felder und Methoden definiert werden können und wie diese vererbt werden.
 
-Zusätzlich soll für beide Objektsysteme geprüft werden, welche Möglichkeiten es gibt, Methoden einer Superklasse in einer Subklasse zu ergänzen. 
+Schließlich vervollständigen wir die Hierarchie so, dass mit möglichst wenig Klassen möglichst viele Sonderfälle und Probleme abgedeckt werden können. Hierfür eignet sich das Diamant-Problem sehr gut: Eine Klasse, die von zwei Klassen erbt, die wiederum eine gemeinsame Superklasse haben. Element und Animal erben bereits von Thing. Wir nutzen den Umstand also aus und definieren eine Klasse Pokemon, die von beiden erbt.
+
+In jedem Schritt wollen wir betrachten, was passiert, wenn man Methoden redefiniert, wie disjunkte Mengen von Slots und Methoden vererbt werden, wie mit gleichbenannten Merkmalen umgegangen wird und wie man als Programmierer die Vererbung bei gleichbenannten Merkmalen beeinflussen kann.
+
+Zusätzlich wollen wir noch betrachten, welche Möglichkeiten es gibt, Methoden einer Superklasse in einer Subklasse zu ergänzen und ob diese kompatibel mit Mehrfachvererbung sind (und wenn nicht, warum).
