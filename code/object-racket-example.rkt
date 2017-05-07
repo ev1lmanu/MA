@@ -1,30 +1,29 @@
 #lang racket
 
 ; ------------ Klassen und Objekte ---------------
-(define Thing (class object% (super-new)))
+(define Thing (class object% (super-new)
+                (init-field [i-am-a " Thing"])
+                (define/public (what-am-i?) 
+                  (string-append "I am a" i-am-a "!"))))
 
 ; (new Thing)
+; (send (new Thing what-am-i?))
 
-(define Element (class Thing (super-new)
+(define Element (class Thing (super-new [i-am-a "n Element"])
                   (init-field [attr 'water])
                   (define/public (hot?) (equal? attr 'fire))))
 
 (define elem (new Element))
+; (send elem what-am-i?)
 ; (get-field attr elem)
 ; (set-field! elem attr 'wind)
 ; (send elem hot?)
 
-(define Animal (class Thing (super-new)
+(define Animal (class Thing (super-new [i-am-a "n Animal"])
                  (init-field [gender 'male]
                              [size 'small])))
 
-(define Pet (class Animal (super-new)
-              (init-field [name 'unknown])))
-
-(define harry (new Pet [name 'harry] [size 'normal]))
-; (get-field name harry)
-; (get-field gender harry)
-; (get-field size harry)
+; (send (new Animal) what-am-i?)
 
 
 ; ------------------ Mixins ---------------------
@@ -33,14 +32,14 @@
   (class superclass (super-new)))
 
 (define (Element-mixin %)
-  (class % (super-new)
+  (class % (super-new) ; ! (super-new [i-am-a "n Element"])
     (init-field [attr 'water])
 ;    (define/public (attack) attr) ; !
     (define/override (attack) (list (super attack) attr))
     ))
 
 (define (Animal-mixin %)
-  (class % (super-new)
+  (class % (super-new) ; ! (super-new [i-am-a "n Animal"])
     (init-field [gender 'male]
                 [size 'small])
     (define/public (attack) size)))
@@ -104,15 +103,14 @@
 (define Pokemon-mixin (trait->mixin Pokemon-trait))
 
 (define Pokemon2 (Pokemon-mixin
-                  (class object% (super-new)
-                    (init-rest args)
-                    (when (not (empty? args))
-                      (display args))
-                    )))
+                  (class Thing (super-new [i-am-a " Pokemon"])
+                    (init-rest args))))
 
 (define p2 (new Pokemon2))
+; (send p2 what-am-i?)
 ; (send p2 attack)
 (define p3 (make-object Pokemon2 'large 'female 'fire))
+; (send p3 attack)
 
 ; ------------ Ergänzungsmethoden ---------------
 

@@ -5,5 +5,5 @@
 *.toc
 *.gz
 *.out
-ma.kilepr
+*.kilepr
 *~
