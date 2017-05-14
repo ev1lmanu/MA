@@ -93,20 +93,20 @@
 ;; Around method (and either can be present or not)
 ;; Before and After methods have a set evaluation order:
 (defmethod daily-routine ((t Trainer))
-  (println "He caught some Pokemon."))
+  (display "He caught some Pokemon.\n"))
 (defmethod daily-routine :before ((t Trainer))
-  (println "He walked out."))
+  (display "He walked out.\n"))
 (defmethod daily-routine :after ((t Trainer))
-  (println "He walked back home."))
+  (display "He walked back home.\n"))
 
 (defclass Earlybird (Trainer))
 
 (defmethod daily-routine ((e Earlybird))
-  (println "He found two bird Pokemon in the morning."))
+  (display "He found two bird Pokemon in the morning.\n"))
 (defmethod daily-routine :before ((e Earlybird))
-  (println "The sun just started rising."))
+  (display "The sun just started rising.\n"))
 (defmethod daily-routine :after ((e Earlybird))
-  (println "There was still time before dinner."))
+  (display "There was still time before dinner.\n"))
 
 ;; See the order of evaluation: 
 ;> (daily-routine (make Earlybird))
@@ -117,7 +117,7 @@
 (defclass Lazybum (Trainer))
 
 (defmethod daily-routine :around ((l Lazybum))
-  (println "He slept through the whole day."))                                      
+  (display "And that was it.\n"))                                      
 
 ;> (daily-routine (make Lazybum))
 
@@ -129,7 +129,11 @@
 (defclass Nightowl (Trainer))
 
 (defmethod daily-routine :around ((n Nightowl))
-  (println "He slept through the whole day.")
+  (display "He slept through the whole day.\n")
   (list (call-next-method) 42))              ; let's return something
 
 ;> (daily-routine (make Nightowl))
+
+(defclass Lazyowl (Nightowl Lazybum))
+
+;> (daily-routine (make Lazyowl))

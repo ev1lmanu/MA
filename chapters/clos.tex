@@ -285,9 +285,74 @@ Zusätzlich zu Vor- und Nachmethoden gibt es noch Around-Methoden. Sie sind ähn
  \end{itemize}
 \end{itemize}
 
-Ein Beispiel für eine Around-Methode ist das Messen der Zeit, die die Primärmethode benötigt. Da Around-Methoden eintscheiden können, \texttt{call-next-method} nicht aufzurufen, können sie den Aufruf aller Vor-, Nach- und Primärmethoden verhindern. Eine Around-Methode muss auch nicht das Ergebnis der Primärmethode zurückgeben (auch wenn es Konvention ist, das zu tun).
+Wir können uns eine Klasse Nightowl definieren, die den Rückgabewert der Primärmethode verändert:
 
-\subsection{Ergänzungmethoden und Mehrfachvererbung}
-%TODO
+\begin{lstlisting}
+(defclass Nightowl (Trainer))
+
+(defmethod daily-routine :around ((n Nightowl))
+  (display "He slept through the whole day.\n")
+  (list (call-next-method) 42))
+  
+> (daily-routine (make Nightowl))
+\end{lstlisting}
+{\routput He slept through the whole day.\\
+\phantom{.}He walked out.\\
+\phantom{.}He caught some Pokemon.\\
+\phantom{.}He walked back home.\\
+\phantom{.}(\#<void> 42)}
+
+Da Around-Methoden entscheiden können, \texttt{call-next-method} nicht aufzurufen, können sie den Aufruf aller Vor-, Nach- und Primärmethoden verhindern. Eine Around-Methode muss auch nicht das Ergebnis der Primärmethode zurückgeben. Ein Beispiel ist die folgende Klasse Lazybum:
+
+\begin{lstlisting}
+(defclass Lazybum (Trainer))
+
+(defmethod daily-routine :around ((l Lazybum))
+  (display "And that was it.\n"))
+  
+> (daily-routine (make Lazybum))
+\end{lstlisting}
+{\routput And that was it.}
+
+Wir sehen, dass die Around-Methode alle weiteren Methodenaufrufe verhindert hat. 
+
+Bei mehreren Oberklassen beziehen sich die ``nächstspezifischste Around-Methode'' und ``alle Vor- bzw. Nachmethoden'' auf den kompletten Vererbungsbaum. Wir können beispielsweise die Klasse Lazyowl definieren, die sowohl von Nightowl als auch von Lazybum erbt:
+
+\begin{lstlisting}
+(defclass Lazyowl (Nightowl Lazybum))
+
+> (daily-routine (make Lazyowl))
+\end{lstlisting}
+{\routput He slept through the whole day.\\
+\phantom{.}And that was it.\\
+\phantom{.}(\#<void> 42)}
+
+Ein Aufruf von \texttt{daily-routine} zeigt, dass die Around-Methoden beider Oberklassen aufgerufen werden. 
+
+% TODO ?
+% \subsection{Ergänzungmethoden und Methodenkombination}
+% Ergänzungsmethoden sind in CLOS Teil der Standard-Method-Combination (SMC), also der Methodenkombination, die ausgeführt wird, wenn wir nichts anderes angeben. Sobald wir in einer generischen Funktion eine Kombinationsart für die Methode angeben, ist es nicht mehr möglich, auch Ergänzungsmethoden für diese Methode zu definieren.
+% 
+% Warum ist das so?
+% 
+% Nehmen wir beispielsweise die \texttt{attack}-Methode aus dem Pokemonbeispiel und nehmen wir außerdem an, dass alle drei Klassen Element, Animal und Pokemon eine Around-Methode definiert haben (Abb. \ref{problem}). Die Methodenkombination sagt uns, wir müssen sowohl die Methode in Element als auch die in Animal auswerten. Pokemon besitzt jedoch eine Around-Methode, die laut SMC zuallererst ausgewertet werden müsste. Welche Regel soll zuerst befolgt werden?
+% 
+% \begin{figure}[h]
+%  \centering
+%  \includegraphics[scale=0.3]{pictures/problem}
+%  \caption{Beispiel für Methodenkombination und Ergänzungmethoden.}
+%  \label{problem}
+% \end{figure}
+% 
+% Die naheliegende Lösung ist, den Regeln der Standard-Methodenkombination  Vorrang zu geben: wir lassen das Auswertungsschema undverändert, aber anstatt nur einer Primärmethode werten wir alle anwendbaren Primärmethoden aus und kombinieren das Ergebnis.
+% 
+% Zuallererst muss also die Around-Methode von Pokemon ausgewertet werden. Nehmen wir weiterhin an, die Around-Methode ruft die Methode der Superklasse auf, die spezifischste sei hier die von Element und diese ruft nicht \texttt{call-next-method} auf. Für die Listen-Kombination müssen wir jedoch die primäre Methode von Animal auswerten, die unter Umständen ohne ohne Around-Methode überhaupt keinen Sinn ergibt, zum Beispiel wenn die Around-Methode die Datei öffnet und schließt, die in der primären Methode gelesen wird.
+% 
+% Man müsste also alle Around-Methoden ausführen, unabhängig davon, ob \texttt{call-next-} \texttt{method} aufgerufen wurde oder nicht. Das steht jedoch in Widerspruch zu der Fähigkeit von Around-Methoden, die Auswertung anderer Methoden verhindern zu können. Die Verbindung von Methodenkombination und dem Überschreiben von Methoden scheint nicht sinnvoll. 
+% 
+% Vor- und Nachmethoden sind weniger problematisch, denn ihre Auswertungsreihenfolge hängt nicht von ihrem Inhalt ab. Es ist dann vermutlich
 
 Wir haben damit gesehen, dass ein Umgang mit Mehrfachvererbung in CLOS sehr intuitiv und einfach bereitgestellt werden kann.
+
+\section{Zwischenfazit}
+Das Objektsystem von Racket bietet zwar Mixins und Traits, beide sind jedoch geschickt verpackte Einfachvererbung und werden sehr schnell sehr kompliziert, wenn die Anzahl an Klassen steigt und gleichbenannte Methoden und Felder vorkommen. CLOS hingegen bietet einen sehr intuitiven Umgang mit Mehrfachvererbung. Es gibt generische Methoden, Methodenkombination und Ergänzungsmethoden.
