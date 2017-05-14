@@ -11,19 +11,31 @@
 ;; or instantiate (label and position based):
 ;> (new Thing)
 ;; Field access with get-field and set-field!, Method access with send.
-;> (send (new Thing who-are-you?))
-;> (send (make-object Thing "Bob") who-are-you?)
+;> (get-field name (new Thing))
+(define bob (new Thing [name "Bob"]))
+;> (get-field name bob)
+;> (set-field name bob "not Bob")
+;> (get-field name bob)
+;> (send (new Thing) who-are-you?)
+;> (send bob who-are-you?)
 
 ;; A class Element that inherits from Thing
-(define Element (class Thing (super-new)
+(define Element (class Thing 
+                  (init [name "an Element"])
+                  (super-new [name name])
                   (init-field [attr 'water])
-                  (define/public (hot?) (equal? attr 'fire))))
+                  (define/public (hot?) (equal? attr 'fire))
+                  (define/override (who-are-you?)
+                    (string-append (super who-are-you?)
+                                   (if (hot?) " And I am hot!" "")))
+                  (inherit-field [newname name])
+                  (define/public (get-name) newname)))
+                                   
 
 ;; We can access both inherited and new behavior
-(define elem (new Element))
+(define elem (new Element [name "Fire"] [attr 'fire]))
+;> (send (new Element) who-are-you?)
 ;> (send elem who-are-you?)
-;> (get-field attr elem)
-;> (set-field! elem attr 'wind)
 ;> (send elem hot?)
 
 ;; A class Animal that also inherits from Thing
@@ -32,8 +44,7 @@
 (define Animal (class Thing
                  (init [name "an Animal"]) ;; update default value
                  (super-new [name name])
-                 (init-field [gender 'male]
-                             [size 'small])))
+                 (init-field [size 'small])))
 
 ;> (send (new Animal) who-are-you?)
 
@@ -44,18 +55,21 @@
 
 ;; An Element Mixin that provides everythin Element-related
 (define (Element-Mixin %)
-  (class % (super-new)
+  (class %
+    (init [name "an Element"])  ;; this also works for Mixins :)
+    (super-new [name name])
     (init-field [attr 'water])
-    ;; Before: (define/public (attack) attr)
+    (define/public (hot?) (equal? attr 'fire))
+    ;; Before:
+    ;; (define/public (attack) attr)
     (define/override (attack) (list (super attack) attr))
     ))
 
 (define (Animal-Mixin %)
-  (class % ; (super-new)
-    (init [name "an Animal"])  ;; this also works for Mixins :)
+  (class %
+    (init [name "an Animal"])
     (super-new [name name])
-    (init-field [gender 'male]
-                [size 'small])
+    (init-field [size 'small])
     (define/public (attack) size)))
 
 ;; We can still define Element and Animal
@@ -64,36 +78,31 @@
                   ;; provide a method to be overriden here.
                   (class Thing (super-new)
                     (define/public (attack) null))))
-;> (get-field attr (new Element2))
 ;> (send (new Element2) who-are-you?)
-;> (send (new Element2 [name "Fire"]) who-are-you?)
+(define elem2 (new Element [attr 'fire] [name "Fire"]))
+;> (send elem2 who-are-you?)
+;> (send elem2 hot?)
 
 (define Animal2 (Animal-Mixin Thing))
 ;> (get-field size (new Animal [size 'huge] [gender 'female]))
 ;> (send (new Animal2) who-are-you?)
-;> (send (new Animal2 [name "Cat"]) who-are-you?)
 
 ;; And additionally Pokemon
 (define Pokemon (class (Element-Mixin (Animal-Mixin Thing))
                   (init [name "a Pokemon"])
                   (super-new [name name])))
+
 ;; It won't work the other way around though:
 ; (define Pokemon (Animal-Mixin (Element-Mixin Thing))) ; !
 
 ;; We can access all fields and methods, including attack
-;> (get-field size (new Pokemon))
-;> (get-field attr (new Pokemon))
-;> (get-field gender (new Pokemon))
 ;> (send (new Pokemon) who-are-you?)
-;> (send (new Pokemon [name "Charmander"]) who-are-you?)
-;> (send (new Pokemon) attack)
-(define p (new Pokemon [size 'large]
-                       [gender 'female]
+(define p (new Pokemon [name "Charmander"]
+                       [size 'large]
                        [attr 'fire]))
+;> (send p who-are-you?)
+;> (send p hot?)
 ;> (get-field size p)
-;> (get-field gender p)
-;> (get-field attr p)
-;> (send p attack)
 
 ; ------------------ Traits ---------------------
 
@@ -103,11 +112,11 @@
 ;; However, they don't allow initialization arguments.
 (define Element-Trait
   (trait (field [attr 'water]) ;; we need to use field instead of init-field
+         (define/public (hot?) (equal? attr 'fire))
          (define/public (attack) attr)))
 
 (define Animal-Trait
-  (trait (field [gender 'male]
-                [size 'small])
+  (trait (field [size 'small])
          (define/public (attack) size)))
 
 ;; Traits can be combined rather easily with trait-sum, trait-alias,
@@ -142,26 +151,24 @@
                    ;; add initialization arguments by hand
                    (init [this-name "a Pokemon"]
                          [this-size 'small]
-                         [this-gender 'male]
                          [this-attr 'water])
                    ;; name already is an init-field, we can just
                    ;; pass it to the super call
                    (super-new [name this-name])
                    ;; to have access to the others, we first need
                    ;; to inherit them
-                   (inherit-field size gender attr)
+                   (inherit-field size attr)
                    ;; and then we can set them to the desired value
                    (set! size this-size)
-                   (set! gender this-gender)
                    (set! attr this-attr)))
 
 ;; We can make Pokemon now! \o/
 (define p2 (new Pokemon2))
 ;> (send p2 who-are-you?)
-;> (send p2 attack)
 
-(define p3 (make-object Pokemon2 "Charmander" 'large 'female 'fire))
+(define p3 (make-object Pokemon2 "Charmander" 'large 'fire))
 ;> (send p3 who-are-you?)
+;> (send p3 hot?)
 ;> (send p3 attack)
 
 ; ------------ Auxiliary Methods ---------------

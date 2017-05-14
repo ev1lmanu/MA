@@ -19,13 +19,13 @@ Alle Code-Beispiele sind auch noch einmal zusammenhängend in Anhang \ref{or-exa
 
 \subsection{Einfache Klassen}
 
-Eine Klasse wird in Racket durch das Schlüsselwort \texttt{class} definiert. Bei der Definition einer Klasse muss die Superklasse angegeben werden. Falls die Klasse keine (anderen) Superklassen hat, wird \texttt{object\%} angegeben, die eingebaute Wurzelklasse. Per Konvention sollen Klassennamen in Racket auf \% ended, bei den folgenden Beispielen wird jedoch darauf verzichtet, um sie später leichter mit CLOS vergleichen zu können. Nach der Superklasse können noch beliebige Klassenoptionen, Felder oder Methoden definiert werden. An einer beliebigen Stelle im Rumpf der Klasse muss jedoch mit \texttt{super-new} der Konstruktor der Oberklasse aufgerufen werden. Eine minimale Klassendefinition sieht damit folgendermaßen aus:
+Eine Klasse wird in Racket durch das Schlüsselwort \texttt{class} definiert. Bei der Definition einer Klasse muss die Superklasse angegeben werden. Falls die Klasse keine (andere) Superklasse hat, wird \texttt{object\%} angegeben, die eingebaute Wurzelklasse. Per Konvention sollen Klassennamen in Racket auf \% enden, bei den folgenden Beispielen wird jedoch darauf verzichtet, um sie später leichter mit CLOS vergleichen zu können. Nach der Superklasse können noch beliebige Klassenoptionen, Felder oder Methoden definiert werden. An einer beliebigen Stelle im Rumpf der Klasse muss jedoch mit \texttt{super-new} der Konstruktor der Oberklasse aufgerufen werden. Eine minimale Klassendefinition sieht damit folgendermaßen aus:
 
 \begin{lstlisting}
 (class object% (super-new))
 \end{lstlisting}
 
-Als Rückgabewert erhält man ein Klassenobjekt und kann dieses für den späteren Zugriff in einer Variablen speichern. Die Variable wurde hier Thing genannt.
+Als Rückgabewert erhält man ein Klassenobjekt und kann dieses für den späteren Zugriff in einer Variablen speichern. Wir können die leere Klasse beispielsweise Thing nennen.
 
 \begin{lstlisting}
 (define Thing (class object% (super-new)))
@@ -37,9 +37,57 @@ Objekte von Klassen lassen sich mit den Schlüsselwörtern \texttt{new}, \texttt
 (new Thing)
 \end{lstlisting}
 
-Felder lassen sich mit \texttt{init-field} oder \texttt{field} deklarieren, je nachdem, ob es möglich sein soll sie bei der Objekterzeugung zu initialisieren oder nicht. Auf die Felder kann man dann mit \texttt{get-field} beziehungsweise \texttt{set-field!} zugreifen. 
+Felder lassen sich mit \texttt{init-field} oder \texttt{field} deklarieren, je nachdem, ob es möglich sein soll sie bei der Objekterzeugung zu initialisieren oder nicht. Wir können beispielsweise zu der Klasse Thing ein Feld hinzufügen, das eine Beschreibung des Objekts enthält:
 
-Für Methoden gibt es, je nach Art und Sichtbarkeit, unter anderem die Schlüsselwörter \texttt{define/public}, \texttt{define/private} und \texttt{define/override}. Die so definierten Methoden lassen sich anschließend mittels \texttt{send} aufrufen. Zum Beispiel sieht eine Klasse namens Element, bestehend aus einem Feld für das Attribut und einer sondierenden Methode, die von Thing erbt, folgendermaßen aus:
+\begin{lstlisting}
+(define Thing (class object% (super-new)
+                (init-field [name "a Thing"])))
+\end{lstlisting}
+
+Auf die Felder kann man dann mit \texttt{get-field} beziehungsweise \texttt{set-field!} zugreifen. 
+
+\begin{lstlisting}
+> (get-field name (new Thing))
+\end{lstlisting}
+{\routput {\qq}a Thing{\qq}}
+
+\begin{lstlisting}
+(define bob (new Thing [name "Bob"]))
+
+> (get-field name bob)
+\end{lstlisting}
+{\routput {\qq}Bob{\qq}}
+
+\begin{lstlisting}
+> (set-field name bob "not Bob")
+> (get-field name bob)
+\end{lstlisting}
+{\routput {\qq}not Bob{\qq}}
+
+Für Methoden gibt es, je nach Art und Sichtbarkeit, unter anderem die Schlüsselwörter \texttt{define/public}, \texttt{define/private} und \texttt{define/override}. Wir können für die Klasse Thing eine Methode \texttt{who-are-you?} definieren, die einen beschreibenden Text für das Objekt ausgibt:
+
+\begin{lstlisting}
+(define Thing (class object% (super-new)
+                (init-field [name "a Thing"])
+                (define/public (who-are-you?) 
+                  (string-append "I am " name "!"))))
+\end{lstlisting}
+
+Die Methode lässt sich anschließend mittels \texttt{send} aufrufen.
+
+\begin{lstlisting}
+(send (new Thing) who-are-you?)
+\end{lstlisting}
+{\routput {\qq}I am a Thing!{\qq}}
+
+\begin{lstlisting}
+(send bob who-are-you?)
+\end{lstlisting}
+{\routput {\qq}I am not Bob!{\qq}}
+
+Attribute, die keinen Defaultwert haben, müssen bei der Initialisierung angegeben werden. Da das Attribut \texttt{name} den Wert  \texttt{{\qq}I am a Thing{\qq}} als Defaultwert hat, ist eine Angabe bei der Objekterzeugung optional. 
+
+Um von Thing zu erben, müssen wir in der Klassendefinition lediglich Thing statt \texttt{object\%} als Superklasse angeben. So können wir beispielweise eine Klasse Element definieren, die von Thing erbt:
 
 \begin{lstlisting}
 (define Element (class Thing (super-new)
@@ -47,83 +95,115 @@ Für Methoden gibt es, je nach Art und Sichtbarkeit, unter anderem die Schlüsse
                   (define/public (hot?) (equal? attr 'fire))))
 \end{lstlisting}
 
-Attribute, die keinen Defaultwert haben, müssen bei der Initialisierung angegeben werden. Da das Attribut der Element-Klasse, hier \texttt{attr} genannt, \texttt{{\textquotesingle}water} als Defaultwert hat, ist eine Angabe bei der Objekterzeugung optional. Mit den Methoden \texttt{get-attr} und \texttt{set-attr} können wir darauf zugreifen:
-
-% > elem
-% \end{lstlisting} 
-% {\routput (object:Element ...)}
+Element definiert auch noch ein eigenes Feld sowie eine Methode, damit wir später das Verhalten bei der Klasse betrachten können, die von Element erbt. Objekte von Element haben sowohl Zugriff auf die neu definierten Features als auch auf die geerbten:
 
 \begin{lstlisting}
-(define elem (new Element))
+> (send (new Element) who-are-you?)
+\end{lstlisting}
+{\routput {\qq}I am a Thing!\qq}
 
-> (get-field attr elem)
+\begin{lstlisting}
+(define elem (new Element "Fire" 'fire))
+> (send elem who-are-you?)
 \end{lstlisting} 
-{\rsymbol{water}}
+{\routput {\qq}I am Fire!\qq}
 \begin{lstlisting}
-> (send elem hot?)
-\end{lstlisting} 
-{\routput{\#f}}
-
-\begin{lstlisting}
-> (set-field! elem attr 'fire)
 > (send elem hot?)
 \end{lstlisting} 
 {\routput{\#t}}
-% 
-% \begin{lstlisting}
-% (define elem2 (new Element [attr 'fire]))
-% 
-% > (send elem2 get-attr)
-% \end{lstlisting} 
-% {\rsymbol{fire}}
 
-Wir können uns auch eine Klasse Animal definieren, die von Thing erbt (auch wenn es nicht viel zu vererben gibt):
+Element kann auch das geerbe Verhalten von Thing ändern. Wenn wir zum Beispiel den Defaultwert von \texttt{name} in Element ändern wollen, können wir den Wert per Hand mit \texttt{init} initialisieren und den Wert dann an die Superklasse übergeben:
 
 \begin{lstlisting}
-(define Animal (class Thing (super-new)
-                 (init-field [gender 'male]
-                             [size 'small])))
-\end{lstlisting} 
+(define Element (class Thing 
+                  (init-field [attr 'water])
+                  (init [name "an Element"])  ; !
+                  (super-new [name name])     ; !
+                  (define/public (hot?) (equal? attr 'fire))))
+  
+(send (new Element) who-are-you?)
+\end{lstlisting}
+{\routput {\qq}I am an Element!\qq}
 
-Und eine Klasse Pet, die wiederum von Animal erbt:
-
-\begin{lstlisting}
-(define Pet (class Animal (super-new)
-              (init-field [name 'unknown])))
-\end{lstlisting} 
-
-Objekte der Klasse Pet besitzen dann alle drei Attribute:
+Analog können geerbte Methoden mit \texttt{define/override} überschrieben werden. Die Methode der Superklasse lässt sich mit \texttt{super} aufrufen:
 
 \begin{lstlisting}
-(define harry (new Pet [name 'harry] [size 'normal]))
-
-> (get-field name harry)
-\end{lstlisting} 
-{\rsymbol harry}
+(define Element (class Thing 
+                  ...
+                  (define/override (who-are-you?)
+                    (string-append (super who-are-you?)
+                                   (if (hot?) " And I am hot!" "")))))
+                                   
+> (send (new Element) who-are-you?)
+\end{lstlisting}
+{\routput {\qq}I am an Element!\qq}
 
 \begin{lstlisting}
-> (get-field gender harry)
-\end{lstlisting} 
-{\rsymbol male}
+> (send elem who-are-you?)
+\end{lstlisting}
+{\routput {\qq}I am Fire! And I am hot!\qq}
+
+Es gibt jedoch eine Einschränkung: Features der Oberklasse sind innerhalb der Klassendefinition von Element jedoch nicht ohne weiteres sichtbar: 
 
 \begin{lstlisting}
-> (get-field size harry)
-\end{lstlisting} 
-{\rsymbol normal}
+(define Element (class Thing 
+                  ...
+                  (define/public (get-name) name)))
+\end{lstlisting}
+{\rerror class: cannot use non-field init variable in a method in: name}
+
+Wir haben Felder und Methoden der Superklasse bisher immer innerhalb einer \texttt{super}-Aufrufs benutzt. Falls wir jedoch direkten Zugriff auf den Wert von \texttt{name} brauchen, so müssen wir das explizit durch \texttt{inherit-field} (oder \texttt{inherit} für Methoden) angeben:
+
+\begin{lstlisting}
+(define Element (class Thing 
+                  ...
+                  (init [name "an Element"])
+                  (super-new [name name])
+                  ...
+                  (inherit-field name)
+                  (define/public (get-name) name)))
+\end{lstlisting}
+{\rerror  class: duplicate declared identifier in: name}
+
+Wir erhalten immer noch einen Fehler, denn nun haben wir zwei Deklarationen für das Feld \texttt{name}: durch \texttt{init} und durch \texttt{inherit-field}. Wir müssen uns entscheiden, eins von beiden umzubennennen. Ein Umbenennen des Initialisierungs-Paramters würde bedeuten, dass sich die Syntax der Objekterzeugung ändert, das wollen wir vermeiden. Es wird also das geerbte Feld umbenannt:
+
+\begin{lstlisting}
+(define Element (class Thing 
+                  (inherit-field [newname name])
+                  (define/public (get-name) newname)))
+\end{lstlisting}
+
+Nun gibt es keinen Fehler mehr und wir können die Methode aufrufen:
+
+\begin{lstlisting}
+(send (new Element) get-name)
+\end{lstlisting}
+{\routput {\qq}An Element\qq}
 
 \subsection{Mehrfachvererbung in Racket}
 \label{mixins}
 Zuvor wurde behauptet, mit Racket könne man keine Mehrfachvererbung modellieren. Tatsächlich gibt es zwei Arten von Klassen in Racket, deren Verhalten auf den ersten Blick wie Mehrfachvererbung aussieht: Mixins und Traits. Es werden deshalb beide kurz vorgestellt, um aufzuzeigen, welche Probleme und Grenzen sie haben.
 
-Dafür verwenden wir unsere vorher definierten Klassen Element und Animal. Beide haben unterschiedliche Felder und Methoden. Wir wollen versuchen, die Felder und Methoden aus beiden in einer neuen Klasse namens Pokemon zu vereinigen. % (Abbildung \ref{hirarchy}). 
-Das ginge natürlich ganz simpel, indem eine der beiden Klassen in Pokemon umbenannt wird und von der anderen erbt, deshalb wollen wir außerdem fordern, dass beide Klassen auch einzeln verwendet können. 
+Dafür verwenden wir unsere vorher definierte Klasse Thing, eine vereinfachte Version von Element, sowie die folgende Klasse Animal, die ebenfalls von Thing erbt:
 
-% \begin{figure}[h]
-%  \centering
-%  \includegraphics[width=0.35\textwidth]{pictures/hirarchy}
-%  \caption{Vererbungshierarchie für die Klasse Pokemon.}
-%  \label{hirarchy}
-% \end{figure}
+\begin{lstlisting}
+(define Element (class Thing 
+                  (init [name "an Element"])
+                  (super-new [name name])
+                  (init-field [attr 'water])
+                  (define/public (hot?) (equal? attr 'fire)))
+
+(define Animal (class Thing
+                 (init [name "an Animal"])
+                 (super-new [name name])
+                 (init-field [size 'small])))
+\end{lstlisting}
+
+Animal redefiniert ebenfalls den Defaultwert für den Namen und besitzt außerdem noch ein eigenes Feld \texttt{size} für die Größe.
+
+Animal und Element haben sowohl gemeinsame als auch unterschiedliche Felder und Methoden. Wir wollen versuchen, die Felder und Methoden aus beiden in einer neuen Klasse namens Pokemon zu vereinigen. 
+
+% Das ginge natürlich ganz simpel, indem eine der beiden Klassen in Pokemon umbenannt wird und von der anderen erbt, deshalb wollen wir außerdem fordern, dass beide Klassen auch einzeln verwendet können. 
 
 
 \subsubsection{Mixins}
@@ -167,13 +247,17 @@ Falls wir das Verhalten beider Klassen Element und Animal vereinen wollen, so k�
 
 \begin{lstlisting}
 (define (Element-mixin %)
-  (class % (super-new)
-    (init-field [attr 'water])))
+  (class % 
+    (init [name "an Element"])
+    (super-new [name name])
+    (init-field [attr 'water])
+    (define/public (hot?) (equal? attr 'fire))))
 
 (define (Animal-mixin %)
-  (class % (super-new)
-    (init-field [gender 'male]
-                [size 'small])))
+  (class %
+  (init [name "an Animal"])
+    (super-new [name name])
+    (init-field [gender 'male])))
 \end{lstlisting}
 
 Und aus diesen könnten wir uns dann alle drei Klassen Element, Animal und Pokemon erzeugen:
@@ -185,66 +269,94 @@ Und aus diesen könnten wir uns dann alle drei Klassen Element, Animal und Pokem
 (define Pokemon (Element-mixin (Animal-mixin Thing)))
 \end{lstlisting}
 
-Es wird Thing als Superklasse verwendet, da sie zuvor als leere Klasse definiert wurde. Genausogut hätten wir natürlich \texttt{object\%} benutzen können. Es fällt auf, dass die zwei Mixins nicht gleichwertig sind; wir müssen uns entscheiden, welches von beiden wir zuerst anwenden. Genau genommen passiert hier auch keine Mehrfachvererbung, sondern zweifache Einfachvererbung -- mit dem Vorteil jedoch, dass wir die zwei Klassen auch unabhängig voneinander verwenden können. Die Hierarchie sieht also wie folgt aus:
+Es fällt auf, dass die zwei Mixins nicht gleichwertig sind; wir müssen uns entscheiden, welches von beiden wir zuerst anwenden. Genau genommen passiert hier auch keine Mehrfachvererbung, sondern zweifache Einfachvererbung -- mit dem Vorteil jedoch, dass wir die zwei Klassen auch unabhängig voneinander verwenden können. Die Hierarchie sieht also wie folgt aus:
 
 \texttt{Pokemon $\rightarrow$ Element $\rightarrow$ Animal $\rightarrow$ Thing $\rightarrow$ object\%}
 
 Element und Animal verhalten sich genauso wie zuvor:
 
 \begin{lstlisting}
-> (get-field attr (new Element))
-\end{lstlisting} 
-{\rsymbol{fire}}
+(send (new Animal) who-are-you?)
+\end{lstlisting}
+{\routput {\qq}I am an Element!\qq}
 
 \begin{lstlisting}
-> (get-field size (new Animal [size 'huge] [gender 'female]))
+(get-field size (new Animal))
+\end{lstlisting}
+{\rsymbol small}
+
+\begin{lstlisting}
+(send (new Element) who-are-you?)
+\end{lstlisting}
+{\routput {\qq}I am an Element!\qq}
+
+\begin{lstlisting}
+(define elem (new Element [attr 'fire] [name "Fire"]))
+> (send elem who-are-you?)
 \end{lstlisting} 
-{\rsymbol{huge}}
+{\routput {\qq}I am Fire!\qq}
+
+\begin{lstlisting}
+> (send elem hot?)
+\end{lstlisting} 
+{\routput \#t}
 
 Zusätzlich können wir uns nun auch ein Pokemon definieren, das alle drei Eigenschaften aufweist:
 \begin{lstlisting}
-(define p (new Pokemon [size 'large]
-                       [gender 'female]
+(define p (new Pokemon [name "Charmander"]
+                       [size 'large]
                        [attr 'fire]))
  
+> (send p who-are-you?)
+\end{lstlisting}
+{\routput {\qq}I am Charmander!\qq}
+\begin{lstlisting}
+> (send p hot?)
+\end{lstlisting}
+{\routput \#t}
+\begin{lstlisting}
 > (get-field size p)
 \end{lstlisting}
 {\rsymbol{large}}
 \begin{lstlisting}
-> (get-field gender p)
+> (send (new Pokemon3) who-are-you?)
 \end{lstlisting}
-{\rsymbol{female}}
+{\routput {\qq}I am an Element!\qq}
+
+Es fällt auf, dass kein Konflikt für \texttt{name} und \texttt{who-are-you?} auftritt. Das ist aber nicht weiter überraschend, denn wie wir wissen, passiert ja nur Einfachvererbung; das Feld Name wird in der Vererbungshierarchie zweimal überschrieben, erst von Animal un dann von Element. Würden wir die Reihenfolge der Mixins vertauschen, so würden wir \texttt{{\qq}I am an Animal!\qq} as Ergebnis erhalten.
+
+Falls uns die letzte Ausgabe stört, können wir auch für Pokemon den Default-Wert anpassen. Das geht leider nicht direkt in der Definition des Mixins, aber die Klasse Pokemon kann stattdessen von dem resultierenden Mixin erben:
+
 \begin{lstlisting}
-> (get-field attr p)
+(define Pokemon (class (Element-Mixin (Animal-Mixin Thing))
+                  (init [name "a Pokemon"])
+                  (super-new [name name])))
+     
+> (send (new Pokemon) who-are-you?)
 \end{lstlisting}
-{\rsymbol{fire}}
+{\routput {\qq}I am a Pokemon!\qq}
 
-Falls es also nicht stört, dass technisch eigentlich keine Mehrfachvererbung geschieht, so scheinen sich Mixins zunächst gut zur Modellierung zu eignen. Es muss lediglich für jede Klasse, die für Mehrfachvererbung in Frage kommt, eine Mixin-Klasse definiert werden. Einen Umstand haben wir jedoch bisher außen vor gelassen: gleichbenannte Felder und Methoden. Element und Animal besitzen bisher eine disjunkte Menge von Feldern und Methoden. 
-
-Das soll sich nun ändern. Nehmen wir an, es gibt eine Funktion \texttt{attack}, die sowohl Element als auch Animal haben. Ein Angriff des Elements Feuer soll einfach Feuer sein, bei Tieren sagen wir, der Angriff ist proportional zur Größe und auf Pokemon trifft beides zu. Der Einfachheit halber gibt die Funktion für Element und Animal also einfach die Werte der Felder \texttt{attr} und \texttt{size} zurück:
+Bisher wurden die geerbten Features von Thing einfach immer überschrieben. Wir wollen und daher einmal anschauen, ob die Werte von Oberklassen von Pokemon auch kombiniert werden können. Nehmen wir dafür an, sowohl Element als auch Animal besitzen eine \texttt{attack}-Methode. Der Wert der \texttt{attack}-Methode für Pokemon soll sich aus beiden Oberklassen zusammensetzen als eine Liste aus Größe und Attribut.
 
 \begin{lstlisting}
 (define (Element-mixin %) ...
-    (define/public (attack) attr))
- 
+     (define/public (attack) attr)))
+
 (define (Animal-mixin %) ...
-    (define/public (attack) size))
+     (define/public (attack) size)))
 \end{lstlisting}
 
-Nun schlägt jedoch die Definition der Klasse Pokemon fehl:
+Wenn wir die Methode naiv beiden Mixins hinzufügen, so schlägt die Definition der Klasse Pokemon fehl:
 
-\begin{lstlisting}
-> (define Pokemon (Element-mixin (Animal-mixin Thing)))
-\end{lstlisting}
-{\rerror $\bigotimes$ class*: superclass already contains method\\
-method name: attack}
+{\rerror class*: superclass already contains method. method name: attack}
 
-Racket erlaubt es nicht, dass zwei Methoden in einer Klasse den gleichen Namen haben. Wir dürfen geerbte Methoden aus Superklassen nicht neu deklarieren. Falls wir vorhaben, sie zu überschreiben, so müssen wir \texttt{define/override} verwenden:
+Racket erlaubt es nicht, dass zwei Methoden in einer Klasse den gleichen Namen haben. Element darf geerbte Methoden aus Animal nicht neu deklarieren. Falls wir vorhaben, sie zu überschreiben, so müssen wir \texttt{define/override} verwenden:
 
 \begin{lstlisting}
 (define (Element-mixin %) ...
     (define/override (attack) attr))
 \end{lstlisting}
+
 
 Das führt jedoch dazu, dass wir nun bei der Erstellung der Element-Klasse nicht mehr Thing als Superklasse angeben können, denn die Klasse Thing bietet keine Funktion \texttt{attack}, die überschrieben werden könnte. Wollen wir also weiterhin, dass es möglich ist, sich Objekte von der Klasse Element zu erzeugen, so müssen wir eine Klasse bereitstellen, die eine solche Methode anbietet, damit Element von ihr erben kann.
 
@@ -255,12 +367,7 @@ Das führt jedoch dazu, dass wir nun bei der Erstellung der Element-Klasse nicht
 \end{lstlisting}
 
 Zudem ist der Angriff eines Pokemons nun ledligchlich der Wert des Feldes \texttt{attr}. 
-% Für unser Pokemon \texttt{p} von oben ergibt das:
-% \begin{lstlisting}
-% > (send p attack)
-% \end{lstlisting}
-% {\rsymbol fire}
-% 
+
 Was wir eigentlich wollen, ist jedoch eine Kombination aus der Größe und dem Element. Das heißt, damit Pokemon das gewünschte Verhalten zeigt, müsste Element eine Kombination aus dem eigenen Wert und dem der Superklasse zurückgeben.
 
 \begin{lstlisting}
@@ -291,25 +398,25 @@ führt zu einem Fehler, aus dem gleichen Grund wie vorher bei Objekten der Klass
 
 Wollen wir beide Vererbungs-Reihenfolgen erlauben, wird zudem die Funktion \texttt{attack} deutlich komplizierter, da nun anhand der Superklasse entschieden werden müsste, ob der Wert des Feldes direkt zurückgegeben werden kann oder eine Kombination mit dem Wert der Superklasse nötig ist.
 
-Wir haben bisher nur zwei Superklassen betrachtet. Bei drei, vier oder gar 20 Superklassen, die vielleicht selbst wiederum von mehreren Superklassen erben, wird, falls eine sinnvolle Modellierung mit Mixins überhaupt noch möglich ist, der Code extrem unübersichtlich und schwer wartbar. Insbesondere für die Lehre von Mehrfachvererbung eignen sie sich demnach nicht.
+Wir haben bisher nur zwei Superklassen betrachtet. Bei drei, vier oder gar 20 Superklassen, die vielleicht selbst wiederum von mehreren Superklassen erben, wird, falls eine sinnvolle Modellierung von Methodenkombination mit Mixins überhaupt noch möglich ist, der Code extrem unübersichtlich und schwer wartbar. Insbesondere für die Lehre eignen sie sich demnach nicht.
 
 \subsubsection{Traits}
 Traits sind ähnlich zu Mixins. Sie kapseln eine Menge von Methoden, die zu einer Klasse hinzugefügt werden sollen. Traits erlauben jedoch Kontrolle darüber, welche Methoden wie geerbt werden. Es ist möglich bestimmte Methoden nicht zu erben, sie unter einem Alias zu erben oder mit Trait-Operatoren zu manipulieren und die Ergebnisse mehrerer Methoden zu kombinieren.
 
 Sie lösen damit eines der fundamentalen Probleme von Mixins: Die Vererbung und Kombination gleichbenannter Methoden. Wenn es in zwei Traits, die kombiniert werden sollen, gleichbenannte Methoden gibt, so hat der Programmierer die Möglichkeit (und Pflicht), anzugeben, wie diese Kollision gelöst werden soll -- üblicherweise durch Ausschließen oder Umbenennen einer der Methoden in der Subklasse, oder durch Methodenkombination.
 
-Die Definition von Traits ist syntaktisch fast identisch zu der Definition einer Klasse, es gibt nur zwei Unterschiede: Anstelle des Schlüssworts \texttt{class} wird \texttt{trait} benutzt und es müssen weder Superklasse noch Superkonstruktor-Aufruf angegeben werden. Traits unterstützen einen Großteil der Optionen, die auch \texttt{class} unterstützt, unter anderem aber keine \texttt{init-field}s. Prinzipiell können wir jedoch unsere Defintion für Element und Animal fast eins zu eins übernehmen. 
+Die Definition von Traits ist syntaktisch oft fast identisch zu der Definition einer Klasse, es gibt nur zwei Unterschiede: Anstelle des Schlüssworts \texttt{class} wird \texttt{trait} benutzt und es müssen (und können) weder Superklasse noch Superkonstruktor-Aufruf angegeben werden. Traits unterstützen einen Großteil der Optionen, die auch \texttt{class} unterstützt, unter anderem aber weder \texttt{init} noch \texttt{init-field}. Das bedeutet, dass das ein Zugriff auf \texttt{name} nicht möglich ist (wir lassen den Code daher weg) und wir die Felder mit \texttt{field} definieren müssen.
 
 \begin{lstlisting}
 (require racket/trait)
 
 (define Element-trait
   (trait (field [attr 'water]) ; statt init-field
+         (define/public (hot?) (equal? attr 'fire))
          (define/public (attack) attr)))
 
 (define Animal-trait
-  (trait (field [gender 'male] ; statt init-field
-                [size 'small])
+  (trait (field [size 'small])
          (define/public (attack) size)))
 \end{lstlisting}
 
@@ -353,9 +460,49 @@ Man kann Traits nicht direkt zu Klassen hinzufügen, aber man kann sie mit der F
  (define Pokemon ((trait->mixin Pokemon-trait) Thing))
 \end{lstlisting}
 
-Da wir \texttt{field} statt \texttt{init-field} bei der Traitdefinition benutzt haben, ist es nun jedoch nicht mehr möglich, die Felder zu initialisieren. Man kann zwar im Rumpf der Klasse per Hand \texttt{init} aufrufen und damit eine Initialisierung erzwingen, das hat jedoch zur Folge, dass die Felder nicht mehr als optionale Parameter möglich sind; sie \textit{müssen} bei der Objekterzeugung angegeben werden.
+Da wir \texttt{field} statt \texttt{init-field} bei der Traitdefinition benutzt haben, ist es nun jedoch nicht mehr möglich, die Felder zu initialisieren. Falls wir das trotzdem wollen, müssen wir, wie zuvor bei dem Mixin, eine Subklasse erzeugen und alle Felder per Hand initialisieren:
 
-Die Konfliktlösung bei Traits ist für einen ersten Einblick in Mehrfachvererbung recht umständlich und auch das Fehlen von optionalen Paramatern ist unschön. Zusätzlich sind Traits schlussendlich bessere Mixins und auch sie werden bei komplizierteren Vererbungshierarchien schnell unübersichtlich.
+\begin{lstlisting}
+(define Pokemon (class (Pokemon-Mixin Thing)
+                  ;; add initialization arguments by hand
+                  (init [this-name "a Pokemon"]
+                        [this-size 'small]
+                        [this-attr 'water])
+                  ;; name already is an init-field, we can just
+                  ;; pass it to the super call
+                  (super-new [name this-name])
+                  ;; to have access to the others, we first need
+                  ;; to inherit them
+                  (inherit-field size attr)
+                  ;; and then we can set them to the desired value
+                  (set! size this-size)
+                  (set! attr this-attr)))
+\end{lstlisting}
+
+Das gleiche Spiel muss analog für die Klassen Element und Animal durchgeführt werden, falls wir sie auch einzeln verwenden wollen. Wir können uns einmal vergewissern, dass Pokemon alle erwarteten Features hat:
+
+\begin{lstlisting}
+> (send (new Pokemon) who-are-you?)
+\end{lstlisting}
+{\routput {\qq}I am a Pokemon!\qq}
+
+\begin{lstlisting}
+(define p (make-object Pokemon2 "Charmander" 'large 'fire))
+> (send p who-are-you?)
+\end{lstlisting}
+{\routput {\qq}I am Charmander!\qq}
+
+\begin{lstlisting}
+> (send p hot?)
+\end{lstlisting}
+{\routput \#t}
+
+\begin{lstlisting}
+> (send p attack)
+\end{lstlisting}
+{\rsymbol (large fire)}
+
+Die Konfliktlösung bei Traits ist für einen ersten Einblick in Mehrfachvererbung recht umständlich und auch die Lösung für Initialisierungsparameter per Hand ist unschön. Zusätzlich sind Traits schlussendlich bessere Mixins und auch sie werden bei komplizierteren Vererbungshierarchien schnell unübersichtlich.
 
 \subsection{Ergänzungsmethoden}
 
@@ -456,6 +603,5 @@ Liefert die Sublasse einen Rückgabewert, so kann dieser weiter verwendet werden
 
 Durch \texttt{overment} ist eine Methode sogar in der Lage, gleichzeitig das Ergebnis der Superklasse und das Ergebnisse der Subklasse abzufragen und weiterzuverweneden. In einer größeren Vererbungshierarchie können dann lange Ketten von sich überschreibenden und ergänzenden Methoden entstehen. Je abwechslungreicher die verwendeten Methodenoptionen in einer Vererbungshierarchie sind, desto schwieriger kann es jedoch am Ende sein nachzuvollziehen, was die effektive Methode für ein Objekt der untersten Subklasse nun eigentlich in welcher Reihenfolge tut.
 
-
-%TODO abschließender Satz zu Problemen mit Object-Racket. 
+Wir haben gesehen, dass Object-Racket keine direkte Möglichkeit für Mehrfachvererbung bietet. Es gibt Mixins und Traits, doch beide werden intern auf Einfachvererbung abgebildet werden für kompliziertere Vererbungshierarchien schnell unübersichtlich. Dafür gibt es sehr umfangreiche Möglichkeiten, die Redefinition und Erweiterung von Methoden zu kontrollieren und alle  Methodenoptionen sind kompatibel mit Mixins und Traits. 
 

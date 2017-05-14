@@ -66,16 +66,16 @@ Das Common Lisp Object System (CLOS) vereint die Ansätze 6 und 7: Wenn nichts a
 
 Die Funktionsweise von CLOS ist sehr ausführlich in dem Buch ``Object-oriented programming in Common Lisp. A programmer's guide to CLOS'' von Sonya E. Keene \cite{keene} dokumentiert. Einen Blick hinter die Implementation werfen Gregor Kiczales, Jim Des Rivieres und Daniel Gureasko Bobrow mit dem Werk ``The art of the metaobject protocol'' \cite{amop}. Sie zeigen wie eine objektorientierte Sprache auf Basis von Lisp, Makros und Metaobjekten implementiert werden kann. 
 
-Das Hinzufügen von Mehrfachvererbung zu einer bestehenden objektorientierten Sprache ist jedoch bisher wenig dokumentiert. In dieser Arbeit soll untersucht werden, ob das Metaobjekt-Protokoll auch genutzt werden kann, um Verhalten von CLOS zu dem bestehenden Objektsystem von Racket hinzuzufügen.
+Das Hinzufügen von Mehrfachvererbung zu einer bestehenden objektorientierten Sprache ist jedoch bisher wenig dokumentiert. 
 
 \section{Problemstellung} 
-%TODO  Ausformulieren 
+In dieser Arbeit soll untersucht werden, ob das Metaobjekt-Protokoll auch genutzt werden kann, um Verhalten von CLOS zu dem bestehenden Objektsystem von Racket hinzuzufügen. 
 
-Konzepte, die im Modul ``Softwareentwicklung III'' vermittelt werden und die aus dem Objektsystem von Java noch nicht bekannt sind, umfassen: Mehrfachvererbung, Klassenpräzedenzlisten, Methodenkombination und Ergänzungsmethoden.
+Dabei soll eine Spracherweiterung entstehen, die in der Lehre des Moduls ``Softwareentwicklung III'' genutzt werden kann. Der Fokus liegt daher auf für die Lehre relevanten Konzepten: Mehrfachvererbung, Klassenpräzedenz, Methodenkombination und Ergänzungsmethoden.
 
-Es ist bisher nicht möglich, diese Paradigmen aus CLOS in vollem Umfang im Objektsystem von Racket zu verwenden. Beide Systeme verwenden außerdem unterschiedliche Objekte, die nicht ohne weiteres miteinander kommunizieren oder ineinander umgewandelt werden können.
-
-Im Rahmen dieser Arbeit soll eine Racket-Erweiterung entstehen, die Mehrfachvererbung auch im Objektsystem von Racket möglich macht. Der Fokus liegt dabei auf Lehrinhalten des Moduls ``Softwareentwicklung III''.
+% Es ist bisher nicht möglich, diese Paradigmen in vollem Umfang im Objektsystem von Racket zu verwenden. Beide Systeme verwenden außerdem unterschiedliche Objekte, die nicht ohne weiteres miteinander kommunizieren oder ineinander umgewandelt werden können.
+% 
+% Im Rahmen dieser Arbeit soll eine Racket-Erweiterung entstehen, die Mehrfachvererbung auch im Objektsystem von Racket möglich ermöglicht. Als Anleitung soll die bereits existierende Umsetzung in CLOS dienen. 
 
 
 \section{Vorgehen}
