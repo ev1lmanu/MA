@@ -1,8 +1,3 @@
-% TODO überarbeiten, da Beispielproblem rausgezogen wurde
-%      - Erklärung für Beispielproblem kürzen
-%      - etwas in Thing einbauen, das sich zu vererben lohnt (Diamantproblem)
-%      - Redefinition von Methoden
-
 \section{CLOS}
 Grundlage für dieses Kapitel ist das Buch ``Object-Oriented Programming in Common Lisp. A Programmer's Guide to CLOS''\cite{keene} von Sonya E. Keene. 
 
@@ -33,159 +28,171 @@ Objekte dieser Klasse können mit dem Schlüsselwort \texttt{make} erzeugt werde
 \end{lstlisting}
 {\routput \#Thing}
 
-Felder (oder Slots, wie sie in CLOS üblicherweise genannt werden) werden nach der Superklasse angegeben. Ein großer Unterschied zu dem Objektsystem von Racket ist, dass innerhalb einer Klassendefinition \textit{nur} Slots definiert werden, keine Methoden. Methoden werden außerhalb der Klasse definiert. Das bedeutet, dass kein Schlüsselwort benötigt wird, um anzugeben, ob gerade ein Slot oder eine Methode definiert wird. Wir können also für die Definition der Klasse Element beispielweise einfach schreiben:
+Felder (oder Slots, wie sie in CLOS üblicherweise genannt werden) werden nach der Superklasse angegeben. Ein großer Unterschied zu dem Objektsystem von Racket ist, dass innerhalb einer Klassendefinition \textit{nur} Slots definiert werden, keine Methoden. Methoden werden außerhalb der Klasse definiert. Das bedeutet, dass kein Schlüsselwort benötigt wird, um anzugeben, ob gerade ein Slot oder eine Methode definiert wird. Wir können also für die Definition des Namens einfach schreiben:
 
 \begin{lstlisting}
-(defclass Element (Thing)
-  attr)
+(defclass Thing ()
+  name)
 \end{lstlisting}
 
-Die Klasse hat genau einen Slot namens \texttt{attr}, der jedoch so noch nicht sehr nützlich ist.
+Die Klasse hat genau einen Slot namens \texttt{name}, der jedoch so noch nicht sehr nützlich ist.
 
-Damit mit diesem Slot auch interargiert werden kann, benötigt er noch Accessoren: einen Getter (in CLOS Reader genannt) und einen Setter (in CLOS Writer genannt). Außerdem möchte man gegebenenfalls einen Initialwert angeben können, den Slot dokumentieren, typisieren und so weiter. All dies geschieht durch Slot-Optionen. Sie folgen nach dem Namen des Slots (der nun geklammert werden muss, damit klar ist, wann die Slot-Definition zuende ist) und beginnen per Konvention mit einem Doppelpunkt. Um auf das Attribut \texttt{attr} beispielsweise lesend oder schreibend zugreifen zu können, kann die Slot-Option \texttt{:reader} beziehungsweise \texttt{:writer} gesetzt werden oder, falls beides über das gleiche Schlüsselwort möglich sein soll, auch die Option \texttt{:accessor}. Accessoren müssen benannt werden. Im Gegensatz zu dem Objektsystem von Racket muss sich der Name jedoch nicht vom Namen des Slots unterscheiden. Hier also die vollständige Definition der Klasse:
+Damit mit diesem Slot auch interargiert werden kann, benötigt er noch Accessoren: einen Getter (in CLOS Reader genannt) und einen Setter (in CLOS Writer genannt). Außerdem möchte man gegebenenfalls einen Initialwert angeben können, den Slot dokumentieren, typisieren und so weiter. All dies geschieht durch Slot-Optionen. Sie folgen nach dem Namen des Slots (der nun geklammert werden muss, damit klar ist, wann die Slot-Definition zuende ist) und beginnen per Konvention mit einem Doppelpunkt. Um auf das Attribut \texttt{name} beispielsweise lesend oder schreibend zugreifen zu können, kann die Slot-Option \texttt{:reader} beziehungsweise \texttt{:writer} gesetzt werden oder, falls beides über das gleiche Schlüsselwort möglich sein soll, auch die Option \texttt{:accessor}. Accessoren müssen benannt werden, der Name muss sich jedoch nicht vom Namen des Slots unterscheiden. Hier also die vollständige Definition der Klasse:
 
 \begin{lstlisting}
-(defclass Element (Thing)
-  (attr
-    :accessor attr
-    :initvalue 'water
-    :initarg :attr)
+(defclass Thing ()
+  (name :accessor name
+        :initarg :name
+        :initvalue "a Thing")
   :printer #t
   :automaker #t)
 \end{lstlisting}
 
 Für die Klasse gibt es drei nützliche Slot- und Klassenoption: \texttt{:initarg}, \texttt{:printer} und \texttt{:automaker}. Die \texttt{:initarg}-Option bewirkt, dass der Parameter bei der Objekterzeugung initialisiert werden kann.
 
-\begin{lstlisting}
-(make Element :attr 'fire)
-\end{lstlisting}
-
 Durch die \texttt{:printer}-Option erhalten wir bei Aufruf der \texttt{print}-Funktion an einem Objekt oder bei Auswertung des Objekts in der Direkteingabe einen formattierten String. Das hat den Vorteil, dass zur Überprüfung des Zustandes des Objekts nicht jeder Slot einzeln abgefragt werden muss.
 
 \begin{lstlisting}
-> (make Element)
+(make Thing :name "Bob")
 \end{lstlisting}
-{\routput \#<Element: attr=water>}
+{\routput \#<Thing: name={\qq}Bob\qq>}
 
-\texttt{:automaker} bewirkt, dass es zusätzlich zu dem Schlüsselwort \texttt{make} zur Erzeugung von allgemeinen Objekten nun auch das Schlüsselwort \texttt{make-Element} zur Erzeugung von Objekten der Klasse Element gibt. Element-Objekte können natürlich auch weiterhin mit \texttt{make} erzeugt werden.
+\texttt{:automaker} bewirkt, dass es zusätzlich zu dem Schlüsselwort \texttt{make} zur Erzeugung von allgemeinen Objekten nun auch das Schlüsselwort \texttt{make-Thing} zur Erzeugung von Objekten der Klasse Thing gibt. Thing-Objekte können natürlich auch weiterhin mit \texttt{make} erzeugt werden.
 
 \begin{lstlisting}
-(make Element :attr 'fire)
-(make-Element 'fire)
+(make Thing :name "Bob")
+(make-Thing "Bob")
 \end{lstlisting}
 
 Der Wert eines Slots, der einen Writer oder Accessor besitzt, kann nach der Objekterzeugung mittels \texttt{set!} verändert werden:
 
 \begin{lstlisting}
-(define elem (make Element))
-> (set! (attr elem) 'wind)
-> (attr elem)
+(define thing (make Thing))
+> (set! (name thing) "Bob")
+> (name thing)
 \end{lstlisting}
-{\routput wind}
+{\routput {\qq}Bob\qq}
 
-Eine weitere nützliche Klassenoption ist \texttt{:autoaccessors :slot}, die automatisch für jeden Slot Accessor-Funktionen generiert. Der Name der Accessor-Funktion ist dann identisch zum Slot. Wir verwenden sie für die Klasse Animal.
+Eine weitere nützliche Klassenoption ist \texttt{:autoaccessors :slot}, die automatisch für jeden Slot Accessor-Funktionen generiert. Der Name der Accessor-Funktion ist dann identisch zum Slot. Wir verwenden sie für die Klassen Element und Animal.
 
 \begin{lstlisting}
+(defclass Element (Thing)
+  (name :initvalue "an Element") 
+  (attr :initvalue 'water)
+  :autoaccessors :slot 
+  :printer #t          
+  :automaker #t)
+  
 (defclass Animal (Thing)
-  (gender :initvalue 'male)
-  (size   :initvalue 'small)
+  (name :initvalue "an Animal")      
+  (size  :initvalue 'small)
   :autoaccessors :slot
   :automaker #t
   :printer #t)
 \end{lstlisting}
 
-Da im folgenden die Objekte nur noch mit \texttt{make-Animal} erzeugt werden, wurde die \texttt{:initarg}-Option weggelassen. Es können beliebig viele Argumente an \texttt{make-Animal} übergeben werden, im Zweifelsfalls werden die Slots mit Standardwerten belegt oder überschüssige Parameter ignoriert.
+Wir können den geerbten Slot ohne weiteres redefinieren. Da im folgenden die Objekte nur noch mit \texttt{make-} erzeugt werden, wurde die \texttt{:initarg}-Option weggelassen. Es können beliebig viele Argumente an \texttt{make-} übergeben werden, im Zweifelsfalls werden die Slots mit Standardwerten belegt oder überschüssige Parameter ignoriert.
 
 \begin{lstlisting}
-> (make-Animal)
+> (make-Animal "Bob" 'large 42)
 \end{lstlisting}
-{\routput \#<Animal: gender=male size=small>}
+{\routput \#<Animal: name={\qq}Bob{\qq} size=large>}
+
+Methoden werden mit \texttt{defmethod} definiert. Die Definition findet außerhalb der Klasse statt und die Klasse, für die die Methode spezialisiert ist, wird per Konvention als erstes Argument angegeben. Prinzipiell ist jedoch eine beliebige Parameterreihenfolge möglich. Eine Methode kann auch auf mehrere Klassen spezialisiert sein, in dem Fall werden einfach mehrere Objekte als Parameter angegeben.
+
+Wir können die Methoden \texttt{who-are-you?} und \texttt{hot?} und \texttt{attack} definieren:
 
 \begin{lstlisting}
-> (make-Animal 'female)
+(defmethod (who-are-you? (t Thing))
+  (string-append "I am " (name t) "!"))
+
+(defmethod (hot? (e Element))
+  (equal? (attr e) 'fire))
+  
+(defmethod attack ((e Element))
+  (attr e))
+  
+(defmethod attack ((a Animal))
+  (size a))
 \end{lstlisting}
-{\routput \#<Animal: gender=female size=small>}
+
+Die Methoden lassen sich dann an einem Objekt der angegebenen Klasse oder eine Subklasse aufrufen. Die Methode \texttt{who-are-you?} ist damit bereits für Thing, Element und Animal definiert, während die Methode \texttt{hot?} nur für Element und die Methode \texttt{attack} für Element und Animal definiert ist.
 
 \begin{lstlisting}
-> (make-Animal 'female 'normal 42)
+> (who-are-you? (make-Thing))
 \end{lstlisting}
-{\routput \#<Animal: gender=female size=normal>}
+{\routput {\qq}I am a Thing!\qq}
+
+\begin{lstlisting}
+> (who-are-you? (make-Element))
+\end{lstlisting}
+{\routput {\qq}I am an Element!\qq}
+
+\begin{lstlisting}
+> (who-are-you? (make-Animal))
+\end{lstlisting}
+{\routput {\qq}I am an Animal!\qq}
+
+\begin{lstlisting}
+> (hot? (make-Element "Fire" 'fire))
+\end{lstlisting}
+{\routput \#t}
+
+\begin{lstlisting}
+> (attack (make-Element "Fire" 'fire))
+\end{lstlisting}
+{\rsymbol fire}
+
+\begin{lstlisting}
+> (attack (make-Animal))
+\end{lstlisting}
+{\rsymbol small}
 
 \subsection{Mehrfachvererbung in CLOS}
 Für Mehrfachvererbung in CLOS genügt es, mehr als eine Klasse in der Liste der Superklassen anzugeben. Um eine Klasse Pokemon aus Element und Animal zu definieren können wir also schreiben:
 
 \begin{lstlisting}
 (defclass Pokemon (Animal Element)
-    :automaker #t
-    :printer #t)
+  :automaker #t
+  :printer #t)
 \end{lstlisting}
 
 Objekte der Klasse erben automatisch alle Slots.
 
 \begin{lstlisting}
-> (make-Pokemon)
-\end{lstlisting}
-{\routput \#<Pokemon: attr=water gender=male size=small>}
-
-\begin{lstlisting}
-> (make-Pokemon 'fire 'female 'large)
-\end{lstlisting}
-{\routput \#<Pokemon: attr=fire gender=female size=large>}
-
-Die Klasse kann auch noch weitere Slots definieren. Wollen wir, dass jedes Pokemon sich seinen Index im Pokedex merkt, so wird sie um den neuen Slot ergänzt.
-
-\begin{lstlisting}
- (defclass Pokemon (Animal Element)
-  (index :initvalue 0)
-  :autoaccessors :slot
-  :automaker #t
-  :printer #t)
-\end{lstlisting}
-
-Objekte der Klasse haben nun vier Slots.
-
-\begin{lstlisting}
 (define p1 (make-Pokemon))
-(define p2 (make-Pokemon 'fire 'female 'large 42))
 > p1
 \end{lstlisting}
-{\routput \#<Pokemon: attr=water gender=male size=small index=0>}
+{\routput \#<Pokemon: name={\qq}an Animal{\qq} attr=water size=small>}
 
 \begin{lstlisting}
+> (hot? p1)
+\end{lstlisting}
+{\routput \#f}
+
+\begin{lstlisting}
+> (who-are-you? p1)
+\end{lstlisting}
+{\routput {\qq}I am an Animal!\qq}
+
+\begin{lstlisting}
+> (attack p1)
+\end{lstlisting}
+{\rsymbol 'small}
+
+Wir sehen, dass automatisch der Name und die \texttt{attack}-Methode einer der beiden Oberklassen vererbt wurde: der Klasse Animal, die weiter links in der Liste der Superklassen steht. Die Reihenfolge der Initialisierungsargumente hängt ebenfalls von der Reihenfolge der Superklassen in der Klassendefinition ab:
+
+\begin{lstlisting}
+(define p2 (make-Pokemon "Charmander" 'fire 'large 4))
 > p2
 \end{lstlisting}
-{\routput \#<Pokemon: attr=fire gender=female size=large index=42>}
+{\routput \#<Pokemon: name={\qq}Charmander{\qq} attr=fire size=large>}
+
+Und wir sehen, dass überschüssige Parameter ignoriert werden.
 
 Die Liste von Superklassen in einer Klassendefnition wird auch Klassenpräzendenzliste genannt. Sie bestimmt im Zweifel von Konflikten, welche Slots oder Methoden (im Standardfall) vererbt werden. Die am weitesten links stehende Klasse ist die spezifischste, die am weitesten rechts stehende die unspezifischste. Bei Slots kann die Vererbung nicht beeinflusst werden, es wird immer der Slot des am weitesten links in der Liste stehenden Klasse (die diesen Slot bereitstellt) genommen. Auf die Klassenpräzedenz wird noch im Detail im Kapitel \ref{cpl} eingegangen.
 
-Angenommen, es gibt sowohl in Element als auch Animal einen Slot für die Farbe. Dann erbt die Klasse Pokemon immer die Farbe der Klasse Animal, da diese am weitesten links in der Liste steht.
-
-\begin{lstlisting}
-(defclass Element ...
-  (color :initvalue 'blue))
-  
-(defclass Animal ...
-  (color :initvalue 'brown))
-
-> (make-Pokemon)
-\end{lstlisting}
-{\routput \#<Pokemon: attr=water color=brown gender=male size=small index=0>}
-
-Nachdem wir gesehen haben, wie Slots vererbt werden, wollen wir uns nun Methoden anschauen.
-
 \subsection{Generische Funktionen und Methodenkombination}
-Methoden werden in Racket mit \texttt{defmethod} definiert. Wie bereits erwähnt, werden Methoden in CLOS nicht innerhalb der Klassendefinition definiert, sondern außerhalb. Das Objekt, auf das die Methode angewendet werden soll, wird als Parameter übergeben. Der Typ des Parameters bestimmt demnach, welcher Klasse eine Methode zugeordnet ist. Es ist möglich, eine Methode auf mehrere Klassen zu spezialisieren. Die Objekt-Paramater kommen, falls die Methode zusätzliche Parameter hat, per Konvention an erster Stelle, es ist jedoch prinzipiell jede Reihenfolge möglich. Gibt es keinen Objekt-Parameter, verhält sich das Makro genauso wie \texttt{define}.
-
-Die Methode \texttt{attack}, die für Animal die Größe und für Element das Attribut zurückgibt, kann wie folgt definiert werden.
-
-\begin{lstlisting}
-(defmethod attack ((e Element))
-  (attr e))
-
-(defmethod attack ((a Animal))
-  (size a))
-\end{lstlisting}
-
 An die Klasse Pokemon wird, falls wir nichts weiter festlegen, analog zu den Slots die spezifischste Methode vererbt, also die von Animal. Stattdessen sollen beide Werte in einer Liste zu vereint werden. Eine Methode, die auf Pokemon spezialisiert ist, würde das Problem lösen, aber CLOS bietet für die Kombination der Methoden aller (Ober-)Klassen einen Automatismus: generische Funktionen und Methodenkombination. 
 
 Die generische Funktion beschreibt, wie sich das Ergebnis aus den Ergebnissen der Klasse und aller Oberklassen zusammensetzt. Generische Funktionen werden in CLOS mit \texttt{defgeneric} definiert. Tatsächlich gibt es zu jeder Methode, die wir definieren, automatisch eine entsprechende genererische Funktion, selbst wenn wir sie nicht explizit hinschreiben. 
@@ -203,6 +210,11 @@ Alle von Thing erbenden Klassen geben beim Aufruf von \texttt{attack} nun eine L
 > (attack (make Element))
 \end{lstlisting}
 {\routput (water)}
+
+\begin{lstlisting}
+> (attack p1)
+\end{lstlisting}
+{\routput (small water)}
 
 \begin{lstlisting}
 > (attack p2)
@@ -274,5 +286,8 @@ Zusätzlich zu Vor- und Nachmethoden gibt es noch Around-Methoden. Sie sind ähn
 \end{itemize}
 
 Ein Beispiel für eine Around-Methode ist das Messen der Zeit, die die Primärmethode benötigt. Da Around-Methoden eintscheiden können, \texttt{call-next-method} nicht aufzurufen, können sie den Aufruf aller Vor-, Nach- und Primärmethoden verhindern. Eine Around-Methode muss auch nicht das Ergebnis der Primärmethode zurückgeben (auch wenn es Konvention ist, das zu tun).
+
+\subsection{Ergänzungmethoden und Mehrfachvererbung}
+%TODO
 
 Wir haben damit gesehen, dass ein Umgang mit Mehrfachvererbung in CLOS sehr intuitiv und einfach bereitgestellt werden kann.

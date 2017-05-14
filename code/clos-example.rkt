@@ -2,13 +2,19 @@
 
 ;; A basic class Thing with a slot
 (defclass Thing ()
-  (name 
-    :accessor name
-    :initvalue "a Thing")
-  :printer #t)
+  (name :accessor name        ; how to access this slot for reading/writing
+        :initvalue "a Thing"  ; default value
+        :initarg :name)       ; how to access this slot for intialization
+  :printer #t                 ; pretty printing of objects of this class
+  :automaker #t)                 ; enable position-based slot initialization with make-
 
 ;; Create an instance with make (label-based slot intialization)
 ;> (make Thing)
+;> (make Thing :name "Bob")
+;> (make-Thing "Bob")
+(define thing (make Thing))
+(set! (name thing) "Bob")
+;> (name thing)
 
 ;; A method defined on instances of Thing
 (defmethod (who-are-you? (t Thing))
@@ -18,34 +24,27 @@
 ;> (who-are-you? (make Thing))
 
 ;; An Element class that inherits from Thing
+;; If we only use by-position initialization,
+;; with automaker, we can omit the :initarg option
 (defclass Element (Thing)
   (name :initvalue "an Element")  ; we can overwrite the inherited slot
-  (attr
-    :accessor attr     ; how to access this slot for reading/writing
-    :initvalue 'water  ; default value
-    :initarg :attr)    ; how to access this slot fot intialization
-  :printer #t          ; pretty printing of objects of this class
-  :automaker #t)       ; enable position-based slot initialization with make-
+  (attr :initvalue 'water)
+  :autoaccessors :slot            ; automatically create accessors
+  :printer #t          
+  :automaker #t)
 
 ;; method specialized on Element
 (defmethod (hot? (e Element))
   (equal? (attr e) 'fire))
 
-;; Several ways to initialize Element objects
-;> (make Element)
-;> (make Element :attr 'fire)
-;> (make-Element "Calcifer" 'fire)
 (define elem (make Element))
-(set! (attr elem) 'wind)
-;> elem
 ;> (who-are-you? elem)
 
 ;; An Animal class that also inherits from Thing
 (defclass Animal (Thing)
-  (name :initvalue "an Animal") ;; If we only use by-position initialization
-  (gender :initvalue 'male)     ;; with automaker, we can omit the :initarg option
+  (name :initvalue "an Animal")      
   (size  :initvalue 'small)
-  :autoaccessors :slot          ;; automatically create accessors for each slot
+  :autoaccessors :slot
   :automaker #t
   :printer #t)
 
@@ -55,10 +54,7 @@
 
 ;; A pokemon class that inherits from both Element and Animal
 (defclass Pokemon (Animal Element)
-  (name :initvalue "a Pokemon") ; first without
-  (index :initvalue 0
-         :type <number>)
-  :autoaccessors :slot
+  ; (name :initvalue "a Pokemon") ; first without
   :automaker #t
   :printer #t)
 
@@ -70,7 +66,7 @@
 
 ;; Curious: Less inherited slots from less specific classes 
 ;; come first as by-position argument
-(define p2 (make-Pokemon "Charmander" 'fire 'female 'large 4))
+(define p2 (make-Pokemon "Charmander" 'fire 'large 4))
 ;> p2
 ;> (hot? p2)
 ;> (who-are-you? p2)
