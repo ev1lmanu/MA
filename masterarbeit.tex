@@ -18,10 +18,22 @@
 
 \include{chapters/einleitung} 
 \include{chapters/racket}
-\include{chapters/objectracket} 
-\include{chapters/clos}
+\input{chapters/objectracket} 
+\input{chapters/clos}
 \include{chapters/entwurf}
-\include{chapters/makros}
+
+\chapter{CLOS: Hinter den Kulissen}
+Um die Konzepte von CLOS auf ein anderes Objektsystem anwenden zu können, ist es hilfreich zu verstehen, wie CLOS funktioniert. Wir wollen deshalb einen Blick hinter die Kulissen werfen und die relevanten Konzepte der Implementation aufzeigen.
+
+Makros sind das Sprachmittel, mit dem die Syntax einer Programmiersprache geschrieben und verändert wird. Der Einstiegspunkt einer jeden Erweiterung der Sprache ist ein Makro, das gilt sowohl für die Implementation von CLOS als auch die Erweiterung, die im Rahmen dieser Arbeit entstehen soll. Deshalb soll zunächst kurz auf die Grundlagen von Makros in Racket eingegangen werden.
+
+Anschließend schauen wir uns an, wie CLOS implementiert ist. CLOS ist dabei nicht nur ein Ratgeber zur Implementation von Mehrfachvererbung. Es gibt uns außerdem einen Einblick, wie eine bestehende Sprache mithilfe von Makros und Metaobjekten um ein Objektsystem erweitert werden kann -- eine wichtige Grundlage für die Erweiterung von Racket.
+
+\input{chapters/makros}
+
+\section{Metaobjekte}
+
+\section{Klassenpräzedenz}
 
 \chapter{Implementation}  % überwiegend eigener Teil
 
