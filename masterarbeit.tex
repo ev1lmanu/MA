@@ -25,17 +25,68 @@
 \chapter{CLOS: Hinter den Kulissen}
 Um die Konzepte von CLOS auf ein anderes Objektsystem anwenden zu können, ist es hilfreich zu verstehen, wie CLOS funktioniert. Wir wollen deshalb einen Blick hinter die Kulissen werfen und die relevanten Konzepte der Implementation aufzeigen.
 
-Makros sind das Sprachmittel, mit dem die Syntax einer Programmiersprache geschrieben und verändert wird. Der Einstiegspunkt einer jeden Erweiterung der Sprache ist ein Makro, das gilt sowohl für die Implementation von CLOS als auch die Erweiterung, die im Rahmen dieser Arbeit entstehen soll. Deshalb soll zunächst kurz auf die Grundlagen von Makros in Racket eingegangen werden.
+Makros sind das Sprachmittel, mit dem die Syntax einer Programmiersprache geschrieben und verändert wird. Der Einstiegspunkt einer jeden Erweiterung der Sprache ist ein Makro, das gilt sowohl für die Implementation von CLOS als auch die Erweiterung, die im Rahmen dieser Arbeit entstehen soll. Deshalb soll zunächst kurz auf die Grundlagen von Makros in Racket eingegangen werden. Dieser Teil basiert auf dem Guide ``Fear of Macros'' von Greg Hendershott \cite{fearofmacros} und dem Racket-Guide für Makros \cite{racketguide-macros}. %Die Code-Beispiele sind, falls nicht anders gekennzeichnet, dem ``Fear of Macros'' Guide entnommen.
 
-Anschließend schauen wir uns an, wie CLOS implementiert ist. CLOS ist dabei nicht nur ein Ratgeber zur Implementation von Mehrfachvererbung. Es gibt uns außerdem einen Einblick, wie eine bestehende Sprache mithilfe von Makros und Metaobjekten um ein Objektsystem erweitert werden kann -- eine wichtige Grundlage für die Erweiterung von Racket.
+Anschließend schauen wir uns an, wie CLOS implementiert ist. CLOS ist dabei nicht nur ein Ratgeber zur Implementation von Mehrfachvererbung. Es gibt uns außerdem einen Einblick, wie eine bestehende Sprache mithilfe von Makros und Metaobjekten um ein Objektsystem erweitert werden kann -- eine wichtige Grundlage für die Erweiterung von Racket. Die Implementationsdetails von CLOS sind dem Buch ``The Art of the Metaobject Protocol'' (AMOP) \cite{amop} entnommen. Die CLOS-Implementation in AMOP ist nicht in Racket, sondern Common Lisp und die Quelltextbeispiele wurden unverändert übernommen. Das sollte jedoch keinen erheblichen Einfluss auf die Verständlichkeit haben. Auf die Umsetzung in Racket wird im Kapitel \ref{implementation} näher eingegangen.
 
 \input{chapters/makros}
 
+\section{Grundstruktur von CLOS}
+Es gibt drei Schlüsselwörter, die die Objektstruktur von CLOS definieren:  \texttt{defclass}, \texttt{defgeneric} und \texttt{defmethod}. Implementiert sind sie als Makros, die die interne Repräsentation der Klassen, generischen Funktionen und Methoden erzeugen und damit die Übersicht über die Informationen behalten, die in ihren Definitionen angegeben wurden.
+
+Das \texttt{defclass}-Makro expandiert beispielsweise zu einem internen Methodenaufruf. Es werden die angegebenen Superklassen, Slots und anderen Optionen übergeben und die Methode sorgt dafür, dass eine interne Repräsentation dieser Klasse erstellt wird und anschließend das Klassenobjekt zurückgegeben wird.
+
+Die Informationen werden in Form von Objekten festgehalten -- internen Objekten, die der Nutzer niemals zu sehen bekommt. Diese Objekte werden daher ``Metaobjekte'' genannt.
+
+Es entsteht eine Struktur in drei Schichten:
+\begin{itemize}
+ \item die Makro-Expansions-Schicht: eine dünne Schicht, die die wenigen syntaktischen Konstrukte bereitstellt, die der Nutzer zu sehen bekommt, wie das \texttt{defclass}-Makro.
+ \item Die ``Leim''-Schicht: hier werden die externen Namen auf die intern benutzten Metaobjekte abgebildet, zum Beispiel die Funktion \texttt{find-class}, welche ein Metaobjekt anhand des Namens heraussucht.
+ \item Die Support-Schicht: Hier ist das Verhalten von Klassen, Instanzen, generischen Funktionen und Methoden implementiert. Das Metaobjekt-Protokoll konzentriert sich hauptsächlich auf diese Schicht.
+\end{itemize}
+
+Um diese Struktur zu verstehen, wollen wir in der untersten Schicht anfangen: bei den Metaobjekten.
+
 \section{Metaobjekte}
+CLOS ist zirkulär definiert: Der Code, der CLOS implementiert, ist in CLOS geschrieben. 
+
+Natürlich ist die Sprachdefinition nicht wirklich rekursiv, sonst wäre jede Klassendefintion eine Endlosschleife. CLOS hat Wege gefunden, diese Zirkularität zu umgehen, über Bootstrapping und Reflection, aber das zu verstehen ist nicht Bestandteil dieser Arbeit. Wir werden später ebenfalls ein bereits fertig definiertes Objektsystem verwenden, um darauf aufbauend ein mächtigeres Objektsystem zu definieren: das Objektsystem von Racket.
+
+Wichtig ist jedoch ist die Grundidee. Die Implementation von CLOS benutzt CLOS-Objekte.
+
+Es gibt interne Objekte, die das Verhalten der dem Benutzer sichtbaren Klassen und Objekte definieren. Objekte über andere Objekte -- Metaobjekte. Es gibt solche Metaobjekte für alle Konstrukte, die für den Benutzer definiert werden sollen und über die daher Informationen gesammelt werden müssen: Klassenmetaobjekte für Klassen, Generische-Funktionen-Metaobjekte für generische Funktionen und Methodenmetaobjekte für Methoden. 
+
+Wo es Objekte gibt, muss es auch eine Klasse geben, die ihr Verhalten definiert. Die Klasse, die das Verhalten von Metaobjekten definiert, wird Metaklasse genannt. 
+
+Klassen-Metaobjekte sammeln beispielsweise all diejenigen Information, die zur Erstellung der aktuellen und zukünftiger Klassen relevant sind: den Namen der Klasse, die angegebenen Superklassen, definierte Slots, geerbte Slots, die Klassenpräzedenzliste, die direkten Subklassen und die definierten Methoden. 
+
+Die ``Klassen-Metaklasse'' ist dann lediglich die Beschreibung, wie unsere Metaobjekte aussehen.
+
+\begin{lstlisting}
+(defclass standard-class ()
+  (name :initarg :name
+        :accessor class-name)
+  (direct-superclasses :init-arg :direct-superclasses
+                       :accessor class-direct-superclasses)
+  (direct-slots :accessor class-direct-slots)
+  (class-precedence-list :accessor class-precedence-list)
+  (effective-slots :accessor class-slots)
+  (direct-subclasses :initform ()
+                     :accessor class-direct-subclasses)
+  (direct-methods :initform ()
+                  :accessor class-direct-methods))
+\end{lstlisting}
+
+Wir stellen fest: was sich zunächst ganz gruselig anhört, ist sehr einfach zu verstehen, wenn man CLOS lesen kann. Es ist eine ganz normale CLOS-Klasse, mit dem einzigen Unterschied, dass wir sie nur intern verwenden.
+
+Die Aufgabe des \texttt{defclass}-Makros ist es, die Klassendefinition zu parsen und sie in einen Aufruf an die Methode \texttt{ensure-class} aus der ``Leim''-Schicht zu verwandeln. 
 
 \section{Klassenpräzedenz}
 
+\section{Mehrfachvererbung und Methodenkombination}
+
 \chapter{Implementation}  % überwiegend eigener Teil
+\label{implementation}
 
 \chapter{Analyse/Erprobung/Auswertung/Test}
 

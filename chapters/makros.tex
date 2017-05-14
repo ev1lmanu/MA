@@ -1,8 +1,5 @@
 \section{Makros} 
 \label{makros}
-Dieses Kapitel basiert auf dem Guide ``Fear of Macros'' von Greg Hendershott \cite{fearofmacros} und dem Racket-Guide für Makros \cite{racketguide-macros}. Die Code-Beispiele sind, falls nicht anders gekennzeichnet, dem ``Fear of Macros'' Guide entnommen.
-
-
 \subsection{Transformers}
 
 Ein Makro ist im Grunde eine Funktion. Sie erhält ein Stück Syntax als Eingabe und gibt ein anderes Stück Syntax zurück. Sie \textit{transformiert} Syntax. Wir können einen solchen Syntax-Transformer mit \texttt{define-syntax} definieren:
@@ -118,4 +115,4 @@ Es ist sogar möglich, Patterns beliebiger Länge in einem Makro zu matchen. Fü
                           (rotate b c ...))]))
 \end{lstlisting}
 
-Wir werden im Folgenden mit \texttt{syntax-rules} arbeiten.
+
