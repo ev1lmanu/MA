@@ -12,14 +12,61 @@ Racket bietet zwei Arten, objektorientiert zu programmieren: ein integriertes Ob
 Da die Studierenden bereits aus `Softwareentwicklung I'' und ``Softwareentwicklung II'' mit Java vertraut sind, bietet das Objektsystem von Racket bietet kaum neue Lehrinhalte. Aus diesem Grund wird bisher CLOS, das in dem Racket-Dialekt Swindle implementiert ist, behandelt. 
 
 \section{Stand der Forschung} 
-\begin{itemize}
- \item ganz knapp: Anfang von OOP (Warum hat man sich das mal überlegt?)
- \item welche Arten von OOP haben sich etabliert? Kernpunkte der Objektsysteme
- \item wichtig: Warum macht man das?
- \item von den Arten zu dem, was man sich ansehen will
- \item vllt. Paper zu CLOS
- \item NICHT Gott und die Welt zitieren! Nur relevantes!
-\end{itemize}
+% \begin{itemize}
+%  \item ganz knapp: Anfang von OOP (Warum hat man sich das mal überlegt?)
+%  \item TODO welche Arten von OOP haben sich etabliert? Kernpunkte der Objektsysteme
+%  \item wichtig: Warum macht man das?
+%  \item von den Arten zu dem, was man sich ansehen will
+%  \item vllt. Paper zu CLOS
+%  \item NICHT Gott und die Welt zitieren! Nur relevantes!
+% \end{itemize}
+
+Die Idee objektorientierter Programmierung kam erstmals Ende der 1950er Jahre auf, als Systeme aus der realen Welt in Form von Programmen abgebildet werden sollten. Viele Systeme aus der realen Welt bestehen aus hunderten oder sogar tausenden miteinander interagierenden Teilen. Um dieses Verhalten abbilden zu können, mussten auch die Programmsysteme in kleine, handhabbare Teile zerlegt werden: in Objekte \cite{history}.
+
+Objekte sind Programmeinheiten, die einen eigenen Zustand besitzen und mit anderen Objekten interagieren können. So wie reale Objekte von uns klassifiziert werden (zum Beispiel als ``Tisch'' oder ``Stuhl''), gibt es auch in der objektorientierten Programmierung Klassen, die Objekte mit ähnlichen Eigenschaften zusammenfassen. Sie sind wie ein Bauplan, der das grundlegende Verhalten der Objekte anhand von Attributen (Feldern) und Methoden festlegt.
+
+Objektierte Programmierung erlaubt uns eine Verringerung der Komplexität eines Problems: Anstatt das komplette Verhalten eines Systems auf einmal darzustellen zu müssen, wird es aufgeteilt in kleine, übersichtliche Teilsysteme und deren Interaktion untereinander.
+
+Ein wichtiges Kernkonzept von objektorientierter Programmierung ist Vererbung: die Fähigkeit einer Klasse, Verhalten einer anderen Klasse zu übernehmen, ohne den Code explizit noch einmal schreiben zu müssen. Gibt es beispielsweise in der Klasse \texttt{A} ein Feld oder eine Methode \texttt{a}, so hat auch jedes Objekt einer Klasse \texttt{B}, die von \texttt{A} erbt, diese Methode (Abb. \ref{inheritance}).
+
+\begin{figure}[h]
+\centering
+ \includegraphics[scale = 0.3]{pictures/inheritance}
+ \caption{Vererbung einer Methode.}
+ \label{inheritance}
+\end{figure}
+
+Erbt eine Klasse von mehreren anderen Klassen, so nennt man das Mehrfachvererbung. Mehrfachvererbung war lange ein umstrittenes Thema in der objektorientierten Welt, denn sie kommt mit einer Herausforderung: Wie geht man damit um, wenn zwei gleichbenannte Methoden (oder Felder) geerbt werden? Eine sehr bekannte Ausprägung dieses Problems nennt sich das Diamond-Problem. Es erhält seinen Namen von der Tatsache, dass die Vererbungshierarchie die Form einer Raute (englisch \emph{rhombus} oder \emph{diamond}) hat (Abb. \ref{diamond}):
+Eine Klasse \texttt{D} erbt von zwei anderen Klassen \texttt{B} und \texttt{C}, die eine gemeinsame Superklasse \texttt{A} haben. Diese Superklasse hat ein Element (hier die Methode \texttt{a()}), das an beide Subklassen \texttt{B} und \texttt{C} vererbt wird und damit schlussendlich zweimal an \texttt{D}. Das Diamond-Problem ist nun die Fragestellung, wie die Klasse \texttt{D} damit umgeht.
+
+\begin{figure}[h]
+\centering
+ \includegraphics[scale = 0.3]{pictures/diamond}
+ \caption{Das Diamond-Problem.}
+ \label{diamond}
+\end{figure}
+
+Dafür haben sich im Laufe der Zeit in verschiedene Programmiersprachen verschiedene Herangehensweisen entwickelt, die sich grob in sieben Strategien unterteilen lassen:
+
+\begin{enumerate}
+ \item Mehrfachvererbung wird nicht unterstützt. Als Alternative werden teils Mixins oder Traits genutzt.
+ \item Es ist nicht erlaubt, mehrdeutige Features zu verwenden. Wenn in der Klasse \texttt{D} die Methode \texttt{a()} aufgerufen wird, so führt das zu einem Fehler. Beispiel: Go, Java 8.
+ \item Zu vererbende Features werden per Hand gewählt. Die Klasse \texttt{D} kann sich also entscheiden, entweder \texttt{B.a()} zu erben oder \texttt{C.a()}. Beispiel: Eiffel.
+ \item Gleichbenannte Features werden umbenannt. \texttt{D} würde zwei Methoden \texttt{ba()} und \texttt{ca()} erben. Beispiel: Eiffel, Logtalk.
+ \item Man kann qualifiziert auf die Features zugreifen. In \texttt{D} kann man dann mit \texttt{B.a()} oder \texttt{C.a()} die Methode aufrufen. Beispiel: C++, OCaml.
+ \item Features werden nach Präzedenz geerbt. Die Superklassen werden in eine bestimmte Reihenfolge (Präzedenzliste) gebracht und bei gleichbenannten Features wird immer nur dasjenige geerbt, das in der Präzedenzliste zuerst kommt. Wenn wir beispielweise die Klassen in die Reihenfolge \texttt{D,B,C,A} bringen, so würde das Feature je nach Implementation entweder von \texttt{B} oder direkt von \texttt{A} geerbt, jedoch nur einmal. Beispiel: Common Lisp, Perl, Python.
+ \item Kombination aller gleichbenannter Features. Der Programmierer kann angeben, wie die geerbten Features kombiniert werden sollen. Das funktioniert gegebenfalls sogar für indirekte Superklassen: Haben \texttt{A} und \texttt{B} ein gemeinsames Feature, dann gehen beide in die Kombination mit ein. Beispiel: Common Lisp, Eiffel.
+\end{enumerate}
+
+% Für einen möglichst einfachen Einstieg in die Lehre von Mehrfachvererbung bietet sich Kategorie 6 am meisten an: Die Konfliktlösung passiert automatisch. Es reicht, eine Vererbungshierarchie anzugeben und den Rest übernimmt die Sprache. 
+
+Racket fällt in die Kategorie 1. Mehrfachvererbung wird nicht unterstützt.
+
+Das Common Lisp Object System (CLOS) vereint die Ansätze 6 und 7: Wenn nichts anderes angegeben wird, wird das Feature der Klasse mit der höchsten Präzedenz vererbt; der Programmierer hat jedoch für Methoden alternativ auch die Möglichkeit, eine Kombinationsart anzugeben. Diese Art der Mehrfachvererbung bietet auch einen einfachen Einstieg für die Lehre. Die Konfliktlösung passiert automatisch. Es reicht, eine Vererbungshierarchie anzugeben und den Rest übernimmt die Sprache. Gleichzeitig erhält man als Programmierer durch die Methodenkombination auch selbst die Möglichkeit der Kontrolle.
+
+Die Funktionsweise von CLOS ist sehr ausführlich in dem Buch ``Object-oriented programming in Common Lisp. A programmer's guide to CLOS'' von Sonya E. Keene \cite{keene} dokumentiert. Einen Blick hinter die Implementation werfen Gregor Kiczales, Jim Des Rivieres und Daniel Gureasko Bobrow mit dem Werk ``The art of the metaobject protocol'' \cite{amop}. Sie zeigen wie eine objektorientierte Sprache auf Basis von Lisp, Makros und Metaobjekten implementiert werden kann. 
+
+Das Hinzufügen von Mehrfachvererbung zu einer bestehenden objektorientierten Sprache ist jedoch bisher wenig dokumentiert. In dieser Arbeit soll untersucht werden, ob das Metaobjekt-Protokoll auch genutzt werden kann, um Verhalten von CLOS zu dem bestehenden Objektsystem von Racket hinzuzufügen.
 
 \section{Problemstellung} 
 %TODO  Ausformulieren 

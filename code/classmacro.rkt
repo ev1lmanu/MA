@@ -411,7 +411,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (display "(method->λ '(define/public (foo x y) (+ x y))) -> ")
 (method->λ '(define/public (foo x y) (+ x y)))|#
 
-(define one (my-class () (super-new)
+#|(define one (my-class () (super-new)
                       (define/generic (foo) list)
                       (define/public (foo) 1)
                       (define/generic (bar x y) list)
@@ -439,4 +439,23 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                        (define/public (number) 'four)))
 
 (display "four number: ")
-(send (new four) number)
+(send (new four) number)|#
+
+
+(define thing (my-class () (super-new)
+                        (field [x 42])
+                        (define/generic (attack) list)))
+
+(define element (class thing (super-new)
+                  (inherit-field x)
+                  (init-field [attr 'water])
+                  (define/public (attack) attr)))
+
+(define animal (my-class thing (super-new)
+                 (init-field [size 'small])
+                 (define/public (attack) size)))
+
+;(define pokemon (my-class (element animal) (super-new)
+;                          (field [form 'ball])
+;                          (define/public (attack) form)
+;                          (inherit-field attr size)))
