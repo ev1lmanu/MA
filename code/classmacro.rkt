@@ -31,13 +31,27 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 ; ---------------------- MACRO -----------------------
 
-; enable us to use eval in the definitions window
-(define-namespace-anchor anchor)
-(define ns (namespace-anchor->namespace anchor))
-(define (my-eval x) (eval x ns))
-
 ; provide new version of the class macro
 (provide (rename-out [my-class class]))
+
+; enable us to use eval in the definitions window
+;(define-namespace-anchor anchor)
+;(define ns (namespace-anchor->namespace anchor))
+;(define (my-eval x) (eval x ns))
+(define-syntax my-class
+  (syntax-rules ()
+    [(my-class super . args)
+     (let ([ns (make-base-namespace)])
+       (namespace-attach-module (current-namespace)
+                                'racket/class
+                                ns)
+       (let ([my-eval
+              (parameterize ([current-namespace ns])
+                (namespace-require 'racket/class)
+                (namespace-require 'racket/list)
+                (namespace-require 'racket/function)
+                (λ (x) (eval x ns)))])
+         (my-ns-class my-eval super . args)))]))
 
 ; redefine class macro.
 ; Instead of only a single superclass, this macro allows
@@ -47,14 +61,14 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; * an empty list (we'll treat this as object%)
 ; * a non-empty list
 ; TODO: class*, class/derived ?
-(define-syntax my-class
+(define-syntax my-ns-class
   (syntax-rules ()
-    [(my-class () . rest)
-     (expand! #f (list object%) 'rest)]
-    [(my-class (super ...) . rest)
-     (expand! #f (list super ...) 'rest)]
-    [(my-class super . rest)
-     (expand! #t (list super) 'rest)]))
+    [(my-ns-class my-eval () . rest)
+     (expand!  my-eval #f (list object%) 'rest)]
+    [(my-ns-class my-eval (super ...) . rest)
+     (expand!  my-eval #f (list super ...) 'rest)]
+    [(my-ns-class my-eval super . rest)
+     (expand!  my-eval #t (list super) 'rest)]))
 
 ; The entry point where everything begins!!
 ; * creates a class object and returns it
@@ -66,12 +80,12 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ;   Object Racket shall not do it again
 ; * information that we'll need later about the class object
 ;   will be stored in a meta object
-(define (expand! do-not-touch? supers args)
+(define (expand! my-eval do-not-touch? supers args)
   ; create meta object
   (let ([meta (make-metaobject supers args)])
     (update-generic-functions meta)
     ; create actual class object
-    (let ([obj (make-classobject do-not-touch? supers args meta)])
+    (let ([obj (make-classobject my-eval do-not-touch? supers args meta)])
       ; add the new class to the list of observed classes
       (add-class obj meta)
       ; return the class object
@@ -91,7 +105,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     meta))
 
 ;; creates a class object
-(define (make-classobject do-not-touch? supers args meta)
+(define (make-classobject my-eval do-not-touch? supers args meta)
   ; remove define/generic forms
   (let ([args (filter (negate defgeneric?) args)])
     (if do-not-touch?
@@ -383,7 +397,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
         7
 |#
 
-(display "------------ Tests ------------\n")
+#|(display "------------ Tests ------------\n")
 (display "<test name>:      <expected> / <observed>\n\n")
 
 ;                        supers                            slots               methods
@@ -448,23 +462,4 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                        (define/public (number) 'four)))
 
 (display "four number: '(four two three) / ")
-(send (new four) number)
-
-
-(define thing (my-class () (super-new)
-                        (field [x 42])
-                        (define/generic (attack) list)))
-
-(define element (class thing (super-new)
-                  (inherit-field x)
-                  (init-field [attr 'water])
-                  (define/public (attack) attr)))
-
-(define animal (my-class thing (super-new)
-                 (init-field [size 'small])
-                 (define/public (attack) size)))
-
-;(define pokemon (my-class (element animal) (super-new)
-;                          (field [form 'ball])
-;                          (define/public (attack) form)
-;                          (inherit-field attr size)))
+(send (new four) number)|#
