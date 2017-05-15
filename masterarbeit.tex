@@ -77,11 +77,141 @@ Die ``Klassen-Metaklasse'' ist dann lediglich die Beschreibung, wie unsere Metao
                   :accessor class-direct-methods))
 \end{lstlisting}
 
-Wir stellen fest: was sich zunächst ganz gruselig anhört, ist sehr einfach zu verstehen, wenn man CLOS lesen kann. Es ist eine ganz normale CLOS-Klasse, mit dem einzigen Unterschied, dass wir sie nur intern verwenden.
+Was sich zunächst ganz gruselig anhört, ist sehr einfach zu verstehen, wenn man CLOS lesen kann. Es ist eine ganz normale CLOS-Klasse, mit dem einzigen Unterschied, dass wir sie nur intern verwenden.
 
-Die Aufgabe des \texttt{defclass}-Makros ist es, die Klassendefinition zu parsen und sie in einen Aufruf an die Methode \texttt{ensure-class} aus der ``Leim''-Schicht zu verwandeln. 
+Die Aufgabe des \texttt{defclass}-Makros ist es nun, die Klassendefinition zu parsen und sie in einen Aufruf an die Methode \texttt{ensure-class} aus der ``Leim''-Schicht zu verwandeln. 
+
+\begin{lstlisting}
+(defmacro defclass (name direct-superclasses direct-slots &rest options)
+  ´(ensure-class ',name
+    :direct-superclasses ,(canonicalize-direct-superclasses 
+                            direct-superclasses)
+    :direct-slots ,(canonicalize-direct-slots direct-slots)
+    ,@(canonicalize-defclass-options options)))
+\end{lstlisting}
+
+Der Makro-Befehl ist sehr ähnlich zu \texttt{define-syntaxrule}: das Pattern mit Name, Superklassen, Slots und anderen Optionen wird gematched und im anschließenden Template benutzt -- einem Aufruf der Methode ensure-class. Die \texttt{canonicalize}-Funktionen übernehmen die weitere Makro-Expansion, wie das Auswerten der Slot-Optionen, das Expandieren von Accessor-Optionen zu den Reader und Writer, Ersetzen der Namen der Superklassen durch die zugehören Metaobjekte und so weiter. Sie tun praktisch ``die ganze Arbeit'' der Expansion.
+
+\texttt{ensure-class} nimmt dann den Namen und die Argumente der Klasse und definiert ein Klassenobjekt mit dem Namen:
+
+\begin{lstlisting}
+(defun ensure-class (name &rest all-keys)
+  (if (find-class name nil)
+      (error "Can't redefine the class named ~S.", name)
+      (let ((class (apply #'make-instance
+                          'standard-class :name name all-keys)))
+        (setf (find-class name) class)
+        class)))
+\end{lstlisting}
+
+Es werden die expandierten Klassenoptionen genommen und mit ihnen ein neues Metaobjekt erstellt. Das Metaobjekt wird zur Liste der bekannten Klassen hinzugefügt und anschließend zurückgegeben. 
+
+Es gibt demnach eine Tabelle von Klassen-Metaobjekten, die bereits erstellt wurden, sowie Funktionen zum Abfragen, ob ein Objekt bereits existiert und zum Hinzufügen eines Objekts:
+
+\begin{lstlisting}
+(let ((class-table (make-hash-table :test #'eq)))
+  
+  (defun find-class (symbol &optional (errorp t))
+    (let ((class (gethash symbol class-table nil)))
+      (if (and (null class) errorp)
+          (error "No class named ~S." symbol)
+          class)))
+  
+  (defun (setf find-class) (new-value symbol)
+    (setf (gethash symbol class-table) new-value))
+)
+\end{lstlisting}
+
+\texttt{make-instance} ist eine Methode der untersten Schicht und führt noch einige notwendige Initialisierungen durch, wie das Hinzufügen des Objekts als Subklasse zu seinen Superklassen, Konvertieren der Liste von Sloteigenschaften in tatsächliche Slot-Definitionen oder die Definition von Accessor-Methoden. 
 
 \section{Klassenpräzedenz}
+Wir haben fast alle Schritte gesehen, die mit dem Erstellen eines Klassen-Metaobjekts zu tun haben: von \texttt{defclass} über \texttt{ensure-class} bis hin zu \texttt{make-instance}. Die verbleibenden Schritte haben mit Vererbung zu tun:
+\begin{itemize}
+ \item Berechnen und Speichern der Klassenpräzedenzliste
+ \item Berechnen und Speichern der vollständigen Menge von Slots, bestehend aus direkt in der Klasse definierten und von Superklassen geerbten Slots.
+\end{itemize}
+
+Die Methode \texttt{finalize-inheritance}, die von \texttt{make-instance} aufgerufen wird führt beides aus:
+
+\begin{lstlisting}
+(defun finalize-inheritance (class)
+  (setf (class-precedence-list class)
+        (compute-class-precedence-list class))
+  (setf (class-slots class)
+        (compute-slots class))
+  (values))
+\end{lstlisting}
+
+Die Klassenpräzedenzliste (nach \cite[S. 118ff]{keene}) beinhaltet die Klasse selbst und all ihre Superklassen, ohne Duplikate. Die Reihenfolge der Klassen ist dabei relevant; sie sind von der spezifischsten zur am wenigsten spezifischen Klasse geordnet. Wenn eine Klasse spezifischer als eine zweite Klasse ist, so hat sie Präzedenz über die zweite Klasse. Es gibt zwei Regeln, die die Reihenfolge von Klassen in der Präzedenzliste bestimmen:
+
+\begin{enumerate}
+ \item Eine Klasse hat immer Präzedenz über ihre Superklassen.
+ \item Jede Klassendefinition legt die Präzedenzreihenfolge ihrer direkten Superklassen fest.
+\end{enumerate}
+
+Die erste Regel erlaubt es einer Klasse, Verhalten ihrer Superklasse zu überschreiben oder verändern.
+
+Die zweite Regel bewirkt, dass die Reihenfolge direkter Superklassen durch die Reihenfolge der Superklassen im \texttt{defclass}-Makro festgelegt ist. Das heißt, jede angegebene Klasse ist spezifischer als die Klassen, die weiter hinten in der Liste stehen.
+
+Anhand der ersten Regel kennen wir sofort die spezifischste und unspezifischste Klasse jeder Klassenpräzedenzliste. Die Klasse selbst ist die spezifischste und die Wurzelklasse, in Common Lisp \texttt{t} (und noch eine Ebene tiefer \texttt{standard-object}), die unspezifischste in jeder Klassenpräzedenzliste.
+
+Wenn CLOS die Klassenpräzedenzliste einer Klasse bestimmt, startet es bei der Definition der Klasse. Es wendet beide Regeln auf die Klassendefinition an und erhält so eine Liste von Reihenfolgen-Constraints für die direkten Superklassen. Anschließend werden die Regeln auch auf jede direkte Superklasse angewendet, und so weiter, bis alle Pfade in der Wurzelklasse \texttt{t} enden. Das Ergebnis ist eine Menge von Reihenfolgen-Constraints aller beteiligten Klassen.
+
+Der nächste Schritt ist es, eine Sortierung zu finden, die alle Einzelconstraints erfüllt. CLOS führt dazu eine topologische Sortierung durch: das Ermitteln einer Reihenfolge, in der alle Teil-Constraints erfüllt sind. Es entstehen drei Möglichkeiten:
+\begin{enumerate}
+ \item genau eine Reihenfolge erfüllt alle Constraints
+ \item mehrere Reihenfolgen erfüllen alle Constraints
+ \item keine Reihenfolge erfüllt alle Constraints
+\end{enumerate}
+
+In den ersten beiden Fällen erzeugt CLOS eine Klassenpräzedenzliste. Im dritten Fall wird ein Fehler signalisiert. Für das Pokemon-Beispiel (Abb. \ref{pokemon} ergibt sich beispielsweise die folgenden Constraints:
+
+\begin{tabular}{ll}
+ \textbf{Constraint} & \textbf{Regel}\\
+ \texttt{Pokemon $>$ Element} & 1\\
+ \texttt{Pokemon $>$ Animal}  & 1\\
+ \texttt{Element $>$ Animal}  & 2\\
+ \texttt{Element $>$ Thing}   & 1\\
+ \texttt{Animal  $>$ Thing}   & 1
+\end{tabular}
+
+Es gibt nur eine totale Ordnung, die alle Constraints erfüllt:
+
+\texttt{Pokemon $>$ Element $>$ Animal $>$ Thing $>$ standard-object $>$ t}
+
+Oft ergeben die zwei Präzedenzregeln keine eindeutige Reihenfolge, zum Beispiel wenn Animal neben Thing noch eine weitere Superklasse Creature hat (Abb. \ref{creature}). 
+\begin{figure}[h]
+ \centering
+ \includegraphics[scale=0.3]{pictures/creature}
+ \caption{Vererbungshierarchie mit uneindeutiger Klassenpräzedenz.}
+ \label{creature}
+\end{figure}
+Für Creature und Thing gibt es dann nach den bisher bekannten Regeln kein Constraint, das eine Reihenfolge festlegt. Es sind daher zwei Präzedenzlisten möglich:
+
+\texttt{Pokemon$\,>\,$Element$\,>\,$Animal$\,>\,$Creature$\,>\,$Thing$\,>\,$standard-object$\,>\,$t}
+und
+\texttt{Pokemon$\,>\,$Element$\,>\,$Animal$\,>\,$Thing$\,>\,$Creature$\,>\,$standard-object$\,>\,$t}.
+
+CLOS entscheidet sich in dem Fall deterministisch für eine der beiden Reihenfolgen.
+
+% Der Algorithmus in AMOP ist relativ umfangreich, da er sehr allgemein gehalten wurde. Die Vorgehensweise lässt sich jedoch als topologische Sortierung eines Baumes generalisieren: Die Klassen sind Knoten und die Superklassen die Kindknoten einer Klasse.
+% \begin{itemize}
+%  \item Finde alle Wurzelknoten ohne eingehende Kanten (= Klassen ohne Subklassen).
+%  \begin{itemize}
+%   \item Wenn es keine mehr gibt, brich ab und
+%   \item wenn die Liste der noch zu bearbeitenden Knoten leer ist, dann ist die Klassenpräzedenzliste fertig
+%   \item ansonsten ist der Graph inkonsistent und es gibt kein Ergebnis.
+%  \end{itemize}
+%  \item Wähle einen der Wurzelknoten.
+%  \begin{itemize}
+%   \item Falls es mehr als einen gibt: wähle den, dessen (ehemaliger) Vaterknoten am weitesten rechts in der bisherigen Klassenpräzedenzliste steht.
+%  \end{itemize}
+%  \item Entferne ihn aus der Liste noch zu betrachtender Knoten und füge ihn zur Klassenpräzedenzliste hinzu.
+%  \item Wiederhole solange bis Abbruchkriterium erreicht.
+% \end{itemize}
+
+
+
 
 \section{Mehrfachvererbung und Methodenkombination}
 
@@ -93,9 +223,8 @@ Die Aufgabe des \texttt{defclass}-Makros ist es, die Klassendefinition zu parsen
 \chapter{Zusammenfassung und Ausblick}
 
 % -----------------------------------------------------------------------------------------
-
-\include{chapters/anhang}
 \include{chapters/literatur} 
+\include{chapters/anhang}
 \include{chapters/erklaerung}
 
 \end{document}
