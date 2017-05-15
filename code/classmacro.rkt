@@ -50,11 +50,11 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define-syntax my-class
   (syntax-rules ()
     [(my-class () . rest)
-     (expand! #f '(object%) 'rest)]
-    [(my-class (super . supers) . rest)
-     (expand! #f '(super . supers) 'rest)]
+     (expand! #f (list object%) 'rest)]
+    [(my-class (super ...) . rest)
+     (expand! #f (list super ...) 'rest)]
     [(my-class super . rest)
-     (expand! #t '(super) 'rest)]))
+     (expand! #t (list super) 'rest)]))
 
 ; The entry point where everything begins!!
 ; * creates a class object and returns it
@@ -81,7 +81,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; supers - the list of superclasses
 ; args - other arguments passed to the class macro
 (define (make-metaobject supers args)
-  (let* ([direct-supers     (map (compose find-class my-eval) supers)]  
+  (let* ([direct-supers     (map find-class supers)]  
          [direct-slots      (compute-direct-slots args)]
          [direct-methods    (filter method? args)]
          [generic-functions (filter defgeneric? args)]
@@ -99,13 +99,12 @@ This module was created by Manuela Beckert as master thesis project. The corresp
         ; let racket handle object creation
         (my-eval (append '(class) supers args))
         ; else, put together the superclass
-        (let ([superclass
-               (my-eval (append '(class object% (super-new))
-                                (get-field inherited-slots meta)
-                                ; only add methods that are not part of a
-                                ; method combination
-                                (filter (negate is-generic?)
-                                        (get-field inherited-methods meta))))])
+        (let ([superclass (my-eval (append '(class object% (super-new))
+                                          (get-field inherited-slots meta)
+                                          ; only add methods that are not part of a
+                                          ; method combination
+                                          (filter (negate is-generic?)
+                                                  (get-field inherited-methods meta))))])
           ; and use it for the new class
           (my-eval (append '(class)
                            (list superclass)
