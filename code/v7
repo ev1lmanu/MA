@@ -1,7 +1,4 @@
 #lang racket
-
-(require "cpl.rkt")
-
 #|
 
 This module introduces the following additional class options:
@@ -81,14 +78,18 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; supers - the list of superclasses
 ; args - other arguments passed to the class macro
 (define (make-metaobject supers args)
-  (let* ([direct-supers     (map (compose find-class my-eval) supers)]  
+  (let* ([direct-supers     (map (compose find-class my-eval) supers)]
+         [cpl               (compute-cpl direct-supers)] 
          [direct-slots      (compute-direct-slots args)]
+         [inherited-slots   (compute-inherited-slots cpl)]
          [direct-methods    (filter method? args)]
-         [generic-functions (filter defgeneric? args)]
-         [meta (make-object meta-class% direct-supers direct-slots
-                 direct-methods generic-functions)])
-    (finalize-inheritance meta)
-    meta))
+         [inherited-methods (compute-inherited-methods cpl)]
+         [generic-functions (filter defgeneric? args)])
+
+    ; create meta object
+    (make-object meta-class% direct-supers cpl direct-slots
+         inherited-slots direct-methods inherited-methods
+         generic-functions)))
 
 ;; creates a class object
 (define (make-classobject do-not-touch? supers args meta)
@@ -130,19 +131,17 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define meta-class%
   (class object% (super-new)
     
-    ;; init fields
-    (init-field direct-supers
-                direct-slots
-                direct-methods
-                generic-functions)
-
-    ; fields
+    ;; fields
     (field [number (begin 
                      (set! num-of-classes (+ 1 num-of-classes))
-                     num-of-classes)]
-           [class-precedence-list '()]
-           [inherited-slots '()]
-           [inherited-methods '()])    
+                     num-of-classes)])
+    (init-field direct-supers)         ; as meta objects
+    (init-field class-precedence-list) ; of super classes only
+    (init-field direct-slots)
+    (init-field inherited-slots)
+    (init-field direct-methods)
+    (init-field inherited-methods)
+    (init-field generic-functions)
 
     ; effective slots (for testing)
     (define/public (effective-slots)
@@ -151,12 +150,6 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     ; effective methods (for testing)
     (define/public (effective-methods)
       (append direct-methods inherited-methods))))
-
-(define (finalize-inheritance meta)
-  (let ([cpl (compute-cpl meta)])
-    (set-field! class-precedence-list meta cpl)
-    (set-field! inherited-slots       meta (compute-inherited-slots (cdr cpl)))
-    (set-field! inherited-methods     meta (compute-inherited-methods (cdr cpl)))))
 
 ; table that maps each class object to its meta object
 (define class-table (make-hasheq))
@@ -169,7 +162,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 ; add object% and its meta object to the table
 (define meta-object%
-  (make-object meta-class% '() '() '() '()))
+  (make-object meta-class% '() '() '() '() '() '() '()))
 
 (add-class object% meta-object%)
 
@@ -177,21 +170,19 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; * TODO: this is way simpler than the topological sort in AMOP or  
 ;   the CLOS implementation and I need to figure out whether that's
 ;   a good thing or not
-;(define (compute-cpl classes [result '()])
-;  ; remove object% from the list since we'll add it once at the end
-;  (let ([classes (remove* (list meta-object%) classes)])
-;    (if (empty? classes)
-;        ; once we saw all classes, add object% and return the list
-;        (reverse (cons meta-object% result))
-;        ; add current class to result list and
-;        ; its superclasses to the list of classes to be processed
-;        (let* ([elem (car classes)]
-;               [elem-supers (get-field direct-supers elem)])
-;          (compute-cpl (remove-duplicates (append (cdr classes)
-;                                                  elem-supers))
-;                       (cons elem result))))))
-(define (compute-cpl meta)
-  (compute-std-cpl meta (lambda (obj) (get-field direct-supers obj))))
+(define (compute-cpl classes [result '()])
+  ; remove object% from the list since we'll add it once at the end
+  (let ([classes (remove* (list meta-object%) classes)])
+    (if (empty? classes)
+        ; once we saw all classes, add object% and return the list
+        (reverse (cons meta-object% result))
+        ; add current class to result list and
+        ; its superclasses to the list of classes to be processed
+        (let* ([elem (car classes)]
+               [elem-supers (get-field direct-supers elem)])
+          (compute-cpl (remove-duplicates (append (cdr classes)
+                                                  elem-supers))
+                       (cons elem result))))))
 
 ;; slots and methods
 
@@ -285,7 +276,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     ; returns a list of all applicable function
     ; (as quoted lambda functions), sorted by cpl
     (define/public (get-applicable-methods meta)
-      (let* ([cpl (get-field class-precedence-list meta)]
+      (let* ([cpl (cons meta (get-field class-precedence-list meta))]
              [applicable  (map (curry hash-ref methods)
              (filter (curry hash-has-key? methods) cpl))])
         (if (empty? applicable)
@@ -386,7 +377,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 (display "------------ Tests ------------\n")
 
-;                        supers                            slots               methods
+#|;                        supers                            slots               methods
 (define test1 (my-class ()                  (super-new)   (field [a 1])       (define/public (foo) a)))
 (define test2 (my-class ()                  (super-new)   (field [b 2])       (define/public (foo) b)))
 (define test3 (my-class ()                  (super-new)   (field [c 3] [d 3]) (define/public (foo) c)))
@@ -418,9 +409,9 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (send (new test8) baz)
 (display"\n")
 (display "(method->λ '(define/public (foo x y) (+ x y))) -> ")
-(method->λ '(define/public (foo x y) (+ x y)))
+(method->λ '(define/public (foo x y) (+ x y)))|#
 
-(define one (my-class () (super-new)
+#|(define one (my-class () (super-new)
                       (define/generic (foo) list)
                       (define/public (foo) 1)
                       (define/generic (bar x y) list)
@@ -448,7 +439,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                        (define/public (number) 'four)))
 
 (display "four number: ")
-(send (new four) number)
+(send (new four) number)|#
 
 
 (define thing (my-class () (super-new)

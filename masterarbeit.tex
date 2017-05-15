@@ -216,6 +216,24 @@ Diese zusätzlichen Regeln bewirken, dass es nun nur noch eine mögliche Klassen
 
 (\texttt{Pokemon Element Animal Creature Thing standard-object t})\\
 
+Der Fall, dass keine Reihenfolge alle Constraints erfüllt, tritt auf, wenn zwei Oberklassen gegensätzliche Vererbungsreihenfolgen haben. Das ist zum Beispiel gegeben, wenn wir per Hand einer der Klassen Creature oder Thing vor den Klassen Element und Animal in der Klassendefinition anführen:
+
+\begin{lstlisting}
+(defclass Pokemon (Element Creature Animal)
+  ... )
+\end{lstlisting}
+
+Es ergeben sich dann zwei widersprüchliche Constraints:
+
+\begin{tabular}{l|c}
+ \textbf{Constraint} & \textbf{Regel}\\
+ \hline
+ \texttt{Animal $>$ Creature} & 1\\
+ \texttt{Creature $>$ Animal}  & 2\\
+\end{tabular}
+
+In dem Fall signalisiert CLOS einen Fehler, das es keine Klassenpräzedenzliste erstellen kann, die konsistent mit allen Constraints ist.
+
 % Der Algorithmus in AMOP ist relativ umfangreich, da er sehr allgemein gehalten wurde. Die Vorgehensweise lässt sich jedoch als topologische Sortierung eines Baumes generalisieren: Die Klassen sind Knoten und die Superklassen die Kindknoten einer Klasse.
 % \begin{itemize}
 %  \item Finde alle Wurzelknoten ohne eingehende Kanten (= Klassen ohne Subklassen).
