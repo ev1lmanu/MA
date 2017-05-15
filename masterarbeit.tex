@@ -166,8 +166,8 @@ Der nächste Schritt ist es, eine Sortierung zu finden, die alle Einzelconstrain
 
 In den ersten beiden Fällen erzeugt CLOS eine Klassenpräzedenzliste. Im dritten Fall wird ein Fehler signalisiert. Für das Pokemon-Beispiel (Abb. \ref{pokemon} ergibt sich beispielsweise die folgenden Constraints:
 
-\begin{tabular}{ll}
- \textbf{Constraint} & \textbf{Regel}\\
+\begin{tabular}{l|c}
+ \textbf{Constraint} & \textbf{Regel}\\ \hline
  \texttt{Pokemon $>$ Element} & 1\\
  \texttt{Pokemon $>$ Animal}  & 1\\
  \texttt{Element $>$ Animal}  & 2\\
@@ -177,22 +177,44 @@ In den ersten beiden Fällen erzeugt CLOS eine Klassenpräzedenzliste. Im dritte
 
 Es gibt nur eine totale Ordnung, die alle Constraints erfüllt:
 
-\texttt{Pokemon $>$ Element $>$ Animal $>$ Thing $>$ standard-object $>$ t}
+(\texttt{Pokemon Element Animal Thing standard-object t})
 
-Oft ergeben die zwei Präzedenzregeln keine eindeutige Reihenfolge, zum Beispiel wenn Animal neben Thing noch eine weitere Superklasse Creature hat (Abb. \ref{creature}). 
+Oft ergeben die zwei Präzedenzregeln keine eindeutige Reihenfolge. Nehmen wir zum Beispiel an, Element und Animal haben keine gemeinsame Superklasse, sondern nur Element erbt von Thing und Animal von einer neuen Klasse Creature (Abb. \ref{creature}). 
+
 \begin{figure}[h]
  \centering
  \includegraphics[scale=0.3]{pictures/creature}
  \caption{Vererbungshierarchie mit uneindeutiger Klassenpräzedenz.}
  \label{creature}
 \end{figure}
-Für Creature und Thing gibt es dann nach den bisher bekannten Regeln kein Constraint, das eine Reihenfolge festlegt. Es sind daher zwei Präzedenzlisten möglich:
 
-\texttt{Pokemon$\,>\,$Element$\,>\,$Animal$\,>\,$Creature$\,>\,$Thing$\,>\,$standard-object$\,>\,$t}
-und
-\texttt{Pokemon$\,>\,$Element$\,>\,$Animal$\,>\,$Thing$\,>\,$Creature$\,>\,$standard-object$\,>\,$t}.
+Für Element und Creature sowie Thing und Creature gibt es dann nach den bisher bekannten Regeln kein Constraint, das eine Reihenfolge festlegt. Es ergeben sich drei mögliche Klassenpräzedenzlisten:
 
-CLOS entscheidet sich in dem Fall deterministisch für eine der beiden Reihenfolgen.
+(\texttt{Pokemon Element Animal Creature Thing standard-object t})\\
+(\texttt{Pokemon Element Animal Thing Creature standard-object t})\\ 
+(\texttt{Pokemon Element Thing Animal Creature standard-object t})
+
+CLOS entscheidet sich in dem Fall deterministisch für eine der möglichen Reihenfolgen: diejenige, in der Klassen aus einem Teilbaum möglichst nah beieinander sind. Wenn wir die Klassenhierarchie betrachten, so bilden Element und Thing einen Teilbaum, Animal und Creature einen anderen. CLOS würde demnach die dritte Möglichkeit bevorzugen, in der die Klassen direkt aufeinander folgen.
+
+Falls die Reihenfolge der indirekten Superklassen für das Programm relevant ist, so ist es auch möglich dies als zusätzliches Constraint anzugeben. Nehmen wir beispielweise an, wir wollen, dass Creature in der Klassenpräzedenzliste vor Thing kommt. Wir können dieses Verhalten erzielen, indem wir die Klassen per Hand zu den ``direkten'' Superklassen in der Klassendefinition von Pokemon hinzufügen:
+
+\begin{lstlisting}
+(defclass Pokemon (Element Animal Creature Thing)
+  ... )
+\end{lstlisting}
+
+Es werden dadurch zwei neue Constraints zur Liste hinzugefügt:
+
+\begin{tabular}{l|c}
+ \textbf{Constraint} & \textbf{Regel}\\
+ \hline
+ \texttt{Animal $>$ Creature} & 2\\
+ \texttt{Creature $>$ Thing}  & 2\\
+\end{tabular}
+
+Diese zusätzlichen Regeln bewirken, dass es nun nur noch eine mögliche Klassenpräzedenzliste gibt:
+
+(\texttt{Pokemon Element Animal Creature Thing standard-object t})\\
 
 % Der Algorithmus in AMOP ist relativ umfangreich, da er sehr allgemein gehalten wurde. Die Vorgehensweise lässt sich jedoch als topologische Sortierung eines Baumes generalisieren: Die Klassen sind Knoten und die Superklassen die Kindknoten einer Klasse.
 % \begin{itemize}
