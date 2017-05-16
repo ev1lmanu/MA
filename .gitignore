@@ -7,3 +7,5 @@
 *.out
 *.kilepr
 *~
+*.bbl
+*.blg

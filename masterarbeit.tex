@@ -18,8 +18,8 @@
 
 \include{chapters/einleitung} 
 \include{chapters/racket}
-\input{chapters/objectracket} 
-\input{chapters/clos}
+\include{chapters/objectracket} 
+\include{chapters/clos}
 \include{chapters/entwurf}
 \include{chapters/analyse}
 
@@ -34,8 +34,17 @@
 \chapter{Zusammenfassung und Ausblick}
 \textit{Eine Zusammenfassung und eine Auflistung von Dingen, die aufbauend auf dieser Arbeit getan werden könnten.}
 
-\include{chapters/literatur} 
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Literaturverzeichnis}
+% compile by hand with bibtex masterarbeit.aux
+\bibliographystyle{apalike}
+\bibliography{chapters/bib}  
+\cleardoublepage
+
 \include{chapters/anhang}
+\cleardoublepage
+
 \include{chapters/erklaerung}
 
 \end{document}
