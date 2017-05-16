@@ -1,26 +1,4 @@
 \chapter{Einleitung} 
-%TODO  Einleitung ausformulieren 
-
-An der Universität Hamburg gliedert sich die Lehre zur Softwareentwicklung in zwei Abschnitte. Im ersten Abschnitt werden in den Veranstaltungen ``Softwareentwicklung I'' und ``Softwareentwicklung II'' die Grundlagen für das Programmierverständnis gelegt. Die Studierenden erhalten einen ersten Einblick in imperative und objektorientierte Programmierung in Java nach dem Objects-First-Ansatz.
-
-Anschließend bieten die optionalen Module ``Softwareentwicklung III: Funktionale Programmierung'' sowie ``Softwareentwicklung III: Logikprogrammierung'' zusätzlich die Möglichkeit, zwei weitere  Programmierparadigmen kennenzulernen: funktionale Programmierung am Beispiel von Racket und logikbasierte Programmierung am Beispiel von Prolog.
-
-Racket ist ein Dialekt der funktionalen Sprache Lisp. Genau wie Lisp hat Racket einen funktionalen Kern und ist gleichzeitig eine Mul\-ti\-pur\-pose-Spra\-che. Racket erlaubt es, neben dem funktionalen Stil auch imperative, obkjektorientierte und sogar logikbasierte Programme zu schreiben. Im Rahmen der Lehrveranstaltung werden daher auch diese Möglichkeiten aufgezeigt. 
-
-Racket bietet zwei Arten, objektorientiert zu programmieren: ein integriertes Objektsystem, das sehr ähnlich zu Java ist, und eine Implementation des Common Lisp Object Systems (CLOS), das eine eher funktionalen Sicht auf die Objektorientierung hat. 
-
-Da die Studierenden bereits aus `Softwareentwicklung I'' und ``Softwareentwicklung II'' mit Java vertraut sind, bietet das Objektsystem von Racket bietet kaum neue Lehrinhalte. Aus diesem Grund wird bisher CLOS, das in dem Racket-Dialekt Swindle implementiert ist, behandelt. 
-
-\section{Stand der Forschung} 
-% \begin{itemize}
-%  \item ganz knapp: Anfang von OOP (Warum hat man sich das mal überlegt?)
-%  \item TODO welche Arten von OOP haben sich etabliert? Kernpunkte der Objektsysteme
-%  \item wichtig: Warum macht man das?
-%  \item von den Arten zu dem, was man sich ansehen will
-%  \item vllt. Paper zu CLOS
-%  \item NICHT Gott und die Welt zitieren! Nur relevantes!
-% \end{itemize}
-
 Die Idee objektorientierter Programmierung kam erstmals Ende der 1950er Jahre auf, als Systeme aus der realen Welt in Form von Programmen abgebildet werden sollten. Viele Systeme aus der realen Welt bestehen aus hunderten oder sogar tausenden miteinander interagierenden Teilen. Um dieses Verhalten abbilden zu können, mussten auch die Programmsysteme in kleine, handhabbare Teile zerlegt werden: in Objekte \cite{history}.
 
 Objekte sind Programmeinheiten, die einen eigenen Zustand besitzen und mit anderen Objekten interagieren können. So wie reale Objekte von uns klassifiziert werden (zum Beispiel als ``Tisch'' oder ``Stuhl''), gibt es auch in der objektorientierten Programmierung Klassen, die Objekte mit ähnlichen Eigenschaften zusammenfassen. Sie sind wie ein Bauplan, der das grundlegende Verhalten der Objekte anhand von Attributen (Feldern) und Methoden festlegt.
@@ -49,7 +27,7 @@ Eine Klasse \texttt{D} erbt von zwei anderen Klassen \texttt{B} und \texttt{C}, 
 Dafür haben sich im Laufe der Zeit in verschiedene Programmiersprachen verschiedene Herangehensweisen entwickelt, die sich grob in sieben Strategien unterteilen lassen:
 
 \begin{enumerate}
- \item Mehrfachvererbung wird nicht unterstützt. Als Alternative werden teils Mixins oder Traits genutzt.
+ \item Mehrfachvererbung wird nicht unterstützt. Als Alternative werden teils Mixins oder Traits genutzt. Beispiel: Java bis Version 7.
  \item Es ist nicht erlaubt, mehrdeutige Features zu verwenden. Wenn in der Klasse \texttt{D} die Methode \texttt{a()} aufgerufen wird, so führt das zu einem Fehler. Beispiel: Go, Java 8.
  \item Zu vererbende Features werden per Hand gewählt. Die Klasse \texttt{D} kann sich also entscheiden, entweder \texttt{B.a()} zu erben oder \texttt{C.a()}. Beispiel: Eiffel.
  \item Gleichbenannte Features werden umbenannt. \texttt{D} würde zwei Methoden \texttt{ba()} und \texttt{ca()} erben. Beispiel: Eiffel, Logtalk.
@@ -68,10 +46,27 @@ Die Funktionsweise von CLOS ist sehr ausführlich in dem Buch ``Object-oriented 
 
 Das Hinzufügen von Mehrfachvererbung zu einer bestehenden objektorientierten Sprache ist jedoch bisher wenig dokumentiert. 
 
-\section{Problemstellung} 
-In dieser Arbeit soll untersucht werden, ob das Metaobjekt-Protokoll auch genutzt werden kann, um Verhalten von CLOS zu dem bestehenden Objektsystem von Racket hinzuzufügen. 
+\section{Motivation} 
+An der Universität Hamburg gliedert sich die Lehre zur Softwareentwicklung in zwei Abschnitte. Im ersten Abschnitt werden in den Veranstaltungen ``Softwareentwicklung I'' und ``Softwareentwicklung II'' die Grundlagen für das Programmierverständnis gelegt. Die Studierenden erhalten einen ersten Einblick in imperative und objektorientierte Programmierung in Java nach dem Objects-First-Ansatz.
 
-Dabei soll eine Spracherweiterung entstehen, die in der Lehre des Moduls ``Softwareentwicklung III'' genutzt werden kann. Der Fokus liegt daher auf für die Lehre relevanten Konzepten: Mehrfachvererbung, Klassenpräzedenz, Methodenkombination und Ergänzungsmethoden.
+Anschließend bieten die optionalen Module ``Softwareentwicklung III: Funktionale Programmierung'' sowie ``Softwareentwicklung III: Logikprogrammierung'' zusätzlich die Möglichkeit, zwei weitere  Programmierparadigmen kennenzulernen: funktionale Programmierung am Beispiel von Racket und logikbasierte Programmierung am Beispiel von Prolog.
+
+Racket ist ein Dialekt der funktionalen Sprache Lisp. Genau wie Lisp hat Racket einen funktionalen Kern und ist gleichzeitig eine Mul\-ti\-pur\-pose-Spra\-che. Racket erlaubt es, neben dem funktionalen Stil auch imperative, obkjektorientierte und sogar logikbasierte Programme zu schreiben. Im Rahmen der Lehrveranstaltung werden daher auch diese Möglichkeiten aufgezeigt. 
+
+Racket bietet zwei Arten, objektorientiert zu programmieren: ein integriertes Objektsystem, das sehr ähnlich zu Java ist, und eine Implementation des Common Lisp Object Systems (CLOS), das eine eher funktionalen Sicht auf die Objektorientierung hat. 
+
+Da die Studierenden bereits aus `Softwareentwicklung I'' und ``Softwareentwicklung II'' mit Java vertraut sind, bietet das Objektsystem von Racket kaum neue Lehrinhalte. Aus diesem Grund wird bisher CLOS, das in dem Racket-Dialekt Swindle implementiert ist, behandelt. 
+
+\section{Problemstellung} 
+In dieser Arbeit soll untersucht werden, ob das Metaobjekt-Protokoll auch genutzt werden kann, um Verhalten von CLOS zu dem bestehenden Objektsystem von Racket hinzuzufügen. Dabei soll eine Spracherweiterung von Racket entstehen. 
+
+Die Spracherweiterung kann dann im Rahmen der Lehre des Moduls ``Softwareentwicklung III'' genutzt werden, um Mehrfachvererbung direkt anhand des Objektsystems von Racket zu behandeln. Der Fokus liegt auf für die Lehre relevante Konzepte: 
+\begin{itemize}
+ \item Mehrfachvererbung
+ \item Klassenpräzedenz
+ \item Methodenkombination
+ \item Ergänzungsmethoden
+\end{itemize}
 
 % Es ist bisher nicht möglich, diese Paradigmen in vollem Umfang im Objektsystem von Racket zu verwenden. Beide Systeme verwenden außerdem unterschiedliche Objekte, die nicht ohne weiteres miteinander kommunizieren oder ineinander umgewandelt werden können.
 % 
