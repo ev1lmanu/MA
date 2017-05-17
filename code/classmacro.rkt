@@ -16,7 +16,7 @@ This module introduces the following additional class options:
 
 The superclass specifier can be either a single class (as in standard Object Racket) or an unquoted, possibly empty list of classes.
 
-The combination can be any operator that can be applied to a list of arguments, e.g. +, list, append.
+The combination can be any function that can be applied to a list of arguments, e.g. +, list, append, (compose reverse list). 
 
 -----------------------------------------------------
 
@@ -35,16 +35,13 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (provide (rename-out [my-class class]))
 
 ; enable us to use eval in the definitions window
-;(define-namespace-anchor anchor)
-;(define ns (namespace-anchor->namespace anchor))
-;(define (my-eval x) (eval x ns))
 (define-syntax my-class
   (syntax-rules ()
     [(my-class super . args)
      (let ([ns (make-base-namespace)])
-       (namespace-attach-module (current-namespace)
-                                'racket/class
-                                ns)
+      (namespace-attach-module (current-namespace)
+                               'racket/class
+                               ns)
        (let ([my-eval
               (parameterize ([current-namespace ns])
                 (namespace-require 'racket/class)
@@ -63,12 +60,12 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; TODO: class*, class/derived ?
 (define-syntax my-ns-class
   (syntax-rules ()
-    [(my-ns-class my-eval () . rest)
-     (expand!  my-eval #f (list object%) 'rest)]
+    [(my-ns-class my-eval () . rest) 
+     (expand! my-eval (list object%) 'rest)]
     [(my-ns-class my-eval (super ...) . rest)
-     (expand!  my-eval #f (list super ...) 'rest)]
+     (expand! my-eval (list super ...) 'rest)]
     [(my-ns-class my-eval super . rest)
-     (expand!  my-eval #t (list super) 'rest)]))
+     (expand! my-eval (list super) 'rest)]))
 
 ; The entry point where everything begins!!
 ; * creates a class object and returns it
@@ -80,12 +77,12 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ;   Object Racket shall not do it again
 ; * information that we'll need later about the class object
 ;   will be stored in a meta object
-(define (expand! my-eval do-not-touch? supers args)
+(define (expand! my-eval supers args)
   ; create meta object
   (let ([meta (make-metaobject supers args)])
     (update-generic-functions meta)
     ; create actual class object
-    (let ([obj (make-classobject my-eval do-not-touch? supers args meta)])
+    (let ([obj (make-classobject my-eval supers args meta)])
       ; add the new class to the list of observed classes
       (add-class obj meta)
       ; return the class object
@@ -105,12 +102,13 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     meta))
 
 ;; creates a class object
-(define (make-classobject my-eval do-not-touch? supers args meta)
+(define (make-classobject my-eval supers args meta)
   ; remove define/generic forms
   (let ([args (filter (negate defgeneric?) args)])
-    (if do-not-touch?
-        ; if we're not allowed to touch it, 
-        ; let racket handle object creation
+   ; if there's only a single superclass and no generic functions involved
+    (if (and (= 1 (length (get-field direct-supers meta)))
+             (not (ormap is-generic? (send meta effective-methods))))
+        ; then we can let racket handle object creation
         (my-eval (append '(class) supers args))
         ; else, put together the superclass
         (let ([superclass (my-eval (append '(class object% (super-new))
@@ -397,7 +395,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
         7
 |#
 
-#|(display "------------ Tests ------------\n")
+(display "------------ Tests ------------\n")
 (display "<test name>:      <expected> / <observed>\n\n")
 
 ;                        supers                            slots               methods
@@ -433,6 +431,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (display"\n")
 (display "(method->λ '(define/public (foo x y) (+ x y))) -> ")
 (method->λ '(define/public (foo x y) (+ x y)))
+(display"\n")
 
 (define one (my-class () (super-new)
                       (define/generic (foo) list)
@@ -462,4 +461,4 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                        (define/public (number) 'four)))
 
 (display "four number: '(four two three) / ")
-(send (new four) number)|#
+(send (new four) number)

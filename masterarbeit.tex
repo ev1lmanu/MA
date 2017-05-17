@@ -26,7 +26,21 @@
 
 \chapter{Umsetzung}  
 \label{implementation}
-\textit{Hier kommt die von Vorstellung classmacro.rkt (das wahrscheinlich noch einen besseren Namen bekommt), Abweichungen zu AMOP, die Diskussion der Probleme, die bei der Umsetzung auftraten und wie sie gelöst wurden.}
+\textit{Hier kommt die Vorstellung von classmacro.rkt (das wahrscheinlich noch einen besseren Namen bekommt), Abweichungen zu AMOP, die Diskussion der Probleme, die bei der Umsetzung auftraten und wie sie gelöst wurden.}
+
+
+
+\begin{lstlisting}
+(define-syntax my-class
+  (syntax-rules ()
+    [(my-class () . rest)
+     (expand!  my-eval (list object%) 'rest)]
+    [(my-class (super ...) . rest)
+     (expand!  my-eval (list super ...) 'rest)]
+    [(my-class super . rest)
+     (expand!  my-eval (list super) 'rest)]))
+\end{lstlisting}
+
 
 \chapter{Analyse/Erprobung/Auswertung/Test}
 \textit{Das Kapitel bekommt noch einen sinnvollen Namen, sobald ich es geschrieben habe und weiß, was hier drinsteht. Wahrscheinlich ein Vergleich von Entwurf und Umsetzung und ein Fazit, wie gut sich das Metaobjekt-Protokoll eignet, um ein bestehendes Objektsystem zu erweitern sowie zwei Worte zur Effizienz (Zitat AMOP: ``Closette is simple, but it is woefully inefficient'').}
