@@ -111,8 +111,8 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (ensure-class supers args)
   (let* ([direct-supers     (map find-class supers)]  
          [direct-slots      (compute-direct-slots args)]
-         [direct-methods    (filter method? args)]
-         [generic-functions (filter defgeneric? args)]
+         [direct-methods    (filter method-definition? args)]
+         [generic-functions (filter generic-function-definition? args)]
          [meta (make-object meta-class% direct-supers direct-slots
                  direct-methods generic-functions)])
     (finalize-inheritance meta)
@@ -122,7 +122,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ;; creates a class object
 (define (make-classobject my-eval supers args meta)
   ; remove define/generic forms
-  (let ([args (filter (negate defgeneric?) args)])
+  (let ([args (filter (negate generic-function-definition?) args)])
     ; if there's only a single superclass and no generic functions involved
     (if (and (= 1 (length (get-field direct-supers meta)))
              (not (ormap is-generic? (send meta effective-methods))))
@@ -150,7 +150,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                    ; other args
                    (filter (negate is-generic?) args)))))))
 
-; --------------------- CLASSES ----------------------
+; --------------------- META CLASSES ----------------------
 
 ; since classes have no name, we count them, so we
 ; can distinguish them for debugging
@@ -175,19 +175,13 @@ This module was created by Manuela Beckert as master thesis project. The corresp
            [inherited-slots '()]
            [inherited-methods '()])    
 
-    ; effective slots (for testing)
+    ; effective slots
     (define/public (effective-slots)
       (append direct-slots inherited-slots))
 
-    ; effective methods (for testing)
+    ; effective methods
     (define/public (effective-methods)
       (append direct-methods inherited-methods))))
-
-(define (finalize-inheritance meta)
-  (let ([cpl (compute-cpl meta)])
-    (set-field! class-precedence-list meta cpl)
-    (set-field! inherited-slots       meta (compute-inherited-slots (cdr cpl)))
-    (set-field! inherited-methods     meta (compute-inherited-methods (cdr cpl)))))
 
 ; table that maps each class object to its meta object
 (define class-table (make-hasheq))
@@ -204,61 +198,50 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 (add-class object% meta-object%)
 
-; compute the class precedence list
-; * TODO: this is way simpler than the topological sort in AMOP or  
-;   the CLOS implementation and I need to figure out whether that's
-;   a good thing or not
-;(define (compute-cpl classes [result '()])
-;  ; remove object% from the list since we'll add it once at the end
-;  (let ([classes (remove* (list meta-object%) classes)])
-;    (if (empty? classes)
-;        ; once we saw all classes, add object% and return the list
-;        (reverse (cons meta-object% result))
-;        ; add current class to result list and
-;        ; its superclasses to the list of classes to be processed
-;        (let* ([elem (car classes)]
-;               [elem-supers (get-field direct-supers elem)])
-;          (compute-cpl (remove-duplicates (append (cdr classes)
-;                                                  elem-supers))
-;                       (cons elem result))))))
-(define (compute-cpl meta)
-  (compute-std-cpl meta (lambda (obj) (get-field direct-supers obj))))
+; ---------------- COMPUTE SLOTS AND METHODS ----------------
 
-;; slots and methods
+; define what a slot, method and generic function definition looks like
+(define (slot-definition? s)
+  (member (car s) '(field init-field)))
 
-; define what a slot/method definition looks like
-; TODO: consider whether it actually makes a difference to
-;       directly return the value of the member function (a 
-;       list contianing the field name instead of #t)
-(define (slot? s)
-  (if (member (car s) '(field init-field))
-      #t
-      #f))
-
-(define (method? m)
-  ;(string-prefix? (symbol->string (car m)) "define/"))
-  ; -> problem: we only keep instances of the class with
-  ;    highest precence
+(define (method-definition? m)
   (equal? (car m) 'define/public))
 
-(define (defgeneric? m)
+(define (generic-function-definition? m)
   (equal? (car m) 'define/generic))
 
 ; extract slot definitions from args
 (define (compute-direct-slots args)
-  (let ([slots (filter slot? args)])
+  (let ([slots (filter slot-definition? args)])
     (if (empty? slots)
         '()
         (apply append (map split-1 slots)))))
 
 ; splits field-declarations with multiple values
-; (field [a 1] [b 2]) -> ((field [a 1]) (field [b 2])
+; (field [a 1] [b 2]) -> ((field [a 1]) (field [b 2]))
 (define (split-1 slot)
   (map (curry list (car slot)) (cdr slot)))
 
-; computes the list of inherited slots and methods.
-; since both are very similar, the main logic is in
-; compute-super-stuff. Just substitute "stuff"
+; adds the class precedence list, inherited fields and
+; inherited methods to a metaobject
+(define (finalize-inheritance meta)
+  (let ([cpl (compute-cpl meta)])
+    (set-field! class-precedence-list meta cpl)
+    (set-field! inherited-slots       meta (compute-inherited-slots (cdr cpl)))
+    (set-field! inherited-methods     meta (compute-inherited-methods (cdr cpl)))))
+
+; compute the class precedence list
+; We use the function compute-std-cpl from swindle.
+; It receives the object for which the cpl is to be computed
+; and a method that returns the superclasses of a given object
+; and gives us the cpl.
+(define (compute-cpl meta)
+  (compute-std-cpl meta (lambda (obj) (get-field direct-supers obj))))
+
+; Computes the list of inherited slots and methods
+; (standard method combination).
+; Since both are very similar, the main logic is in
+; compute-inherited-stuff. Just substitute "stuff"
 ; for "slots" or "methods" in your head.
 (define (compute-inherited-slots cpl)
   (compute-inherited-stuff 'direct-slots cpl))
@@ -266,12 +249,12 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (compute-inherited-methods cpl)
   (compute-inherited-stuff 'direct-methods cpl))
 
-(define (compute-inherited-stuff direct-stuff-field cpl)
+(define (compute-inherited-stuff direct-stuff cpl)
   (let ([stuff '()])
     ; add the slots/methods of all superclasses to the list
     (for*/list ([metas cpl])
       (set! stuff (append stuff 
-                          (dynamic-get-field direct-stuff-field metas))))
+                          (dynamic-get-field direct-stuff metas))))
     ; only keep the first appearance of every slot/method
     ; declaration
     (filter-first-occurence stuff)))
@@ -281,22 +264,24 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; is kept:
 ; '((field (a 1)) (field (a 2)) (field b) (field (b 0)))
 ;  -> '((field (a 1)) (field b))
-; TODO: This is probably very inefficient!!
+; This is probably very inefficient!!
 (define (filter-first-occurence xs)
   (remove-duplicates (map (curryr first-occurence xs) xs)))
 
+; returnes the first occurence of a slot or method in the list
 (define (first-occurence elem xs)
-  (car (filter (lambda (x) (equal? (get-symbol x)
-                                   (get-symbol elem)))
+  (car (filter (lambda (x) (equal? (get-name x)
+                                   (get-name elem)))
                xs)))
 
-(define (get-symbol x)
-  (if (symbol? (cadr x))
-      (cadr x)
-      (caadr x)))
+; gives us the name of a slot or method
+(define (get-name x)
+  (if (symbol? (cadr x)) 
+      (cadr x)    ; field name
+      (caadr x))) ; method name
 
 
-; ----------------- GENERIC FUNCTIONS -----------------------
+; ------------------- GENERIC FUNCTIONS -----------------------
 
 ; class for generic function objects
 (define generic-function%
@@ -309,16 +294,19 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
     (define/public (number-of-params)
       (length params))
-    
+
+    ; adds an implementing method to the generic function
     (define/public (add-method meta method)
       (hash-set! methods meta method))
 
-    ; returns a list of all applicable function
+    ; returns a list of all applicable functions
     ; (as quoted lambda functions), sorted by cpl
     (define/public (get-applicable-methods meta)
       (let* ([cpl (get-field class-precedence-list meta)]
-             [applicable  (map (curry hash-ref methods)
-             (filter (curry hash-has-key? methods) cpl))])
+             [applicable
+              ; methods that are specialized on classes from cpl
+              (map (curry hash-ref methods)
+                   (filter (curry hash-has-key? methods) cpl))])
         (if (empty? applicable)
             (error "no applicable methods found for generic function" name)
             applicable)))))
@@ -332,15 +320,17 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (add-generic name meta)
   (hash-set! generic-function-table name meta))
 
+; returns whether there exists a generic function with the name
+; of x
 (define (is-generic? x)
-  (and (or (method? x)
-           (defgeneric? x))
+  (and (or (method-definition? x)
+           (generic-function-definition? x))
        (hash-has-key? generic-function-table (get-name x))))
 
-(define (get-name method)
-  (car (second method)))
+; ---------------- COMPUTE GENERIC FUNCTIONS  -------------------
 
-; Updates generic functions
+; Updates the generic function table with method and gf defintions
+; in the given meta object
 (define (update-generic-functions meta)
   ; keep track of new generic functions
   (map (curryr make-generic-function meta)
@@ -355,16 +345,15 @@ This module was created by Manuela Beckert as master thesis project. The corresp
             meta
             (method->λ method)))))
 
-; Creates the generic function object and adds it to the list
-; If it already exists, an error will be signaled
-; gf: '(define/generic (name args...) combination)
-; combination: quoted operator
-; meta-class: class metaobject
-; 
-(define (make-generic-function gf meta)
-  (let ([name (car (second gf))]
-        [params (cdr (second gf))]
-        [combination (third gf)]) 
+; Creates a metaobject for gf and adds it to the list
+; If it already exists, an error will be signaled.
+; generic function definitions have the form:
+; '(define/generic (name args...) combination)
+;     combination: operator
+(define (make-generic-function gf-defintion meta)
+  (let ([name (car (second gf-defintion))]
+        [params (cdr (second gf-defintion))]
+        [combination (third gf-defintion)]) 
     (if (hash-has-key? generic-function-table name)
         (error "duplicate definition of generic function" name)
         (hash-set! generic-function-table 
@@ -375,32 +364,44 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; Converts a method expression into a quoted lambda function
 ; '(define/public (foo x y) (+ x y)) -> '(λ (x y) (+ x y))
 (define (method->λ method)
-  (let ([m (list 'λ (cdr (second method)) (third method))])
-;    (display m)
-;    (display "\n")
-    m))
+  (list 'λ (cdr (second method)) (third method)))
 
-; Returns a (quoted) function that combines all applicable methods.
-; The parameters (params) of the resulting lambda function are
-; first applied to all applicable methods. On the resulting values
-; we'll apply the combination function. 
+; Returns a (quoted) function definition that combines all applicable
+; methods.
+; The parameters of the resulting lambda function are applied 
+; to all applicable methods and on those values the combination function
+; is applied.
+; Since we're putting together the syntax without evaluating it,
+; we have to work with lists and quoted operators.
+; For example for the values
+; gf:          (foo x y)
+; name:        foo
+; params:      x y
+; combination: *
+; functions:   (λ (x y) (+ x y)), (λ (x y) (* x y))
+; the result will be:
+; '(define/public (foo x y)
+;   (apply + (map (curryr apply (list x y)
+;                               (list (λ (x y) (+ x y))
+;                                     (λ (x y) (- x y)))))))
+; wich evaluates to the defintion of a function that computes
+; (* (+ x y) (- x y))
 (define (combine-method meta name)
   (let* ([gf (get-generic name)]
          [params (get-field params gf)]
          [combination (get-field combination gf)]
-         [functions (send gf get-applicable-methods meta)]
-         [f (list 'define/public
-                  (cons name params)
-                  ; '+  '(3 4 5)  -> '(+ 3 4 5)
-                  (list 'apply
-                        combination
-                        ; '(f g h)  '(1 2) -> '((f 1 2) (g 1 2) (h 1 2))
-                        (list 'map
-                              (list 'curryr
-                                    'apply
-                                    (cons 'list params))
-                              (cons 'list functions))))])
-    f))
+         [functions (send gf get-applicable-methods meta)])
+    (list 'define/public
+          (cons name params)
+          ; '+  '(3 4 5)  -> '(+ 3 4 5)
+          (list 'apply
+                combination
+                ; '(1 2)  '(f g h) -> '((f 1 2) (g 1 2) (h 1 2))
+                (list 'map
+                      (list 'curryr
+                            'apply
+                            (cons 'list params))
+                      (cons 'list functions))))))
   
 
 ;------------------------ Tests -----------------------------
