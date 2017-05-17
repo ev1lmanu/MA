@@ -34,30 +34,48 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; provide new version of the class macro
 (provide (rename-out [my-class class]))
 
-; enable us to use eval in the definitions window
+; Class macro part I
+; Enable us to use eval in the definitions window.
+; For this purpose we'll create an eval-function that uses the
+; namespace of the module where the macro is called and attach
+; it to the macro call.
 (define-syntax my-class
   (syntax-rules ()
     [(my-class super . args)
+     ; Create a namespace in the scope of the macro call.
      (let ([ns (make-base-namespace)])
-      (namespace-attach-module (current-namespace)
-                               'racket/class
-                               ns)
+       ; Make sure the namespace won't use a different class.
+       ; If we don't do this, a fresh version of racket/class
+       ; would be used for the namespace, creating a distinct
+       ; class datatype and they would not be compatble with
+       ; each other.
+       ; It might not be nessecary to also do this for list
+       ; and function, but let's be safe.
+       (namespace-attach-module (current-namespace) 'racket/class ns)
+       (namespace-attach-module (current-namespace) 'racket/list ns)
+       (namespace-attach-module (current-namespace) 'racket/function ns)
+       ; Create an eval function that uses the namespace.
        (let ([my-eval
+              ; Specify which modules are available in the namespace.
+              ; If the required module is attached, the attached version 
+              ; will be used, otherwise a fresh version is imported
               (parameterize ([current-namespace ns])
                 (namespace-require 'racket/class)
                 (namespace-require 'racket/list)
                 (namespace-require 'racket/function)
                 (λ (x) (eval x ns)))])
+         ; Expansion of the original class macro.
          (my-ns-class my-eval super . args)))]))
 
-; redefine class macro.
+; Class macro part II
 ; Instead of only a single superclass, this macro allows
 ; to also specify a (possibly empty) list of superclasses.
 ; Thus, there are three cases: That we got
 ; * a single class
 ; * an empty list (we'll treat this as object%)
 ; * a non-empty list
-; TODO: class*, class/derived ?
+; We'll process all three cases into a list form and
+; then call the expand! function which does the actual work.
 (define-syntax my-ns-class
   (syntax-rules ()
     [(my-ns-class my-eval () . rest) 
@@ -67,7 +85,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     [(my-ns-class my-eval super . rest)
      (expand! my-eval (list super) 'rest)]))
 
-; The entry point where everything begins!!
+; The actual expansion happens here
 ; * creates a class object and returns it
 ; * classes with a single superclass will be handled solely
 ;   by Object Racket, we'll just collect some info on them
@@ -105,30 +123,32 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (make-classobject my-eval supers args meta)
   ; remove define/generic forms
   (let ([args (filter (negate defgeneric?) args)])
-   ; if there's only a single superclass and no generic functions involved
+    ; if there's only a single superclass and no generic functions involved
     (if (and (= 1 (length (get-field direct-supers meta)))
              (not (ormap is-generic? (send meta effective-methods))))
         ; then we can let racket handle object creation
         (my-eval (append '(class) supers args))
         ; else, put together the superclass
-        (let ([superclass (my-eval (append '(class object% (super-new))
-                                          (get-field inherited-slots meta)
-                                          ; only add methods that are not part of a
-                                          ; method combination
-                                          (filter (negate is-generic?)
-                                                  (get-field inherited-methods meta))))])
+        (let ([superclass
+               (my-eval (append '(class object% (super-new))
+                                (get-field inherited-slots meta)
+                                ; only add methods that are not part of a
+                                ; method combination
+                                (filter (negate is-generic?)
+                                        (get-field inherited-methods meta))))])
           ; and use it for the new class
-          (my-eval (append '(class)
-                           (list superclass)
-                           ; add combination methods
-                           (map (curry combine-method meta)
-                                (remove-duplicates
-                                 (map get-name
-                                      (filter is-generic?
-                                              (append (get-field direct-methods meta)
-                                                      (get-field inherited-methods meta))))))
-                           ; other args
-                           (filter (negate is-generic?) args)))))))
+          (my-eval
+           (append '(class)
+                   (list superclass)
+                   ; add combination methods
+                   (map (curry combine-method meta)
+                        (remove-duplicates
+                         (map get-name
+                              (filter is-generic?
+                                      (append (get-field direct-methods meta)
+                                              (get-field inherited-methods meta))))))
+                   ; other args
+                   (filter (negate is-generic?) args)))))))
 
 ; --------------------- CLASSES ----------------------
 
@@ -394,8 +414,8 @@ This module was created by Manuela Beckert as master thesis project. The corresp
        \ /__/
         7
 |#
-
-#|(display "------------ Tests ------------\n")
+;#|
+(display "------------ Tests ------------\n")
 (display "<test name>:      <expected> / <observed>\n\n")
 
 ;                        supers                            slots               methods
@@ -461,4 +481,5 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                        (define/public (number) 'four)))
 
 (display "four number: '(four two three) / ")
-(send (new four) number)|#
+(send (new four) number)
+;|#
