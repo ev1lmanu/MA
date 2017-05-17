@@ -110,10 +110,10 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; args - other arguments passed to the class macro
 (define (ensure-class supers args)
   (let* ([direct-supers     (map find-class supers)]  
-         [direct-slots      (compute-direct-slots args)]
+         [direct-fields      (compute-direct-fields args)]
          [direct-methods    (filter method-definition? args)]
          [generic-functions (filter generic-function-definition? args)]
-         [meta (make-object meta-class% direct-supers direct-slots
+         [meta (make-object meta-class% direct-supers direct-fields
                  direct-methods generic-functions)])
     (finalize-inheritance meta)
     (update-generic-functions meta)
@@ -124,31 +124,47 @@ This module was created by Manuela Beckert as master thesis project. The corresp
   ; remove define/generic forms
   (let ([args (filter (negate generic-function-definition?) args)])
     ; if there's only a single superclass and no generic functions involved
-    (if (and (= 1 (length (get-field direct-supers meta)))
-             (not (ormap is-generic? (send meta effective-methods))))
+    (if (racket-only? meta)
         ; then we can let racket handle object creation
         (my-eval (append '(class) supers args))
-        ; else, put together the superclass
-        (let ([superclass
-               (my-eval (append '(class object% (super-new))
-                                (get-field inherited-slots meta)
-                                ; only add methods that are not part of a
-                                ; method combination
-                                (filter (negate is-generic?)
-                                        (get-field inherited-methods meta))))])
-          ; and use it for the new class
-          (my-eval
-           (append '(class)
-                   (list superclass)
-                   ; add combination methods
-                   (map (curry combine-method meta)
-                        (remove-duplicates
-                         (map get-name
-                              (filter is-generic?
-                                      (append (get-field direct-methods meta)
-                                              (get-field inherited-methods meta))))))
-                   ; other args
-                   (filter (negate is-generic?) args)))))))
+        ; else, put together the superclass and other class options
+        ; and use them for the new class
+        (my-eval (append '(class)
+                         (generate-class-options my-eval meta)
+                         ; other args
+                         (filter (negate is-generic?) args))))))
+
+; Returns whether we can let Racket handle object creation
+; or if we need to put together the class ourselves
+(define (racket-only? meta)
+  (and (= 1 (length (get-field direct-supers meta)))
+       (not (ormap is-generic? (send meta effective-methods)))))
+
+; Generates all class options we'll need to supply to the class
+; macro if we put together the class ourselves.
+(define (generate-class-options my-eval meta)
+  (let* ([inherited-fields   (get-field inherited-fields meta)]
+         [direct-methods    (get-field direct-methods meta)]
+         [inherited-methods (get-field inherited-methods meta)])
+    (append
+     ; superclass
+     (list (my-eval (append '(class object% (super-new))
+                            inherited-fields
+                            ; only  methods that aren't
+                            ; part of a method combination
+                            (filter (negate is-generic?)
+                                    inherited-methods))))
+     ; an inherit-field clause for every inherited field
+     ; because they could possibly be used by the combined methods
+     (map (lambda (field) (list 'inherit-field
+                                (get-name field)))
+          inherited-fields)
+    ; combination methods
+    (map (curry combine-method meta)
+         (remove-duplicates
+          (map get-name (filter is-generic?
+                                (append direct-methods
+                                        inherited-methods))))))))
 
 ; --------------------- META CLASSES ----------------------
 
@@ -163,7 +179,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     
     ;; init fields
     (init-field direct-supers
-                direct-slots
+                direct-fields
                 direct-methods
                 generic-functions)
 
@@ -172,12 +188,12 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                      (set! num-of-classes (+ 1 num-of-classes))
                      num-of-classes)]
            [class-precedence-list '()]
-           [inherited-slots '()]
+           [inherited-fields '()]
            [inherited-methods '()])    
 
-    ; effective slots
-    (define/public (effective-slots)
-      (append direct-slots inherited-slots))
+    ; effective fields
+    (define/public (effective-fields)
+      (append direct-fields inherited-fields))
 
     ; effective methods
     (define/public (effective-methods)
@@ -198,10 +214,10 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 (add-class object% meta-object%)
 
-; ---------------- COMPUTE SLOTS AND METHODS ----------------
+; ---------------- COMPUTE FIELDS AND METHODS ----------------
 
-; define what a slot, method and generic function definition looks like
-(define (slot-definition? s)
+; define what a field, method and generic function definition looks like
+(define (field-definition? s)
   (member (car s) '(field init-field)))
 
 (define (method-definition? m)
@@ -210,24 +226,24 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (generic-function-definition? m)
   (equal? (car m) 'define/generic))
 
-; extract slot definitions from args
-(define (compute-direct-slots args)
-  (let ([slots (filter slot-definition? args)])
-    (if (empty? slots)
+; extract field definitions from args
+(define (compute-direct-fields args)
+  (let ([fields (filter field-definition? args)])
+    (if (empty? fields)
         '()
-        (apply append (map split-1 slots)))))
+        (apply append (map split-1 fields)))))
 
 ; splits field-declarations with multiple values
 ; (field [a 1] [b 2]) -> ((field [a 1]) (field [b 2]))
-(define (split-1 slot)
-  (map (curry list (car slot)) (cdr slot)))
+(define (split-1 field)
+  (map (curry list (car field)) (cdr field)))
 
 ; adds the class precedence list, inherited fields and
 ; inherited methods to a metaobject
 (define (finalize-inheritance meta)
   (let ([cpl (compute-cpl meta)])
     (set-field! class-precedence-list meta cpl)
-    (set-field! inherited-slots       meta (compute-inherited-slots (cdr cpl)))
+    (set-field! inherited-fields       meta (compute-inherited-fields (cdr cpl)))
     (set-field! inherited-methods     meta (compute-inherited-methods (cdr cpl)))))
 
 ; compute the class precedence list
@@ -238,29 +254,29 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (compute-cpl meta)
   (compute-std-cpl meta (lambda (obj) (get-field direct-supers obj))))
 
-; Computes the list of inherited slots and methods
+; Computes the list of inherited fields and methods
 ; (standard method combination).
 ; Since both are very similar, the main logic is in
 ; compute-inherited-stuff. Just substitute "stuff"
-; for "slots" or "methods" in your head.
-(define (compute-inherited-slots cpl)
-  (compute-inherited-stuff 'direct-slots cpl))
+; for "fields" or "methods" in your head.
+(define (compute-inherited-fields cpl)
+  (compute-inherited-stuff 'direct-fields cpl))
 
 (define (compute-inherited-methods cpl)
   (compute-inherited-stuff 'direct-methods cpl))
 
 (define (compute-inherited-stuff direct-stuff cpl)
   (let ([stuff '()])
-    ; add the slots/methods of all superclasses to the list
+    ; add the fields/methods of all superclasses to the list
     (for*/list ([metas cpl])
       (set! stuff (append stuff 
                           (dynamic-get-field direct-stuff metas))))
-    ; only keep the first appearance of every slot/method
+    ; only keep the first appearance of every field/method
     ; declaration
     (filter-first-occurence stuff)))
 
-; Filters a list of slot or method definitions so that
-; only the first declaration of each slot/method
+; Filters a list of field or method definitions so that
+; only the first declaration of each field/method
 ; is kept:
 ; '((field (a 1)) (field (a 2)) (field b) (field (b 0)))
 ;  -> '((field (a 1)) (field b))
@@ -268,13 +284,13 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (filter-first-occurence xs)
   (remove-duplicates (map (curryr first-occurence xs) xs)))
 
-; returnes the first occurence of a slot or method in the list
+; returnes the first occurence of a field or method in the list
 (define (first-occurence elem xs)
   (car (filter (lambda (x) (equal? (get-name x)
                                    (get-name elem)))
                xs)))
 
-; gives us the name of a slot or method
+; gives us the name of a field or method
 (define (get-name x)
   (if (symbol? (cadr x)) 
       (cadr x)    ; field name
@@ -419,7 +435,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (display "------------ Tests ------------\n")
 (display "<test name>:      <expected> / <observed>\n\n")
 
-;                        supers                            slots               methods
+;                        supers                            fields               methods
 (define test1 (my-class ()                  (super-new)   (field [a 1])       (define/public (foo) a)))
 (define test2 (my-class ()                  (super-new)   (field [b 2])       (define/public (foo) b)))
 (define test3 (my-class ()                  (super-new)   (field [c 3] [d 3]) (define/public (foo) c)))
@@ -433,12 +449,12 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 (display "class 7 cpl:      '(7 5 1 2 6 3 4 0) / ")
 (map (curry dynamic-get-field 'number) cpl)
-(display "class 7 slots:    '((field (a 1)) (field (b 2)) (field (c 3)) (field (d 3))) / ")
-(send (find-class test7) effective-slots)
+(display "class 7 fields:   '((field (a 1)) (field (b 2)) (field (c 3)) (field (d 3))) / ")
+(send (find-class test7) effective-fields)
 (display "class 7 methods:  '((define/public (foo) a) (define/public (bar) 'bar)) / ")
 (send (find-class test7) effective-methods)
-(display "class 8 slots:    '((field (a 1))) / ")
-(send (find-class test8) effective-slots)
+(display "class 8 fields:   '((field (a 1))) / ")
+(send (find-class test8) effective-fields)
 (display "class 8 methods:  '((define/public (baz) a) (define/public (foo) a)) / ")
 (send (find-class test8) effective-methods)
 (display "object 7 - a:     1 / ")
