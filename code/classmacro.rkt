@@ -79,19 +79,18 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ;   will be stored in a meta object
 (define (expand! my-eval supers args)
   ; create meta object
-  (let ([meta (make-metaobject supers args)])
-    (update-generic-functions meta)
-    ; create actual class object
-    (let ([obj (make-classobject my-eval supers args meta)])
-      ; add the new class to the list of observed classes
-      (add-class obj meta)
-      ; return the class object
-      obj)))
+  (let* ([meta (ensure-class supers args)]                    ; meta object
+         [obj  (make-classobject my-eval supers args meta)])  ; class object
+    ; add the new class to the list of observed classes
+    ; since classes have no name, we use the object reference as key
+    (add-class obj meta)
+    ; return the class object
+    obj))
 
 ; creates a metaobject.
 ; supers - the list of superclasses
 ; args - other arguments passed to the class macro
-(define (make-metaobject supers args)
+(define (ensure-class supers args)
   (let* ([direct-supers     (map find-class supers)]  
          [direct-slots      (compute-direct-slots args)]
          [direct-methods    (filter method? args)]
@@ -99,6 +98,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
          [meta (make-object meta-class% direct-supers direct-slots
                  direct-methods generic-functions)])
     (finalize-inheritance meta)
+    (update-generic-functions meta)
     meta))
 
 ;; creates a class object
@@ -395,7 +395,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
         7
 |#
 
-(display "------------ Tests ------------\n")
+#|(display "------------ Tests ------------\n")
 (display "<test name>:      <expected> / <observed>\n\n")
 
 ;                        supers                            slots               methods
@@ -461,4 +461,4 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                        (define/public (number) 'four)))
 
 (display "four number: '(four two three) / ")
-(send (new four) number)
+(send (new four) number)|#
