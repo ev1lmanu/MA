@@ -18,11 +18,7 @@
 
 ; Mehrfachvererbung durch Angabe einer (ungequoteten) Liste von Superklassen
 (define pokemon (class (element animal) (super-new)
-                          (define/public (attack) 'ball)
-                          ; Das inherit-field ist für die Methodenkombination
-                          ; notwendig; ich will noch dafür sorgen, dass es
-                          ; automagisch geerbt wird.
-                          (inherit-field attr size)))
+                          (define/public (attack) 'ball)))
 
 ; Beispiel für die Methodenkombination
 (send (new pokemon) attack)

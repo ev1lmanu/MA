@@ -131,7 +131,8 @@ This module was created by Manuela Beckert as master thesis project. The corresp
         ; and use them for the new class
         (my-eval (append '(class)
                          (generate-class-options my-eval meta)
-                         ; other args
+                         ; other args, including the call to
+                         ; super-new
                          (filter (negate is-generic?) args))))))
 
 ; Returns whether we can let Racket handle object creation
@@ -143,7 +144,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; Generates all class options we'll need to supply to the class
 ; macro if we put together the class ourselves.
 (define (generate-class-options my-eval meta)
-  (let* ([inherited-fields   (get-field inherited-fields meta)]
+  (let* ([inherited-fields  (get-field inherited-fields meta)]
          [direct-methods    (get-field direct-methods meta)]
          [inherited-methods (get-field inherited-methods meta)])
     (append
@@ -431,7 +432,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
        \ /__/
         7
 |#
-;#|
+#|
 (display "------------ Tests ------------\n")
 (display "<test name>:      <expected> / <observed>\n\n")
 
@@ -499,4 +500,4 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 (display "four number: '(four two three) / ")
 (send (new four) number)
-;|#
+|#
