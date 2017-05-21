@@ -1,5 +1,5 @@
 #lang racket
-(require "v10-weird-gf-bug.rkt")
+(require "classmacro.rkt")
 
 (define thing (class () (super-new)
                 ; Definition einer generische Funktion
@@ -24,3 +24,8 @@
 ; Beispiel für die Methodenkombination
 (send (new pokemon) attack)
 (send (new pokemon [attr 'fire] [size 'big]) attack)
+
+(define bad (class () (super-new)
+              (define/public (attack) 'foo)))
+
+(send (new bad) attack)

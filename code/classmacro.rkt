@@ -133,13 +133,13 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                          (generate-class-options my-eval meta)
                          ; other args, including the call to
                          ; super-new
-                         (filter (negate is-generic?) args))))))
+                         (filter (negate (curryr is-generic? meta)) args))))))
 
 ; Returns whether we can let Racket handle object creation
 ; or if we need to put together the class ourselves
 (define (racket-only? meta)
   (and (= 1 (length (get-field direct-supers meta)))
-       (not (ormap is-generic? (send meta effective-methods)))))
+       (empty? (applicable-generic-functions meta))))
 
 ; Generates all class options we'll need to supply to the class
 ; macro if we put together the class ourselves.
@@ -153,7 +153,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                             inherited-fields
                             ; only  methods that aren't
                             ; part of a method combination
-                            (filter (negate is-generic?)
+                            (filter (negate (curryr is-generic? meta))
                                     inherited-methods))))
      ; an inherit-field clause for every inherited field
      ; because they could possibly be used by the combined methods
@@ -338,12 +338,13 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (add-generic name meta)
   (hash-set! generic-function-table name meta))
 
-; returns whether there exists a generic function with the name
-; of x
-(define (is-generic? x)
+; returns whether x is part of a generic function
+(define (is-generic? x meta)
   (and (or (method-definition? x)
            (generic-function-definition? x))
-       (hash-has-key? generic-function-table (get-name x))))
+       (hash-has-key? generic-function-table (get-name x))
+       (member (get-field meta-class (get-generic (get-name x)))
+               (get-field class-precedence-list meta))))
 
 ; ---------------- COMPUTING GENERIC FUNCTIONS  -------------------
 
@@ -356,13 +357,16 @@ This module was created by Manuela Beckert as master thesis project. The corresp
   ; add  new methods to existing generic functions
   (for ([method (get-field direct-methods meta)])
     ; for each new method, if a generic function for it exists
-    (when (is-generic? method)
+    (when (is-generic? method meta)
       ; get generic function for it
       (let* ([gf (get-generic (get-name method))]
              [gf-params (send gf number-of-params)]
              [method-params (length (cdr (second method)))])
         ; if the method has the right amount of parameters
-        (if (= gf-params method-params)
+        ; and the generic function is defined for a superclass
+        (if (and (= gf-params method-params)
+                 (member (get-field meta-class gf)
+                         (get-field class-precedence-list meta)))
             ; add new method to generic function
             (send gf
                   add-method
@@ -458,7 +462,7 @@ For method combination, we'll use a simpler, dimond shaped hirarchy with three g
         7
 |#
 
-
+#|
 (display "------------ Tests ------------\n")
 (display "<test name>:      <expected> / <observed>\n\n")
 
@@ -526,3 +530,4 @@ For method combination, we'll use a simpler, dimond shaped hirarchy with three g
 
 (display "four number: '(four two three) / ")
 (send (new four) number)
+|#
