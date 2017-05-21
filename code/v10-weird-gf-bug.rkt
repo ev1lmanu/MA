@@ -162,10 +162,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
           inherited-fields)
     ; combination methods
     (map (curry combine-method meta)
-         (remove-duplicates
-          (map get-name (filter is-generic?
-                                (append direct-methods
-                                        inherited-methods))))))))
+         (applicable-generic-functions meta)))))
 
 ; --------------------- META CLASSES ----------------------
 
@@ -308,24 +305,24 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     (init-field meta-class)
     (init-field combination)        ; quoted operator
     (field [methods (make-hasheq)]) ; (meta, (λ ...)) 
-
+    
     (define/public (number-of-params)
       (length params))
-
+    
     ; adds an implementing method to the generic function
     (define/public (add-method meta method)
       (hash-set! methods meta method))
-
+    
     ; returns a list of all applicable functions
     ; (as quoted lambda functions), sorted by cpl
-    (define/public (get-applicable-methods meta)
+    (define/public (applicable-methods meta)
       (let* ([cpl (get-field class-precedence-list meta)]
              [applicable
               ; methods that are specialized on classes from cpl
               (map (curry hash-ref methods)
                    (filter (curry hash-has-key? methods) cpl))])
         (if (empty? applicable)
-            (error "no applicable methods found for generic function" name)
+            (list 'lambda 'x (error "No applicable methods found for generic function:" name))
             applicable)))))
 
 ; table that maps each generic function name to its object
@@ -395,6 +392,13 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (method->λ method)
   (list 'λ (cdr (second method)) (third method)))
 
+; Returns the applicable generic functions of a class
+(define (applicable-generic-functions meta)
+  (map get-name
+       (apply append
+              (map (lambda (x) (get-field generic-functions x))
+                   (get-field class-precedence-list meta)))))
+
 ; Returns a (quoted) function definition that combines all applicable
 ; methods.
 ; The parameters of the resulting lambda function are applied 
@@ -419,7 +423,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
   (let* ([gf (get-generic name)]
          [params (get-field params gf)]
          [combination (get-field combination gf)]
-         [functions (send gf get-applicable-methods meta)])
+         [functions (send gf applicable-methods meta)])
     (list 'define/public
           (cons name params)
           ; '+  '(3 4 5)  -> '(+ 3 4 5)

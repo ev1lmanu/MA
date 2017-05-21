@@ -32,7 +32,7 @@ Dafür haben sich im Laufe der Zeit in verschiedene Programmiersprachen verschie
  \item Zu vererbende Features werden per Hand gewählt. Die Klasse \texttt{D} kann sich also entscheiden, entweder \texttt{B.a()} zu erben oder \texttt{C.a()}. Beispiel: Eiffel.
  \item Gleichbenannte Features werden umbenannt. \texttt{D} würde zwei Methoden \texttt{ba()} und \texttt{ca()} erben. Beispiel: Eiffel, Logtalk.
  \item Man kann qualifiziert auf die Features zugreifen. In \texttt{D} kann man dann mit \texttt{B.a()} oder \texttt{C.a()} die Methode aufrufen. Beispiel: C++, OCaml.
- \item Features werden nach Präzedenz geerbt. Die Superklassen werden in eine bestimmte Reihenfolge (Präzedenzliste) gebracht und bei gleichbenannten Features wird immer nur dasjenige geerbt, das in der Präzedenzliste zuerst kommt. Wenn wir beispielweise die Klassen in die Reihenfolge \texttt{D,B,C,A} bringen, so würde das Feature je nach Implementation entweder von \texttt{B} oder direkt von \texttt{A} geerbt, jedoch nur einmal. Beispiel: Common Lisp, Perl, Python.
+ \item Features werden nach Präzedenz geerbt. Die Superklassen werden in eine bestimmte Reihenfolge (Präzedenzliste) gebracht und bei gleichbenannten Features wird immer nur dasjenige geerbt, das in der Präzedenzliste zuerst kommt. Wenn wir beispielweise die Klassen in die Reihenfolge \texttt{D,B,C,A} bringen, so würde das Feature je nach Implementierung entweder von \texttt{B} oder direkt von \texttt{A} geerbt, jedoch nur einmal. Beispiel: Common Lisp, Perl, Python.
  \item Kombination aller gleichbenannter Features. Der Programmierer kann angeben, wie die geerbten Features kombiniert werden sollen. Das funktioniert gegebenfalls sogar für indirekte Superklassen: Haben \texttt{A} und \texttt{B} ein gemeinsames Feature, dann gehen beide in die Kombination mit ein. Beispiel: Common Lisp, Eiffel.
 \end{enumerate}
 
@@ -42,7 +42,7 @@ Racket fällt in die Kategorie 1. Mehrfachvererbung wird nicht unterstützt.
 
 Das Common Lisp Object System (CLOS) vereint die Ansätze 6 und 7: Wenn nichts anderes angegeben wird, wird das Feature der Klasse mit der höchsten Präzedenz vererbt; der Programmierer hat jedoch für Methoden alternativ auch die Möglichkeit, eine Kombinationsart anzugeben. Diese Art der Mehrfachvererbung bietet auch einen einfachen Einstieg für die Lehre. Die Konfliktlösung passiert automatisch. Es reicht, eine Vererbungshierarchie anzugeben und den Rest übernimmt die Sprache. Gleichzeitig erhält man als Programmierer durch die Methodenkombination auch selbst die Möglichkeit der Kontrolle.
 
-Die Funktionsweise von CLOS ist sehr ausführlich in dem Buch ``Object-oriented programming in Common Lisp. A programmer's guide to CLOS'' von Sonya E. Keene \cite{keene} dokumentiert. Einen Blick hinter die Implementation werfen Gregor Kiczales, Jim Des Rivieres und Daniel Gureasko Bobrow mit dem Werk ``The art of the metaobject protocol'' \cite{amop}. Sie zeigen wie eine objektorientierte Sprache auf Basis von Lisp, Makros und Metaobjekten implementiert werden kann. 
+Die Funktionsweise von CLOS ist sehr ausführlich in dem Buch ``Object-oriented programming in Common Lisp. A programmer's guide to CLOS'' von Sonya E. Keene \cite{keene} dokumentiert. Einen Blick hinter die Implementierung werfen Gregor Kiczales, Jim Des Rivieres und Daniel Gureasko Bobrow mit dem Werk ``The art of the metaobject protocol'' \cite{amop}. Sie zeigen wie eine objektorientierte Sprache auf Basis von Lisp, Makros und Metaobjekten implementiert werden kann. 
 
 Das Hinzufügen von Mehrfachvererbung zu einer bestehenden objektorientierten Sprache ist jedoch bisher wenig dokumentiert. 
 
@@ -53,7 +53,7 @@ Anschließend bieten die optionalen Module ``Softwareentwicklung III: Funktional
 
 Racket ist ein Dialekt der funktionalen Sprache Lisp. Genau wie Lisp hat Racket einen funktionalen Kern und ist gleichzeitig eine Mul\-ti\-pur\-pose-Spra\-che. Racket erlaubt es, neben dem funktionalen Stil auch imperative, obkjektorientierte und sogar logikbasierte Programme zu schreiben. Im Rahmen der Lehrveranstaltung werden daher auch diese Möglichkeiten aufgezeigt. 
 
-Racket bietet zwei Arten, objektorientiert zu programmieren: ein integriertes Objektsystem, das sehr ähnlich zu Java ist, und eine Implementation des Common Lisp Object Systems (CLOS), das eine eher funktionalen Sicht auf die Objektorientierung hat. 
+Racket bietet zwei Arten, objektorientiert zu programmieren: ein integriertes Objektsystem, das sehr ähnlich zu Java ist, und eine Implementierung des Common Lisp Object Systems (CLOS), das eine eher funktionalen Sicht auf die Objektorientierung hat. 
 
 Da die Studierenden bereits aus `Softwareentwicklung I'' und ``Softwareentwicklung II'' mit Java vertraut sind, bietet das Objektsystem von Racket kaum neue Lehrinhalte. Aus diesem Grund wird bisher CLOS, das in dem Racket-Dialekt Swindle implementiert ist, behandelt. 
 
@@ -78,7 +78,7 @@ Um über Mehrfachvererbung in Racket und CLOS reden zu können, werden im Kapite
 
 Anschließend wird im Kapitel \textbf{Entwurf} ein Vorschlag gemacht, wie die Syntax von Racket um Mehrfachvererbung erweitert werden kann. 
 
-Im Kapitel \textbf{Analyse der Implementationsdetails von CLOS} ergründen wir anhand der Implementation von CLOS, wie das Metaobjekt-Protokoll genutzt werden kann, um ein bestehendes Objektsystem um Mehrfachvererbung zu erweitern. Es werden relevante Implementationsdetails von CLOS beschrieben und ihre Anwendbarkeit auf das Objektsystem von Racket evaluiert.
+Im Kapitel \textbf{Analyse der Implementierungsdetails von CLOS} ergründen wir anhand der Implementierung von CLOS, wie das Metaobjekt-Protokoll genutzt werden kann, um ein bestehendes Objektsystem um Mehrfachvererbung zu erweitern. Es werden relevante Implementierungsdetails von CLOS beschrieben und ihre Anwendbarkeit auf das Objektsystem von Racket evaluiert.
 
 Das Kapitel \textbf{Umsetzung} beschreibt das in dieser Arbeit entstandene Makro und beleuchtet Abweichungen zu CLOS, Probleme, die bei der Umsetzung auftraten und wie sie gelöst wurden.
 

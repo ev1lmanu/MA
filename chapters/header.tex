@@ -24,6 +24,10 @@
 \usepackage{geometry}
 \usepackage{soul}
 \usepackage{textcomp} % Quote Symbol
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
 
 % schrift auf palatino umstellen
 \usepackage{palatino}
@@ -68,7 +72,8 @@
 	  {\{}{{{\color{brown}{\{}}}}{1}
 	  {\}}{{{\color{brown}{\}}}}}{1}
 	  {'}{{{\bfseries\color{green}{\textquotesingle}}}}{1}
-	  {\#'}{{{\color{green}{\#\bfseries\textquotesingle}}}}{1},
+	  {\#'}{{{\color{green}{\#\bfseries\textquotesingle}}}}{1}
+	  {lambda}{{$\lambda$}}{1},
 %     % lists of keywords
 %     morekeywords={},
     keywords=[2]{\#t, \#f},

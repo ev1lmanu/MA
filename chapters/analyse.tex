@@ -1,9 +1,9 @@
-\chapter{Analyse der Implementationsdetails von CLOS}
-Um die Konzepte von CLOS auf ein anderes Objektsystem anwenden zu können, ist es notwendig zu verstehen, wie CLOS funktioniert. Wir wollen deshalb einen Blick hinter die Kulissen werfen, die relevanten Konzepte der Implementation aufzeigen und evaluieren, ob sie sich auch auf Racket anwenden lassen.
+\chapter{Analyse der Implementierungsdetails von CLOS}
+Um die Konzepte von CLOS auf ein anderes Objektsystem anwenden zu können, ist es notwendig zu verstehen, wie CLOS funktioniert. Wir wollen deshalb einen Blick hinter die Kulissen werfen, die relevanten Konzepte der Implementierung aufzeigen und evaluieren, ob sie sich auch auf Racket anwenden lassen.
 
-Makros sind das Sprachmittel, mit dem die Syntax einer Programmiersprache geschrieben und verändert wird. Der Einstiegspunkt einer jeden Erweiterung der Sprache ist ein Makro, das gilt sowohl für die Implementation von CLOS als auch die Erweiterung, die im Rahmen dieser Arbeit entstehen soll. Deshalb soll zunächst kurz auf die Grundlagen von Makros eingegangen werden. Wir betrachten dafür das Makrosystem von Racket. Dieser Teil basiert auf dem Guide ``Fear of Macros'' von Greg Hendershott \cite{fearofmacros} und dem Racket-Guide für Makros \cite{racketguide-macros}.
+Makros sind das Sprachmittel, mit dem die Syntax einer Programmiersprache geschrieben und verändert wird. Der Einstiegspunkt einer jeden Erweiterung der Sprache ist ein Makro, das gilt sowohl für die Implementierung von CLOS als auch die Erweiterung, die im Rahmen dieser Arbeit entstehen soll. Deshalb soll zunächst kurz auf die Grundlagen von Makros eingegangen werden. Wir betrachten dafür das Makrosystem von Racket. Dieser Teil basiert auf dem Guide ``Fear of Macros'' von Greg Hendershott \cite{fearofmacros} und dem Racket-Guide für Makros \cite{racketguide-macros}.
 
-Anschließend schauen wir uns an, wie CLOS implementiert ist. CLOS ist dabei nicht nur ein Ratgeber zur Implementation von Mehrfachvererbung. Es gibt uns außerdem einen Einblick, wie eine bestehende Sprache mithilfe von Makros und Metaobjekten um ein Objektsystem erweitert werden kann -- eine wichtige Grundlage für die Erweiterung von Racket. Die Implementationsdetails von CLOS sind dem Buch ``The Art of the Metaobject Protocol'' (AMOP) \cite{amop} entnommen. Die CLOS-Implementation in AMOP ist nicht in Racket, sondern Common Lisp und die Quelltextbeispiele wurden unverändert übernommen. Es wird daher zu leichten Abweichungen zu der bisher eingeführten Syntax von Racket oder Makros kommen; die grundlegende Funktionalität ist jedoch die gleiche.
+Anschließend schauen wir uns an, wie CLOS implementiert ist. CLOS ist dabei nicht nur ein Ratgeber zur Implementierung von Mehrfachvererbung. Es gibt uns außerdem einen Einblick, wie eine bestehende Sprache mithilfe von Makros und Metaobjekten um ein Objektsystem erweitert werden kann -- eine wichtige Grundlage für die Erweiterung von Racket. Die Implementierungsdetails von CLOS sind dem Buch ``The Art of the Metaobject Protocol'' (AMOP) \cite{amop} entnommen. Die CLOS-Implementierung in AMOP ist nicht in Racket, sondern Common Lisp und die Quelltextbeispiele wurden unverändert übernommen. Es wird daher zu leichten Abweichungen zu der bisher eingeführten Syntax von Racket oder Makros kommen; die grundlegende Funktionalität ist jedoch die gleiche.
 
 \section{Makros} 
 \label{makros}
@@ -139,12 +139,12 @@ Es entsteht eine Struktur in drei Schichten:
  \item Die Support-Schicht: Hier ist das Verhalten von Klassen, Instanzen, generischen Funktionen und Methoden implementiert. Das Metaobjekt-Protokoll konzentriert sich hauptsächlich auf diese Schicht.
 \end{itemize}
 
-Wir werden untersuchen, ob ein analoges Vorgehen auch für die Implementation von Mehrfachvererbung in Racket möglich ist. Um diese Struktur zu verstehen, wollen wir daher die einzelnen Schichten genauer betrachten. Wir fangen mit der untersten Schicht an: bei den Metaobjekten.
+Wir werden untersuchen, ob ein analoges Vorgehen auch für die Implementierung von Mehrfachvererbung in Racket möglich ist. Um diese Struktur zu verstehen, wollen wir daher die einzelnen Schichten genauer betrachten. Wir fangen mit der untersten Schicht an: bei den Metaobjekten.
 
 \section{Metaobjekte}
 CLOS ist zirkulär definiert: Der Code, der CLOS implementiert, benutzt CLOS-Klassen und -Objekte. CLOS hat Wege gefunden, diese Zirkularität zu umgehen, über Bootstrapping und Reflection, aber das zu verstehen ist nicht Bestandteil dieser Arbeit. 
 
-Wir wollen später ein bereits fertig definiertes Objektsystem verwenden, um darauf aufbauend ein mächtigeres Objektsystem zu definieren, das Objektsystem von Racket. Mit einer etwas anderen Sichtweise bietet die CLOS-Implementation uns genau das: es wird ein Objektsystem verwendet, um das Verhalten eines anderen Objektsystems zu definieren. Das erste Objektsystem besteht aus den intern benutzten Klassen und Objekten, das zweite aus den externen Klassen und Objekten, die dem Anwender bereitgestellt werden.
+Wir wollen später ein bereits fertig definiertes Objektsystem verwenden, um darauf aufbauend ein mächtigeres Objektsystem zu definieren, das Objektsystem von Racket. Mit einer etwas anderen Sichtweise bietet die CLOS-Implementierung uns genau das: es wird ein Objektsystem verwendet, um das Verhalten eines anderen Objektsystems zu definieren. Das erste Objektsystem besteht aus den intern benutzten Klassen und Objekten, das zweite aus den externen Klassen und Objekten, die dem Anwender bereitgestellt werden.
 
 Es gibt in CLOS also interne Objekte, die das Verhalten der dem Benutzer sichtbaren Klassen und Objekte definieren. Objekte über andere Objekte -- Metaobjekte. Es gibt solche Metaobjekte für alle Konstrukte, die für den Benutzer definiert werden sollen und über die daher Informationen gesammelt werden müssen: Klassenmetaobjekte für Klassen, Generische-Funktionen-Metaobjekte für generische Funktionen und Methodenmetaobjekte für Methoden. 
 
@@ -214,7 +214,7 @@ Es gibt demnach eine Tabelle von Klassen-Metaobjekten, die bereits erstellt wurd
 
 \texttt{make-instance} ist eine Methode der untersten Schicht und führt noch einige notwendige Initialisierungen durch, wie das Hinzufügen des Objekts als Subklasse zu seinen Superklassen, Konvertieren der Liste von Sloteigenschaften in tatsächliche Slot-Definitionen oder die Definition von Accessor-Methoden. 
 
-Für eine Implementation von Mehrfachvererbung in Racket brauchen wir ebenfalls Informationen darüber, welche Klassen mit welchen Superklassen, Feldern und Methoden bereits definiert wurden. Die Methodenkombination beispielsweise basiert auf den Ergebnissen aller Methoden in allen Superklassen -- nach dieser Information können wir ein Klassenobjekt nach der Erstellung durch Racket jedoch nicht mehr fragen; in ihm existiert jede Methode nur genau einmal.
+Für eine Implementierung von Mehrfachvererbung in Racket brauchen wir ebenfalls Informationen darüber, welche Klassen mit welchen Superklassen, Feldern und Methoden bereits definiert wurden. Die Methodenkombination beispielsweise basiert auf den Ergebnissen aller Methoden in allen Superklassen -- nach dieser Information können wir ein Klassenobjekt nach der Erstellung durch Racket jedoch nicht mehr fragen; in ihm existiert jede Methode nur genau einmal.
 
 Anstelle von CLOS-Metaobjekten über CLOS-Klassen wollen wir also Racket-Metaobjekte über Racket-Klassen erstellen. Um Mehrfachvererbung und Methodenkombination zu implementieren, müssen wir wissen, in welcher Vererbungshierarchie die Klassen stehen und welche Felder und Methoden sie definieren. Das sind genau die Informationen, die sich auch das Metaobjekt in CLOS merkt:
 
@@ -342,7 +342,7 @@ Es ergeben sich dann zwei widersprüchliche Constraints:
 
 In dem Fall signalisiert CLOS einen Fehler, da es keine Klassenpräzedenzliste erstellen kann, die konsistent mit allen Constraints ist.
 
-Eine Beispielimplementation des Algorithmus für die Berechnung der Klassenpräzedenzliste kann in \cite[S.24f,291f]{amop} nachgelesen werden. Eine der Anforderungen an die Implementation von Mehrfachbererbung in Racket war, dass sie möglichst ähnlich zu der von CLOS funktionieren soll. Es wird daher die gleiche topologische Sortierung verwendet werden.
+Eine Beispielimplementierung des Algorithmus für die Berechnung der Klassenpräzedenzliste kann in \cite[S.24f,291f]{amop} nachgelesen werden. Eine der Anforderungen an die Implementierung von Mehrfachbererbung in Racket war, dass sie möglichst ähnlich zu der von CLOS funktionieren soll. Es wird daher die gleiche topologische Sortierung verwendet werden.
 
 CLOS nutzt dann die Klassenpräzedenzliste, um die effektiven Slots zu berechnen:
 
