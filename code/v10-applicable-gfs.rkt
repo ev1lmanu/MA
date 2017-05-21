@@ -313,7 +313,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     (define/public (add-method meta method)
       (hash-set! methods meta method))
     
-    ; returns a list of all applicable functions
+    ; returns a list of all applicable methods
     ; (as quoted lambda functions), sorted by cpl
     (define/public (applicable-methods meta)
       (let* ([cpl (get-field class-precedence-list meta)]
@@ -322,7 +322,11 @@ This module was created by Manuela Beckert as master thesis project. The corresp
               (map (curry hash-ref methods)
                    (filter (curry hash-has-key? methods) cpl))])
         (if (empty? applicable)
-            (list 'lambda 'x (error "No applicable methods found for generic function:" name))
+            (list (list 'λ
+                        'x
+                        (list 'error
+                              "No applicable methods found for generic function:"
+                              `',name)))
             applicable)))))
 
 ; table that maps each generic function name to its object
@@ -380,7 +384,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (make-generic-function gf-defintion meta)
   (let ([name (car (second gf-defintion))]
         [params (cdr (second gf-defintion))]
-        [combination (third gf-defintion)]) 
+        [combination (third gf-defintion)])
     (if (hash-has-key? generic-function-table name)
         (error "duplicate definition of generic function" name)
         (add-generic name

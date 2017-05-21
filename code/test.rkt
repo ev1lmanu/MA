@@ -1,5 +1,5 @@
 #lang racket
-(require "classmacro.rkt")
+(require "v10-weird-gf-bug.rkt")
 
 (define thing (class () (super-new)
                 ; Definition einer generische Funktion
@@ -7,8 +7,7 @@
                   ; Es kann eine beliebige Funktion angegeben werden,
                   ; die sich auf eine Liste apply-en lässt
                   (compose reverse list))
-                (define/generic (x) list)
-                ))
+                (define/generic (x) list)))
 
 (define element (class thing (super-new)
                   (init-field [attr 'water])

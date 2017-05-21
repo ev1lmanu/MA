@@ -162,10 +162,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
           inherited-fields)
     ; combination methods
     (map (curry combine-method meta)
-         (remove-duplicates
-          (map get-name (filter is-generic?
-                                (append direct-methods
-                                        inherited-methods))))))))
+         (applicable-generic-functions meta)))))
 
 ; --------------------- META CLASSES ----------------------
 
@@ -308,24 +305,28 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     (init-field meta-class)
     (init-field combination)        ; quoted operator
     (field [methods (make-hasheq)]) ; (meta, (λ ...)) 
-
+    
     (define/public (number-of-params)
       (length params))
-
+    
     ; adds an implementing method to the generic function
     (define/public (add-method meta method)
       (hash-set! methods meta method))
-
-    ; returns a list of all applicable functions
+    
+    ; returns a list of all applicable methods
     ; (as quoted lambda functions), sorted by cpl
-    (define/public (get-applicable-methods meta)
+    (define/public (applicable-methods meta)
       (let* ([cpl (get-field class-precedence-list meta)]
              [applicable
               ; methods that are specialized on classes from cpl
               (map (curry hash-ref methods)
                    (filter (curry hash-has-key? methods) cpl))])
         (if (empty? applicable)
-            (error "no applicable methods found for generic function" name)
+            (list (list 'λ
+                        'x
+                        (list 'error
+                              "No applicable methods found for generic function:"
+                              `',name)))
             applicable)))))
 
 ; table that maps each generic function name to its object
@@ -383,7 +384,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (make-generic-function gf-defintion meta)
   (let ([name (car (second gf-defintion))]
         [params (cdr (second gf-defintion))]
-        [combination (third gf-defintion)]) 
+        [combination (third gf-defintion)])
     (if (hash-has-key? generic-function-table name)
         (error "duplicate definition of generic function" name)
         (add-generic name
@@ -394,6 +395,13 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; '(define/public (foo x y) (+ x y)) -> '(λ (x y) (+ x y))
 (define (method->λ method)
   (list 'λ (cdr (second method)) (third method)))
+
+; Returns the applicable generic functions of a class
+(define (applicable-generic-functions meta)
+  (map get-name
+       (apply append
+              (map (lambda (x) (get-field generic-functions x))
+                   (get-field class-precedence-list meta)))))
 
 ; Returns a (quoted) function definition that combines all applicable
 ; methods.
@@ -419,7 +427,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
   (let* ([gf (get-generic name)]
          [params (get-field params gf)]
          [combination (get-field combination gf)]
-         [functions (send gf get-applicable-methods meta)])
+         [functions (send gf applicable-methods meta)])
     (list 'define/public
           (cons name params)
           ; '+  '(3 4 5)  -> '(+ 3 4 5)
@@ -437,21 +445,20 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 #|
 
-The following class hirarchy was used for testing inheritance of slots and standard method combination:
+The left class hirarchy was used for testing inheritance of slots and standard method combination.
+For method combination, we'll use a simpler, dimond shaped hirarchy with three generic functions and different method distributions (right)
 
-        0 - object%
-      __|__ 
-     / / \ \
-    1  2 3  4
-   / \/   \/ \
-  8   5   6  /
-       \ /__/
+        0 - object%            0 - object%
+      __|__                    |
+     / / \ \                  one
+    1  2 3  4                /   \ 
+   / \/   \/ \            two   three
+  8   5   6  /               \   /
+       \ /__/                 four
         7
-
-Remove the comments below to run the tests.
 |#
 
-#|
+
 (display "------------ Tests ------------\n")
 (display "<test name>:      <expected> / <observed>\n\n")
 
@@ -489,22 +496,7 @@ Remove the comments below to run the tests.
 (display "(method->λ '(define/public (foo x y) (+ x y))) -> ")
 (method->λ '(define/public (foo x y) (+ x y)))
 (display"\n")
-|#
 
-#|
-
-For method combination, we'll use a simpler, dimond shaped hirarchy with three generic functions and different method distributions:
-
-        0 - object%
-        |
-       one
-      /   \ 
-    two   three
-      \   /
-      four
-|#
-
-#|
 (define one (my-class () (super-new)
                       (define/generic (foo) list)
                       (define/public (foo) 1)
@@ -534,4 +526,3 @@ For method combination, we'll use a simpler, dimond shaped hirarchy with three g
 
 (display "four number: '(four two three) / ")
 (send (new four) number)
-|#
