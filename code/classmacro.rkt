@@ -155,14 +155,15 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                             ; part of a method combination
                             (filter (negate (curryr is-generic? meta))
                                     inherited-methods))))
-     ; an inherit-field clause for every inherited field
-     ; because they could possibly be used by the combined methods
-     (map (lambda (field) (list 'inherit-field
-                                (get-name field)))
-          inherited-fields)
-    ; combination methods
-    (map (curry combine-method meta)
-         (applicable-generic-functions meta)))))
+     ; if method combination is involved
+     (when (not (empty? (applicable-generic-functions meta)))
+       (append ; an inherit-field clause for every inherited field;
+               ; they could possibly be used by the combined methods
+               (map (λ (field) (list 'inherit-field (get-name field)))
+                    inherited-fields)
+               ; combination methods
+               (map (curry combine-method meta)
+                    (applicable-generic-functions meta)))))))
 
 ; --------------------- META CLASSES ----------------------
 
@@ -273,13 +274,13 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; Filters a list of field or method definitions so that
 ; only the first declaration of each field/method
 ; is kept:
-; '((field (a 1)) (field (a 2)) (field b) (field (b 0)))
-;  -> '((field (a 1)) (field b))
+; '((field [a 1]) (field [a 2]) (field [b 3]) (field [b 0])))
+;  -> '((field [a 1]) (field [b 3])
 ; This is probably very inefficient!!
 (define (filter-first-occurence xs)
   (remove-duplicates (map (curryr first-occurence xs) xs)))
 
-; returnes the first occurence of a field or method in the list
+; returns the first occurence of a field or method in the list
 (define (first-occurence elem xs)
   (car (filter (lambda (x) (equal? (get-name x)
                                    (get-name elem)))
@@ -287,19 +288,19 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 ; gives us the name of a field or method
 (define (get-name x)
-  (if (symbol? (cadr x)) 
-      (cadr x)    ; field name
-      (caadr x))) ; method name
+  (if (symbol? (second x)) 
+      (second x)    ; field name
+      (car (second x)))) ; method name
 
 ; ------------------- GENERIC FUNCTIONS -----------------------
 
 ; class for generic function objects
-(define meta-generic-function
+(define meta-generic-function%
   (class object% (super-new)
-    (init-field name)
-    (init-field params)
-    (init-field meta-class)
-    (init-field combination)        ; quoted operator
+    (init-field name
+                params
+                meta-class
+                combination)        ; quoted operator
     (field [methods (make-hasheq)]) ; (meta, (λ ...)) 
     
     (define/public (number-of-params)
@@ -347,9 +348,12 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; Updates the generic function table with method and gf defintions
 ; in the given meta object
 (define (ensure-generic-functions meta)
-  ; keep track of new generic functions
-  (map (curryr make-generic-function meta)
-       (get-field generic-functions meta))
+  ; keep track of new generic functions and replace the definition
+  ; in meta with the meta objects
+  (set-field! generic-functions
+              meta
+              (map (curryr make-generic-function meta)
+                   (get-field generic-functions meta)))
   ; add  new methods to existing generic functions
   (for ([method (get-field direct-methods meta)])
     ; for each new method, if a generic function for it exists
@@ -358,23 +362,23 @@ This module was created by Manuela Beckert as master thesis project. The corresp
       (let* ([gf (get-generic (get-name method))]
              [gf-params (send gf number-of-params)]
              [method-params (length (cdr (second method)))])
-        ; if the method has the right amount of parameters
-        ; and the generic function is defined for a superclass
-        (if (and (= gf-params method-params)
-                 (member (get-field meta-class gf)
-                         (get-field class-precedence-list meta)))
-            ; add new method to generic function
-            (send gf
-                  add-method
-                  meta
-                  (method->λ method))
-            ; else, raise an error
-            (error (string-append "Parameters do not match. Generic function has "
-                                  (number->string gf-params)
-                                  " and method has "
-                                  (number->string method-params)
-                                  ": ")
-                   (get-name method)))))))
+        ; if the generic function is defined for a superclass
+        (when  (member (get-field meta-class gf)
+                       (get-field class-precedence-list meta))
+          ; and the method has the right amount of parameters
+          (if (= gf-params method-params)
+              ; add new method to generic function
+              (send gf
+                    add-method
+                    meta
+                    (method->λ method))
+              ; else, raise an error
+              (error (string-append "Parameters do not match. Generic function has "
+                                    (number->string gf-params)
+                                    " and method has "
+                                    (number->string method-params)
+                                    ": ")
+                     (get-name method))))))))
 
 ; Creates a metaobject for gf and adds it to the list
 ; If it already exists, an error will be signaled.
@@ -382,26 +386,26 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; '(define/generic (name args...) combination)
 ;     combination: operator
 (define (make-generic-function gf-defintion meta)
-  (let ([name (car (second gf-defintion))]
-        [params (cdr (second gf-defintion))]
-        [combination (third gf-defintion)])
+  (let ([name (get-name gf-defintion)])
     (if (hash-has-key? generic-function-table name)
-        (error "duplicate definition of generic function" name)
-        (add-generic name
-                     (make-object meta-generic-function name
-                       params meta combination)))))
+        (error "Duplicate definition of generic function" name)
+        (let* ([params (cdr (second gf-defintion))]
+               [combination (third gf-defintion)]
+               [gf (make-object meta-generic-function% name
+                     params meta combination)])
+          (add-generic name gf)
+          gf))))
 
 ; Converts a method expression into a quoted lambda function
 ; '(define/public (foo x y) (+ x y)) -> '(λ (x y) (+ x y))
 (define (method->λ method)
   (list 'λ (cdr (second method)) (third method)))
 
-; Returns the applicable generic functions of a class
+; Returns the names of the applicable generic functions of a class
 (define (applicable-generic-functions meta)
-  (map get-name
-       (apply append
-              (map (lambda (x) (get-field generic-functions x))
-                   (get-field class-precedence-list meta)))))
+  (apply append
+         (map (lambda (x) (get-field generic-functions x))
+              (get-field class-precedence-list meta))))
 
 ; Returns a (quoted) function definition that combines all applicable
 ; methods.
@@ -415,7 +419,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; name:        foo
 ; params:      x y
 ; combination: *
-; functions:   (λ (x y) (+ x y)), (λ (x y) (* x y))
+; functions:   (λ (x y) (+ x y)), (λ (x y) (- x y))
 ; the result will be:
 ; '(define/public (foo x y)
 ;   (apply + (map (curryr apply (list x y)
@@ -423,8 +427,8 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ;                                     (λ (x y) (- x y)))))))
 ; wich evaluates to the defintion of a function that computes
 ; (* (+ x y) (- x y))
-(define (combine-method meta name)
-  (let* ([gf (get-generic name)]
+(define (combine-method meta gf)
+  (let* ([name (get-field name gf)]
          [params (get-field params gf)]
          [combination (get-field combination gf)]
          [functions (send gf applicable-methods meta)])
