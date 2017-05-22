@@ -1,6 +1,6 @@
 #lang racket
 
-(require "cpl.rkt")
+(require swindle/misc) ; for cpl
 
 #|
 
@@ -207,10 +207,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
   (hash-set! class-table obj metaclass))
 
 ; add object% and its meta object to the table
-(define meta-object%
-  (make-object meta-class% '() '() '() '()))
-
-(add-class object% meta-object%)
+(add-class object% (make-object meta-class% '() '() '() '()))
 
 ; ---------------- COMPUTING FIELDS AND METHODS ----------------
 
@@ -241,8 +238,8 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (finalize-inheritance meta)
   (let ([cpl (compute-cpl meta)])
     (set-field! class-precedence-list meta cpl)
-    (set-field! inherited-fields       meta (compute-inherited-fields (cdr cpl)))
-    (set-field! inherited-methods     meta (compute-inherited-methods (cdr cpl)))))
+    (set-field! inherited-fields  meta (compute-inherited-fields (cdr cpl)))
+    (set-field! inherited-methods meta (compute-inherited-methods (cdr cpl)))))
 
 ; compute the class precedence list
 ; We use the function compute-std-cpl from swindle.
@@ -294,11 +291,10 @@ This module was created by Manuela Beckert as master thesis project. The corresp
       (cadr x)    ; field name
       (caadr x))) ; method name
 
-
 ; ------------------- GENERIC FUNCTIONS -----------------------
 
 ; class for generic function objects
-(define generic-function%
+(define meta-generic-function
   (class object% (super-new)
     (init-field name)
     (init-field params)
@@ -392,7 +388,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     (if (hash-has-key? generic-function-table name)
         (error "duplicate definition of generic function" name)
         (add-generic name
-                     (make-object generic-function% name
+                     (make-object meta-generic-function name
                        params meta combination)))))
 
 ; Converts a method expression into a quoted lambda function
@@ -444,6 +440,68 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                             (cons 'list params))
                       (cons 'list functions))))))
   
+; ---------------- COPY OF CPL FROM SWINDLE ----------------
+
+; A copy of the topological sort implemented in CLOS
+; See racket/pkgs/swindle/tiny-clos.rkt
+(define (compute-std-cpl c get-direct-supers)
+  (top-sort (build-transitive-closure get-direct-supers c)
+            (build-constraints get-direct-supers c)
+            (std-tie-breaker get-direct-supers)))
+
+(define (top-sort elements constraints tie-breaker)
+  (let loop ([elements elements] [constraints constraints] [result '()])
+    (if (null? elements)
+      result
+      (let ([can-go-in-now
+             (filter (lambda (x)
+                       (every (lambda (constraint)
+                                (or (not (eq? (cadr constraint) x))
+                                    (memq (car constraint) result)))
+                              constraints))
+                     elements)])
+        (if (null? can-go-in-now)
+          (error 'top-sort "invalid constraints")
+          (let ([choice (if (null? (cdr can-go-in-now))
+                          (car can-go-in-now)
+                          (tie-breaker result can-go-in-now))])
+            (loop (filter (lambda (x) (not (eq? x choice))) elements)
+                  constraints (append result (list choice)))))))))
+
+(define (std-tie-breaker get-supers)
+  (lambda (partial-cpl min-elts)
+    (let loop ([pcpl (reverse partial-cpl)])
+      (let* ([current-elt (car pcpl)]
+             [ds-of-ce (get-supers current-elt)]
+             [common (filter (lambda (x) (memq x ds-of-ce)) min-elts)])
+        (if (null? common)
+          (if (null? (cdr pcpl))
+            (error 'std-tie-breaker "nothing valid") (loop (cdr pcpl)))
+          (car common))))))
+
+(define (build-transitive-closure get-follow-ons x)
+  (let track ([result '()] [pending (list x)])
+    (if (null? pending)
+      result
+      (let ([next (car pending)])
+        (if (memq next result)
+          (track result (cdr pending))
+          (track (cons next result)
+                 (append (get-follow-ons next) (cdr pending))))))))
+
+(define (build-constraints get-follow-ons x)
+  (let loop ([elements (build-transitive-closure get-follow-ons x)]
+             [this-one '()]
+             [result '()])
+    (if (or (null? this-one) (null? (cdr this-one)))
+      (if (null? elements)
+        result
+        (loop (cdr elements)
+              (cons (car elements) (get-follow-ons (car elements)))
+              result))
+      (loop elements
+            (cdr this-one)
+            (cons (list (car this-one) (cadr this-one)) result)))))
 
 ;------------------------ Tests -----------------------------
 

@@ -1,5 +1,5 @@
 \chapter{Entwurf} 
-Das Objektsystem von Racket soll um die Features Mehrfachvererbung, generische Methoden und Ergänzungsmethoden erweitert werden. 
+Das Objektsystem von Racket soll um die Features Mehrfachvererbung, generische Methoden und Ergänzungsmethoden erweitert werden. Es werden dafür zunächst die Anforderungen an eine solche Umsetzung formuliert und anschließend einen Enwurf erarbeitet, der diese Anforderungen erfüllt. Es wird ein Vorschlag für die Erweiterung der Racket-Syntax um Mehrfachvererbung vorgestellt und Möglichkeiten der Einbindung in Racket diskutiert.
 
 \section{Anforderungen}
 Es sollen dabei folgende Anforderungen beachtet werden:
@@ -9,13 +9,13 @@ Es sollen dabei folgende Anforderungen beachtet werden:
  \item Die Benutzung ist für jemanden, der CLOS kennt, intuitiv. Die definierten Makros und Funktionen sollen möglichst ähnlich zu benutzen sein wie in CLOS und das gleiche Verhalten zeigen (unter Beachtung von 2.).
 \end{enumerate}
 
-Die erste Anforderung soll gewährleisten, dass das Makro auch in bestehenden Racket-Projekten eingebunden werden kann, ohne dass das die Funktionalität bestehender Klassen und Objekte beeinflusst. Die Erweiterung soll dazu ermuntern, Mehrfachvererbung zu nutzen an den Stellen, so es sinnvoll ist und das mit dem geringstmöglichen Änderungsaufwand. Es soll niemand gezwungen sein, alle bestehenden Klassen umzuschreiben, nur damit eine einzelne Klasse Mehrfachvererbung nutzen kann.
+Die erste Anforderung soll gewährleisten, dass die entstehende Erweiterung auch in bestehenden Racket-Projekten eingebunden werden kann, ohne dass das die Funktionalität bestehender Klassen und Objekte beeinflusst. Die Erweiterung soll dazu ermuntern, Mehrfachvererbung zu nutzen an den Stellen, so es sinnvoll ist und das mit dem geringstmöglichen Änderungsaufwand. Es soll niemand gezwungen sein, alle bestehenden Klassen umzuschreiben, nur damit eine einzelne Klasse Mehrfachvererbung nutzen kann.
 
-Die zweie Anforderung knüpft direkt an die erste an: Es ist einfacher, neue Funktionalität zu benutzen, wenn sie sehr ähnlich zu bereits bestehenden Konzepten ist. Für einen Entwickler, der sich bereits mit dem Objektsystem von Racket auskennt, soll die neue Funktionalität so intuitiv wie möglich sein. Dafür ist es ist beispielsweise hilfreich, wenn generische Funktionenen, die vom Konzept her sehr verwandt zu Methoden sind, auf eine ähnliche Weise benutzt werden können.
+Die zweite Anforderung knüpft direkt an die erste an: Es ist einfacher, neue Funktionalität zu benutzen, wenn sie sehr ähnlich zu bereits bestehenden Konzepten ist. Für einen Entwickler, der sich bereits mit dem Objektsystem von Racket auskennt, soll die neue Funktionalität so intuitiv wie möglich sein. Dafür ist es ist beispielsweise hilfreich, wenn generische Funktionenen, die vom Konzept her sehr verwandt zu Methoden sind, auf eine ähnliche Weise benutzt werden können.
 
 Die dritte Anforderung ist interessant für diejenigen, die beide Welten kennen: die von Racket und die von CLOS. Die Erweiterung integriert Bestandteile von CLOS in das Objektsystem von Racket. Dann sollten diese Bestandteile für jemanden, der CLOS kennt, leicht verständlich und möglichst ähnlich zu benutzen sein.
 
-\section{Gewünschtes Verhalten}
+\section{Vorschlag für die Erweiterung von Racket}
 
 \subsection{Mehrere Superklassen}
 Für Mehrfachvererbung muss es zunächst möglich sein, mehrere Superklassen anzugeben. Analog zu CLOS soll dies in einer Liste möglich sein. Die Spezifikation der Superklassen als Liste ist jedoch lediglich eine Alternative, die direkte Angabe der Superklasse soll weiterhin möglich sein. Wie in CLOS soll auch eine leere Liste angegeben werden können, in dem Fall wird automatisch die Rootklasse als Superklasse gesetzt. Die folgenden drei Aufrufe sollen zukünftig alle eine Klasse erzeugen, die \texttt{object\%} als (einzige) Superklasse hat (bisher ist in Racket nur die erste Form möglich):

@@ -26,6 +26,6 @@
 (send (new pokemon [attr 'fire] [size 'big]) attack)
 
 (define bad (class () (super-new)
-              (define/public (attack) 'foo)))
+              (define/public (attack x) 'foo)))
 
-(send (new bad) attack)
+(send (new bad) attack 1)

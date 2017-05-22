@@ -219,6 +219,69 @@ Das passiert in drei Schritten:
 Das erzeugte Klassen-Metaobjekt wird anschließend zurückgegeben, denn wir müssen noch das tatsächliche Klassenobjekt erzeugen, bevor wir es zur Liste hinzufügen können. Die Erzeugung des Klassenobjekts betrachten wir zum Schluss. Zunächst soll auf die Implementierung der Metaklassen für Klassen und generische Funktionen näher eingegangen werden.
 
 \section{Klassen-Metaobjekte}
+Klassen-Metaobjekte werden analog zu CLOS definiert. Es gibt eine interne Racket-Klasse für Metaobjekte, hier \texttt{meta-class\%} genannt, die sich alle wichtigen Informationen über Superklassen, Felder und Methoden in Form von Feldern merkt.
+
+Im Gegensatz zu CLOS manipulieren wir jedoch nur Syntax. Anstelle von Feld- und Methodenobjekten merkt sich die Metaklasse die Definitionen der Felder und Methoden. Sie werden erst ganz am Ende von Racket ausgewertet werden, als Teil der Definition des Klassenobjekts, das an den Nutzer zurückgegeben wird.
+
+Für die Klasse Thing aus dem Object-Racket-Kapitel
+
+\begin{lstlisting}
+(define Thing (class object% (super-new)
+                (init-field [name "a Thing"])
+                (define/public (who-are-you?) 
+                  (string-append "I am " name "!"))))
+\end{lstlisting}
+
+würden wir als direkte Felder die Liste 
+
+\texttt{{\textquotesingle}((init-field [name {\qq}a Thing\qq]))} 
+
+und als direkte Methoden die Liste 
+
+\texttt{{\textquotesingle}((define/public (who-are-you?) (string-append {\qq}I am {\qq} name \qq!\qq)))} 
+
+festhalten. Eine Ausnahme bilden die Superklassen. Klassen sind in Racket nicht benannt und der Benutzer hat die Freiheit die gleiche Klasse mehreren Variablen zuzuweisen. Um eine Klasse eindeutig identifiezieren zu können, brauchen wir also die Referenz; wir müssen die Superklassen auswerten. Um Klassen für Debugging unterscheiden zu können, weisen wir jeder Klasse außerdem eine aufsteigende Nummer zu. Die Anzahl der bisher erzeugten Klasse wird in der Variable \texttt{num-of-classes} festgehalten.
+
+Da wir und später nicht für die eigentlichen Superklassen, sondern die zugehörigen Metaobjekte, interessieren, halten wir in der Klassenpräzedenzliste die Präzedenz der Metaklassen fest.
+
+Im Gegensatz zu CLOS werden am Ende der Expansion von einer Klasse mit mehreren Superklassen zwei Klassen erstellt: Die Klasse, die die Eigenschaften der Superklassen zusammenfasst und die neue, durch das Makro definierte, Klasse, die von der zusammengestellten Superklasse erbt. Das bedeutet, dass wir am Ende unterscheiden zwischen geerbten Feldern und Methoden und solchen, die in der neuen Klasse definiert wurden. Es bietet sich daher an, anstelle der effektiven Felder und Methoden nur die geerbten festzuhalten. Die effektiven Eigenschaften lassen sich leicht in einer Methode als Vereinigung von direkten und geerbten ermitteln; umgekehrt müssten wir jedesmal die Liste der effektiven Eigenschaften filtern, um nur die geerbten zu erhalten. 
+
+Es ergibt sich demnach die folgende Defintion für die Klassen-Metaklasse:
+
+\begin{lstlisting}
+(define meta-class%
+  (class object% (super-new)
+    (init-field direct-supers
+                direct-fields
+                direct-methods
+                generic-functions)
+    (field [number (begin 
+                     (set! num-of-classes (+ 1 num-of-classes))
+                     num-of-classes)]
+           [class-precedence-list '()]
+           [inherited-fields '()]
+           [inherited-methods '()])    
+    (define/public (effective-fields)
+      (append direct-fields inherited-fields))
+    (define/public (effective-methods)
+      (append direct-methods inherited-methods))))
+\end{lstlisting}
+
+In einer Hashtabelle werden die bereits erzeugen Klassen als Paar (Klassenobjekt, Metaobjekt) festgehalten und es gibt die Methoden \texttt{findclass} und \texttt{add-class}, die den Zugriff erleichtern. Zu Beginn befindet sich bereits \texttt{object\%} und sein Metaobjekt in der Tabelle.
+
+Die Superklassen, direkten Felder und Methoden lassen sich aus der Syntax der Klassendefinition extrahieren. Um Felder später unabhängig voneinander vererben zu können werden \texttt{field}- und \texttt{init-field}-Optionen, die mehr als ein Feld definieren gesplittet. Aus
+
+\texttt{(field [a 1] [b 2])}
+
+wird beispielsweise
+
+\texttt{(field [a 1]) (field [b 2])}
+
+Die Methode \texttt{compute-direct-fields} übernimmt diese Konversion.
+
+Die Eigenschaften, die sich durch Verebung ergeben, werden durch die Methode \texttt{finalize-inheritance} zu einem Metaobjekt hinzugefügt. Sie berechnet die die Klassenpräzedentliste und anhand dieser die geerbten Felder und Methoden und bestückt die entprechenden Felder des Metaobjekts.
+
+Für die Berechnung der Klassenpräzedentliste wird die CLOS-Methode \texttt{compute-std-cpl} verwendet. Sie erhält das Objekt, für das die Klassenpräzedentliste berechnet werden soll (wir verwenden das zugehörige Metaobjekt) sowie eine Methode, die zu einer (Meta-)Klasse die direkten Superklassen zurückgibt und liefert uns die vollständige Klassenpräzedentliste. Die Methode befindet sich in \texttt{tinyclos.rkt} im \texttt{swindle}-Paket, wird jedoch nicht exportiert. Der Quelltext wurde daher unverändert in unser Modul kopiert.
 
 
 \chapter{Analyse/Erprobung/Auswertung/Test}

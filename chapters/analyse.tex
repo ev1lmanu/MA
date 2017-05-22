@@ -134,8 +134,8 @@ Die Informationen werden in Form von Objekten festgehalten -- internen Objekten,
 
 Es entsteht eine Struktur in drei Schichten:
 \begin{itemize}
- \item die Makro-Expansions-Schicht: eine dünne Schicht, die die wenigen syntaktischen Konstrukte bereitstellt, die der Nutzer zu sehen bekommt, wie das \texttt{defclass}-Makro.
- \item Die ``Leim''-Schicht: hier werden die externen Namen auf die intern benutzten Metaobjekte abgebildet, zum Beispiel die Funktion \texttt{find-class}, welche ein Metaobjekt anhand des Namens heraussucht.
+ \item Die Makro-Expansions-Schicht: eine dünne Schicht, die die wenigen syntaktischen Konstrukte bereitstellt, die der Nutzer zu sehen bekommt, wie das \texttt{defclass}-Makro.
+ \item Eine Ziwschenschicht: hier werden die externen Namen auf die intern benutzten Metaobjekte abgebildet, zum Beispiel die Funktion \texttt{find-class}, welche ein Metaobjekt anhand des Namens heraussucht.
  \item Die Support-Schicht: Hier ist das Verhalten von Klassen, Instanzen, generischen Funktionen und Methoden implementiert. Das Metaobjekt-Protokoll konzentriert sich hauptsächlich auf diese Schicht.
 \end{itemize}
 
@@ -169,7 +169,7 @@ Die ``Klassen-Metaklasse'' ist dann lediglich die Beschreibung, wie die Metaobje
                    :accessor class-direct-methods)))
 \end{lstlisting}
 
-Das \texttt{defclass}-Makro parst die Klassendefinition und verwandelt sie in einen Aufruf an die Methode \texttt{ensure-class} aus der ``Leim''-Schicht. 
+Das \texttt{defclass}-Makro parst die Klassendefinition und verwandelt sie in einen Aufruf an die Methode \texttt{ensure-class} aus der Zwischenschicht. 
 
 \begin{lstlisting}
 (defmacro defclass (name direct-superclasses direct-slots &rest options)
@@ -228,9 +228,10 @@ Anstelle von CLOS-Metaobjekten über CLOS-Klassen wollen wir also Racket-Metaobj
 
 Da Racket-Klassen nicht benannt sind, entfällt das Feld für den Namen. Um die Metaobjekte für Testzwecke unterscheiden zu können, bietet es sich jedoch gegebenenfalls an, sie zu nummerieren. Die Information über die Subklassen einer Klasse wird in CLOS hauptsächlich für spätere Verwendung durch den Benutzer bereitgestellt, sie ist nicht notwendig für die Umsetzung von Mehrfachbererbung. 
 
-Analog zu CLOS muss es dann auch eine ``Leim''-Schicht geben, die dafür sorgt, dass die Metaobjekte erstellt und verwaltet werden. Da Racket-Klassen nicht benannt sind, wird selbst bei identischer Klassendefinition immer eine neue Klasse erzeugt; der Test auf Enthaltensein in der Liste der bereits erzeugten Klassen entfällt demnach.
+Analog zu CLOS muss es dann auch eine `Zwischenschicht geben, die dafür sorgt, dass die Metaobjekte erstellt und verwaltet werden. Da Racket-Klassen nicht benannt sind, wird selbst bei identischer Klassendefinition immer eine neue Klasse erzeugt; der Test auf Enthaltensein in der Liste der bereits erzeugten Klassen entfällt demnach.
 
 \section{Klassenpräzedenz}
+\label{cpl}
 Wir haben fast alle Schritte gesehen, die mit dem Erstellen eines Klassen-Metaobjekts zu tun haben: von \texttt{defclass} über \texttt{ensure-class} bis hin zu \texttt{make-instance}. Die verbleibenden Schritte haben mit Vererbung zu tun:
 \begin{itemize}
  \item Berechnen und Speichern der Klassenpräzedenzliste.
@@ -316,8 +317,8 @@ Es werden dadurch zwei neue Constraints zur Liste hinzugefügt:
 \begin{tabular}{l|c}
  \textbf{Constraint} & \textbf{Regel}\\
  \hline
- \texttt{Animal $>$ Creature} & 2\\
- \texttt{Creature $>$ Thing}  & 2\\
+ \texttt{Animal {\guillemotright} Creature} & 2\\
+ \texttt{Creature {\guillemotright} Thing}  & 2\\
 \end{tabular}
 
 Diese zusätzlichen Regeln bewirken, dass es nun nur noch eine mögliche Klassenpräzedenzliste gibt:
@@ -336,8 +337,8 @@ Es ergeben sich dann zwei widersprüchliche Constraints:
 \begin{tabular}{l|c}
  \textbf{Constraint} & \textbf{Regel}\\
  \hline
- \texttt{Animal $>$ Creature} & 1\\
- \texttt{Creature $>$ Animal}  & 2\\
+ \texttt{Animal {\guillemotright} Creature} & 1\\
+ \texttt{Creature {\guillemotright} Animal}  & 2\\
 \end{tabular}
 
 In dem Fall signalisiert CLOS einen Fehler, da es keine Klassenpräzedenzliste erstellen kann, die konsistent mit allen Constraints ist.
@@ -359,7 +360,7 @@ CLOS nutzt dann die Klassenpräzedenzliste, um die effektiven Slots zu berechnen
 
 Es werden die direkten Slots aller Klassen in der Reihenfolge der Präzedenzliste gesammelt und anschließend gleichbenannte Slots entfernt. Dadurch verbleibt nur der Slot der Klasse mit der höchsten Präzedenz in der Liste. Das lässt sich auch leicht auf Definitionen von Racket-Feldern abbilden.
 
-CLOS wandelt die Slot-Definition anschließend noch in Slot-Objekte um. Diese Umwandlung wird Racket für uns übernehmen.
+CLOS wandelt die Slot-Definition anschließend noch in Slot-Objekte um. %Diese Umwandlung wird Racket für uns übernehmen.
 
 Mit den den CLOS-Konzepten, die wir bisher kennengelernt haben, lässt sich  unser Makro erweitern um Funktionen, die Informationen über die Klasse in Form eines Metaobjektes speichern, die Klassenpräzedenzliste bestimmen und  die effektiven Felder ermitteln. Die Vererbung von Feldern ist damit bereits abgedeckt. Was noch fehlt, ist die Vererbung von Methoden.
 
@@ -404,4 +405,4 @@ Andere Kombinationsarten werden in AMOP nicht behandelt, aber das gleiche Schema
 Auf analoge Weise lässt sich Methodenkombination auch für Racket umsetzen: 
 Wir erlauben die Optionen \texttt{define/generic}, \texttt{define/before}, \texttt{define/around} und \texttt{define/after} im \texttt{class}-Makro. Wann immer eine generische Funktion oder Methode angegeben wird, merken wir uns die relevanten Informationen in Form eines Metaobjekts. Und wir sorgen dafür, dass die Methodendefinitionen, für die eine Kombination existiert, durch eine entsprechende Kombinationsmethode ersetzt werden, bevor Racket die Klassendefinition auswertet.
 
-Das ist alles, was wir benötigen.
+Damit bietet CLOS uns bereits alle Konzepte, die für eine Umsetzung des Entwurfs benötigt werden. Insbesondere die dritte Anforderung lässt sich auf diese Weise sehr elegant umsetzen: da die Funktionalität, die von CLOS übertragen wird, auf analoge Weise implementiert wird, wird sie auch das gleiche Verhalten zeigen.
