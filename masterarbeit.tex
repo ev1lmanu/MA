@@ -212,7 +212,7 @@ Da Klassen in Racket keine Namen haben, wird das Objekt selbst als Schlüssel in
 Das passiert in drei Schritten:
 \begin{itemize}
  \item Es wird ein Metaobjekt mit den angegebenen Superklassen, Feldern, Methoden und generischen Funktionen erzeugt.
- \item \texttt{finalize-inheritance} fügt die Klassenpräzedentliste, geerbte Felder und Methoden hinzu.
+ \item \texttt{finalize-inheritance} fügt die Klassenpräzedenzliste, geerbte Felder und Methoden hinzu.
  \item \texttt{ensure-generic-functions} aktualisiert die Liste der generischen Funktionen. Neue generische Funktionen, die in der aktuellen Klasse definiert werden, werden hinzugefügt und Methoden, zu denen eine generische Funktion existiert, werden zu der generischen Funktion hinzugefügt.
 \end{itemize}
 
@@ -279,9 +279,31 @@ wird beispielsweise
 
 Die Methode \texttt{compute-direct-fields} übernimmt diese Konversion.
 
-Die Eigenschaften, die sich durch Verebung ergeben, werden durch die Methode \texttt{finalize-inheritance} zu einem Metaobjekt hinzugefügt. Sie berechnet die die Klassenpräzedentliste und anhand dieser die geerbten Felder und Methoden und bestückt die entprechenden Felder des Metaobjekts.
+Die Eigenschaften, die sich durch Einfach- oder Mehrfachvererbung ergeben, werden durch die Methode \texttt{finalize-inheritance} zu einem Metaobjekt hinzugefügt. Sie berechnet die die Klassenpräzedenzliste und anhand dieser die geerbten Felder und Methoden und bestückt die entprechenden Felder des Metaobjekts.
 
-Für die Berechnung der Klassenpräzedentliste wird die CLOS-Methode \texttt{compute-std-cpl} verwendet. Sie erhält das Objekt, für das die Klassenpräzedentliste berechnet werden soll (wir verwenden das zugehörige Metaobjekt) sowie eine Methode, die zu einer (Meta-)Klasse die direkten Superklassen zurückgibt und liefert uns die vollständige Klassenpräzedentliste. Die Methode befindet sich in \texttt{tinyclos.rkt} im \texttt{swindle}-Paket, wird jedoch nicht exportiert. Der Quelltext wurde daher unverändert in unser Modul kopiert.
+Für die Berechnung der Klassenpräzedenzliste wird die Funktion \texttt{compute-std-cpl} aus der CLOS-Implementierung im Racket-Paket \texttt{swindle} verwendet. Sie implementiert die Klassenpräzedenzliste bereits nach den in AMOP definierten Regeln. Die Funktion erhält das Objekt, für das die Klassenpräzedenzliste berechnet werden soll (wir verwenden das zugehörige Metaobjekt) sowie eine Funktion, die zu einem (Meta-)Objekt die direkten Superklassen zurückgibt -- und liefert uns die vollständige Klassenpräzedenzliste. Die Funktion befindet sich in \texttt{tinyclos.rkt}, wird jedoch nicht exportiert. Der Quelltext wurde in unser Modul kopiert, damit nicht jeder, der das Modul verwenden möchte, erst einmal \texttt{tinyclos.rkt} um einen Exportbefehl ergänzen muss. 
+
+Die Methoden \texttt{compute-inherited-fields} und \texttt{compute-inherited-methods} nutzen dann die Klassenpräzedenzliste, um die geerbten Felder und Methoden zu berechnen. Für jedes Objekt in der Klassenpräzedenzliste sammeln sie die dort definierten direkten Eigenschaften und fügen diese zu einer Liste zusammen. Anschließend werden Duplikate, also Felder und Methoden mit gleichem Namen) aus der Liste entfernt. Nur das erste Auftreten, also das Feld oder die Methode der Klasse mit der höchsten Präzedenz, verbleibt in der Liste. Da das Vorgehen bei Methoden und Feldern sich nur geringfügig unterscheidet, wird die Logik in der Methode \texttt{compute-inherited-stuff} zusammengefasst. Der Parameter \texttt{direct-stuff} ist entweder \texttt{{\textquotesingle}direct-fields} oder \texttt{{\textquotesingle}direct-methods}:
+
+\begin{lstlisting}
+(define (compute-inherited-stuff direct-stuff cpl)
+  (let ([stuff '()])
+    ; add the fields/methods of all superclasses to the list
+    (for*/list ([metas cpl])
+      (set! stuff (append stuff 
+                          (dynamic-get-field direct-stuff metas))))
+    ; only keep the first appearance of every field/method declaration
+    (filter-first-occurence stuff)))
+\end{lstlisting}
+
+\texttt{filter-first-occurance} sorgt für die Entfernung von Duplikaten. Aus
+
+\texttt{\textquotesingle((field [a 1]) (field [a 2]) (field [b 3]) (field [b 0]))}
+
+wird beispielsweise
+
+\texttt{\textquotesingle((field [a 1]) (field [b 3]))}
+
 
 
 \chapter{Analyse/Erprobung/Auswertung/Test}
@@ -291,6 +313,7 @@ Für die Berechnung der Klassenpräzedentliste wird die CLOS-Methode \texttt{com
  \item Test mit Pokemon-Beispiel
  \item Einschränkungen
  \item unterstützte Klassenoptionen
+ \item dafür Sorgen, dass in einer neueren Racket-Version \texttt{compute-std-cpl} exportiert wird.
 \end{itemize}
 
 

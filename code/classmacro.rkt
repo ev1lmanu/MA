@@ -246,6 +246,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; It receives the object for which the cpl is to be computed
 ; and a method that returns the superclasses of a given object
 ; and gives us the cpl.
+; You can find the function near the end of this module.
 (define (compute-cpl meta)
   (compute-std-cpl meta (lambda (obj) (get-field direct-supers obj))))
 
@@ -266,8 +267,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
     (for*/list ([metas cpl])
       (set! stuff (append stuff 
                           (dynamic-get-field direct-stuff metas))))
-    ; only keep the first appearance of every field/method
-    ; declaration
+    ; only keep the first appearance of every field/method declaration
     (filter-first-occurence stuff)))
 
 ; Filters a list of field or method definitions so that
