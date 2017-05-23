@@ -6,10 +6,10 @@
 
 This module introduces the following changes to the class macro:
 * it is possible to specify a list of superclasses
-* you can definie generic functions with define/generic and specify a
+* you can define generic functions with define/generic and specify a
   method combination
-* implementing methods can be (re-)declared with define/public in any subclass
-  of the class with the generic function
+* implementing methods can be (re-)declared with define/public in any
+  subclass of the class with the generic function
 
     (class (first second ...)
         ...
@@ -20,6 +20,8 @@ This module introduces the following changes to the class macro:
 The superclass specifier can be either a single class (as in standard Object Racket) or an unquoted, possibly empty list of classes.
 
 The combination can be any function that can be applied to a list of arguments, e.g. +, list, append or (compose reverse list).
+
+Inherited fields that are used by a combination method must be made visible with inherit-field.
 
 Only fields and methods defined with field, init-field or define/public will be inherited when there is more than one superclass or a generic function is definied for the class. Otherwise, Racket will handle inheritance. Method combination is not compatible with override or augment.
 
@@ -139,14 +141,15 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; or if we need to put together the class ourselves
 (define (racket-only? meta)
   (and (= 1 (length (get-field direct-supers meta)))
-       (empty? (applicable-generic-functions meta))))
+       (empty? (get-field applicable-generic-functions meta))))
 
 ; Generates all class options we'll need to supply to the class
 ; macro if we put together the class ourselves.
 (define (generate-class-options my-eval meta)
   (let* ([inherited-fields  (get-field inherited-fields meta)]
-         [direct-methods    (get-field direct-methods meta)]
-         [inherited-methods (get-field inherited-methods meta)])
+         [inherited-methods (get-field inherited-methods meta)]
+         [applicable-generic-functions
+          (get-field applicable-generic-functions meta)])
     (append
      ; superclass
      (list (my-eval (append '(class object% (super-new))
@@ -155,16 +158,9 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                             ; part of a method combination
                             (filter (negate (curryr is-generic? meta))
                                     inherited-methods))))
-     (if (empty? (applicable-generic-functions meta))
-         '()
-         ; if method combination is involved
-         (append ; an inherit-field clause for every inherited field;
-                 ; they could possibly be used by the combined methods
-                 (map (λ (field) (list 'inherit-field (get-name field)))
-                      (send meta not-redeclared-fields))
-                 ; combination methods
-                 (map (curry combine-method meta)
-                      (applicable-generic-functions meta)))))))
+     ; add combination methods
+     (map (curry combine-method meta)
+          applicable-generic-functions))))
 
 ; --------------------- META CLASSES ----------------------
 
@@ -182,25 +178,20 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                 direct-fields
                 direct-methods
                 generic-functions)
-
+    
     ; fields
     (field [number (begin 
                      (set! num-of-classes (+ 1 num-of-classes))
                      num-of-classes)]
            [class-precedence-list '()]
            [inherited-fields '()]
-           [inherited-methods '()])
-
-    ; inherited fields that were not redeclared !!
-    (define/public (not-redeclared-fields)
-      (filter (lambda (field) (not (member (get-name field)
-                                           (map get-name direct-fields))))
-              inherited-fields))
-
+           [inherited-methods '()]
+           [applicable-generic-functions '()])
+    
     ; effective fields
     (define/public (effective-fields)
       (append direct-fields inherited-fields))
-
+    
     ; effective methods
     (define/public (effective-methods)
       (append direct-methods inherited-methods))))
@@ -385,19 +376,22 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                                     " and method has "
                                     (number->string method-params)
                                     ": ")
-                     (get-name method))))))))
+                     (get-name method)))))))
+  ; compute all apllicable generic functions for the class
+  (set-field! applicable-generic-functions meta
+              (applicable-generic-functions meta)))
 
 ; Creates a metaobject for gf and adds it to the list
 ; If it already exists, an error will be signaled.
 ; generic function definitions have the form:
 ; '(define/generic (name args...) combination)
 ;     combination: operator
-(define (make-generic-function gf-defintion meta)
-  (let ([name (get-name gf-defintion)])
+(define (make-generic-function gf-definition meta)
+  (let ([name (get-name gf-definition)])
     (if (hash-has-key? generic-function-table name)
         (error "Duplicate definition of generic function" name)
-        (let* ([params (cdr (second gf-defintion))]
-               [combination (third gf-defintion)]
+        (let* ([params (cdr (second gf-definition))]
+               [combination (third gf-definition)]
                [gf (make-object meta-generic-function% name
                      params meta combination)])
           (add-generic name gf)
@@ -408,7 +402,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (method->λ method)
   (list 'λ (cdr (second method)) (third method)))
 
-; Returns the names of the applicable generic functions of a class
+; Returns the applicable generic functions of a class
 (define (applicable-generic-functions meta)
   (apply append
          (map (lambda (x) (get-field generic-functions x))

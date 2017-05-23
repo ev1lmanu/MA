@@ -5,6 +5,8 @@ Makros sind das Sprachmittel, mit dem die Syntax einer Programmiersprache geschr
 
 Anschließend schauen wir uns an, wie CLOS implementiert ist. CLOS ist dabei nicht nur ein Ratgeber zur Implementierung von Mehrfachvererbung. Es gibt uns außerdem einen Einblick, wie eine bestehende Sprache mithilfe von Makros und Metaobjekten um ein Objektsystem erweitert werden kann -- eine wichtige Grundlage für die Erweiterung von Racket. Die Implementierungsdetails von CLOS sind dem Buch ``The Art of the Metaobject Protocol'' (AMOP) \cite{amop} entnommen. Die CLOS-Implementierung in AMOP ist nicht in Racket, sondern Common Lisp und die Quelltextbeispiele wurden unverändert übernommen. Es wird daher zu leichten Abweichungen zu der bisher eingeführten Syntax von Racket oder Makros kommen; die grundlegende Funktionalität ist jedoch die gleiche.
 
+Im Folgenden wird eine Unterscheidung zwischen Funktionen, Methoden und generischen Funktionen gemacht. Methoden und generische Funktionen sind Bestandteil des Verhaltens von Objekten und werden innerhalb einer Klassendefinition durch eine entprechende Klassenoption angegeben. ``Funktionen'' sind die normalen Racket-Funktionen, die wir mit \texttt{$\lambda$} oder \texttt{define} auch außerhalb von Klassen definieren würden. Natürlich kann man Methoden nicht ohne Funktionen betrachten -- für die Implementation von Methoden werden schließlich Racket-Funktionen benutzt. Die Unterscheidung macht es uns aber einfacher zu erkennen, wann wir über eine Methode reden, die Bestandteil einer Klassendefinition ist, und wann über eine Funktion, die außerhalb definiert wurde.
+
 \section{Makros} 
 \label{makros}
 % \subsection{Transformers}
@@ -29,12 +31,12 @@ Durch die Verwendung von \texttt{define-syntax} geschieht eine Transformer-Bindu
 \begin{lstlisting}
 > (foo 1 2 3)
 \end{lstlisting}
-{\routput ``I am foo''}
+{\routput {\qq}I am foo\qq}
 
-Die Transformation passiert rein auf Syntax-Ebene. Erst \textit{nachdem} die Syntax ersetzt wurde, geschieht die Auswertung. Wir könnten Anstelle der 1 auch eine Division durch 0 schreiben und es würde keinen Fehler geben, da die Parameter von \texttt{foo} nach der Transformation nicht mehr Teil der Syntax sind.
+Die Transformation passiert rein auf Syntax-Ebene. Erst \textit{nachdem} die Syntax ersetzt wurde, geschieht die Auswertung. Wir könnten Anstelle des Parameters \texttt{1} auch eine Division durch 0 schreiben und es würde keinen Fehler geben, da die Parameter von \texttt{foo} nach der Transformation nicht mehr Teil der Syntax sind.
 
 % \subsection{Syntax-Objekte}
-Übsicherweise soll die Eingabe-Syntax transformiert werden. Wenn wir Syntax definieren, erhalten wir ein Syntax-Objekt:
+Üblicherweise soll die Eingabe-Syntax transformiert werden. Wenn wir Syntax definieren, erhalten wir ein Syntax-Objekt:
 
 \begin{lstlisting}
 (syntax (+ 1 (* 2 3)))
@@ -106,9 +108,8 @@ Beispielsweise könnten wir ein Makro definieren, das sowohl zwei als auch drei 
 (define-syntax rotate
   (syntax-rules ()
     [(rotate a b) (swap a b)]
-    [(rotate a b c) (begin
-                     (swap a b)
-                     (swap b c))]))
+    [(rotate a b c) (begin (swap a b)
+                           (swap b c))]))
 \end{lstlisting}
 
 Es ist sogar möglich, Patterns beliebiger Länge in einem Makro zu matchen. Für eine beliebige Anzahl an Parametern gibt es die ``\texttt{...}``-Schreibweise. Das Makro ähnelt dann einer rekursiven Funktion mit einem Standardfall (oder mehr) und einer Regel, wie mit dem Rest der Parameter zu verfahren ist (nach \cite{racketguide-macros}):
@@ -117,9 +118,8 @@ Es ist sogar möglich, Patterns beliebiger Länge in einem Makro zu matchen. Fü
 (define-syntax rotate
   (syntax-rules ()
     [(rotate a) (void)]
-    [(rotate a b c ...) (begin
-                          (swap a b)
-                          (rotate b c ...))]))
+    [(rotate a b c ...) (begin (swap a b)
+                               (rotate b c ...))]))
 \end{lstlisting}
 
 Mit \texttt{syntax-rules} lässt sich recht leicht ein Makro schreiben, das  \texttt{my-class}-Aufrufe matcht, dabei mehrere Superklassen akzeptiert, von uns gewünschte Funktionalität ausführt und anschließend das \texttt{class}-Makro von Racket mit selbst definierten Klassenoptionen aufruft.
@@ -128,14 +128,14 @@ Mit \texttt{syntax-rules} lässt sich recht leicht ein Makro schreiben, das  \te
 \section{Grundstruktur von CLOS}
 Es gibt drei Schlüsselwörter, die die Objektstruktur von CLOS definieren:  \texttt{defclass}, \texttt{defgeneric} und \texttt{defmethod}. Implementiert sind sie als Makros, die die interne Repräsentation der Klassen, generischen Funktionen und Methoden erzeugen und damit die Übersicht über die Informationen behalten, die in ihren Definitionen angegeben wurden.
 
-Das \texttt{defclass}-Makro expandiert beispielsweise zu einem internen Methodenaufruf. Es werden die angegebenen Superklassen, Slots und anderen Optionen übergeben und die Methode sorgt dafür, dass eine interne Repräsentation dieser Klasse erstellt wird und anschließend das Klassenobjekt zurückgegeben wird.
+Das \texttt{defclass}-Makro expandiert beispielsweise zu einem internen Funktionsaufruf. Es werden die angegebenen Superklassen, Slots und anderen Optionen übergeben und die Funktion sorgt dafür, dass eine interne Repräsentation dieser Klasse erstellt und anschließend das Klassenobjekt zurückgegeben wird.
 
-Die Informationen werden in Form von Objekten festgehalten -- internen Objekten, die der Nutzer niemals zu sehen bekommt. Diese Objekte werden daher ``Metaobjekte'' genannt.
+Die Informationen werden in Form von Objekten festgehalten -- internen Objekten, die der Nutzer nicht zu sehen bekommt. Diese Objekte werden daher ``Metaobjekte'' genannt.
 
 Es entsteht eine Struktur in drei Schichten:
 \begin{itemize}
  \item Die Makro-Expansions-Schicht: eine dünne Schicht, die die wenigen syntaktischen Konstrukte bereitstellt, die der Nutzer zu sehen bekommt, wie das \texttt{defclass}-Makro.
- \item Eine Ziwschenschicht: hier werden die externen Namen auf die intern benutzten Metaobjekte abgebildet, zum Beispiel die Funktion \texttt{find-class}, welche ein Metaobjekt anhand des Namens heraussucht.
+ \item Eine Ziwschenschicht: hier werden die externen Namen auf die intern benutzten Metaobjekte abgebildet, wie zum Beispiel die Funktion \texttt{find-class}, welche ein Metaobjekt anhand des Namens heraussucht.
  \item Die Support-Schicht: Hier ist das Verhalten von Klassen, Instanzen, generischen Funktionen und Methoden implementiert. Das Metaobjekt-Protokoll konzentriert sich hauptsächlich auf diese Schicht.
 \end{itemize}
 
@@ -144,13 +144,13 @@ Wir werden untersuchen, ob ein analoges Vorgehen auch für die Implementierung v
 \section{Metaobjekte}
 CLOS ist zirkulär definiert: Der Code, der CLOS implementiert, benutzt CLOS-Klassen und -Objekte. CLOS hat Wege gefunden, diese Zirkularität zu umgehen, über Bootstrapping und Reflection, aber das zu verstehen ist nicht Bestandteil dieser Arbeit. 
 
-Wir wollen später ein bereits fertig definiertes Objektsystem verwenden, um darauf aufbauend ein mächtigeres Objektsystem zu definieren, das Objektsystem von Racket. Mit einer etwas anderen Sichtweise bietet die CLOS-Implementierung uns genau das: es wird ein Objektsystem verwendet, um das Verhalten eines anderen Objektsystems zu definieren. Das erste Objektsystem besteht aus den intern benutzten Klassen und Objekten, das zweite aus den externen Klassen und Objekten, die dem Anwender bereitgestellt werden.
+Wir wollen später ein bereits fertig definiertes Objektsystem verwenden, um darauf aufbauend ein mächtigeres Objektsystem zu definieren -- das Objektsystem von Racket. Mit einer etwas anderen Sichtweise bietet die CLOS-Implementierung uns genau das: es wird ein Objektsystem verwendet, um das Verhalten eines anderen Objektsystems zu definieren. Das erste Objektsystem besteht aus den intern benutzten Klassen und Objekten, das zweite aus den externen Klassen und Objekten, die dem Anwender bereitgestellt werden.
 
 Es gibt in CLOS also interne Objekte, die das Verhalten der dem Benutzer sichtbaren Klassen und Objekte definieren. Objekte über andere Objekte -- Metaobjekte. Es gibt solche Metaobjekte für alle Konstrukte, die für den Benutzer definiert werden sollen und über die daher Informationen gesammelt werden müssen: Klassenmetaobjekte für Klassen, Generische-Funktionen-Metaobjekte für generische Funktionen und Methodenmetaobjekte für Methoden. 
 
 Wo es Objekte gibt, muss es auch eine Klasse geben, die ihr Verhalten definiert. Die Klasse, die das Verhalten von Metaobjekten definiert, wird Metaklasse genannt. 
 
-Klassen-Metaobjekte sammeln beispielsweise all diejenigen Information, die zur Erstellung der aktuellen und zukünftiger Klassen relevant sind: den Namen der Klasse, die angegebenen Superklassen, definierte Slots, geerbte Slots, die Klassenpräzedenzliste, die direkten Subklassen und die definierten Methoden. 
+Klassen-Metaobjekte sammeln beispielsweise all diejenigen Information, die zur Erstellung der aktuellen und zukünftigen Klassen relevant sind: den Namen der Klasse, die angegebenen Superklassen, definierte Slots, geerbte Slots, die Klassenpräzedenzliste, die direkten Subklassen und die definierten Methoden. 
 
 Die ``Klassen-Metaklasse'' ist dann lediglich die Beschreibung, wie die Metaobjekte aussehen. Es ist eine ganz normale CLOS-Klasse, mit dem einzigen Unterschied, dass sie nur intern verwendet wird:
 
@@ -169,7 +169,7 @@ Die ``Klassen-Metaklasse'' ist dann lediglich die Beschreibung, wie die Metaobje
                    :accessor class-direct-methods)))
 \end{lstlisting}
 
-Das \texttt{defclass}-Makro parst die Klassendefinition und verwandelt sie in einen Aufruf an die Methode \texttt{ensure-class} aus der Zwischenschicht. 
+Das \texttt{defclass}-Makro parst die Klassendefinition und verwandelt sie in einen Aufruf an die Funktion \texttt{ensure-class} aus der Zwischenschicht. 
 
 \begin{lstlisting}
 (defmacro defclass (name direct-superclasses direct-slots &rest options)
@@ -180,7 +180,7 @@ Das \texttt{defclass}-Makro parst die Klassendefinition und verwandelt sie in ei
     ,@(canonicalize-defclass-options options)))
 \end{lstlisting}
 
-Der Makro-Befehl ist sehr ähnlich zu \texttt{define-syntaxrule}: das Pattern mit Name, Superklassen, Slots und anderen Optionen wird gematcht und im anschließenden Template benutzt -- einem Aufruf der Methode ensure-class. Die \texttt{canonicalize}-Funktionen übernehmen die weitere Makro-Expansion, wie das Auswerten der Slot-Optionen, das Expandieren von Accessor-Optionen zu den Reader und Writer, Ersetzen der Namen der Superklassen durch die zugehören Metaobjekte und so weiter. Sie tun praktisch ``die ganze Arbeit'' der Expansion.
+Der Makro-Befehl ist sehr ähnlich zu \texttt{define-syntaxrule}: das Pattern mit Name, Superklassen, Slots und anderen Optionen wird gematcht und im anschließenden Template benutzt -- einem Aufruf der Funktion \texttt{ensure-class}. Die \texttt{canonicalize}-Funktionen übernehmen die weitere Makro-Expansion, wie das Auswerten der Slot-Optionen, das Expandieren von Accessor-Optionen zu den Readern und Writern, Ersetzen der Namen der Superklassen durch die zugehören Metaobjekte und so weiter. Sie tun praktisch ``die ganze Arbeit'' der Expansion.
 
 \texttt{ensure-class} nimmt dann den Namen und die Argumente der Klasse und definiert ein Klassenobjekt mit dem Namen:
 
@@ -212,7 +212,7 @@ Es gibt demnach eine Tabelle von Klassen-Metaobjekten, die bereits erstellt wurd
 )
 \end{lstlisting}
 
-\texttt{make-instance} ist eine Methode der untersten Schicht und führt noch einige notwendige Initialisierungen durch, wie das Hinzufügen des Objekts als Subklasse zu seinen Superklassen, Konvertieren der Liste von Sloteigenschaften in tatsächliche Slot-Definitionen oder die Definition von Accessor-Methoden. 
+\texttt{make-instance} ist eine Funktion der untersten Schicht und führt noch einige notwendige Initialisierungen durch, wie das Hinzufügen des Objekts als Subklasse zu seinen Superklassen, Konvertieren der Liste von Sloteigenschaften in tatsächliche Slot-Definitionen oder die Definition von Accessor-Methoden. 
 
 Für eine Implementierung von Mehrfachvererbung in Racket brauchen wir ebenfalls Informationen darüber, welche Klassen mit welchen Superklassen, Feldern und Methoden bereits definiert wurden. Die Methodenkombination beispielsweise basiert auf den Ergebnissen aller Methoden in allen Superklassen -- nach dieser Information können wir ein Klassenobjekt nach der Erstellung durch Racket jedoch nicht mehr fragen; in ihm existiert jede Methode nur genau einmal.
 
@@ -228,7 +228,7 @@ Anstelle von CLOS-Metaobjekten über CLOS-Klassen wollen wir also Racket-Metaobj
 
 Da Racket-Klassen nicht benannt sind, entfällt das Feld für den Namen. Um die Metaobjekte für Testzwecke unterscheiden zu können, bietet es sich jedoch gegebenenfalls an, sie zu nummerieren. Die Information über die Subklassen einer Klasse wird in CLOS hauptsächlich für spätere Verwendung durch den Benutzer bereitgestellt, sie ist nicht notwendig für die Umsetzung von Mehrfachbererbung. 
 
-Analog zu CLOS muss es dann auch eine `Zwischenschicht geben, die dafür sorgt, dass die Metaobjekte erstellt und verwaltet werden. Da Racket-Klassen nicht benannt sind, wird selbst bei identischer Klassendefinition immer eine neue Klasse erzeugt; der Test auf Enthaltensein in der Liste der bereits erzeugten Klassen entfällt demnach.
+Analog zu CLOS muss es dann auch eine Zwischenschicht geben, die dafür sorgt, dass die Metaobjekte erstellt und verwaltet werden. Da Racket-Klassen nicht benannt sind, wird selbst bei identischer Klassendefinition immer eine neue Klasse erzeugt; der Test auf Enthaltensein in der Liste der bereits erzeugten Klassen entfällt demnach.
 
 \section{Klassenpräzedenz}
 \label{cpl}
@@ -240,7 +240,7 @@ Wir haben fast alle Schritte gesehen, die mit dem Erstellen eines Klassen-Metaob
 
 Auch für Racket-Objekte müssen wir diese Berechnungen durchführen.
 
-In CLOS führt die Methode \texttt{finalize-inheritance}, die von \texttt{make-instance} aufgerufen wird, beide Schritte aus:
+In CLOS führt die Funktion \texttt{finalize-inheritance}, die von \texttt{make-instance} aufgerufen wird, beide Schritte aus:
 
 \begin{lstlisting}
 (defun finalize-inheritance (class)
@@ -362,7 +362,7 @@ Es werden die direkten Slots aller Klassen in der Reihenfolge der Präzedenzlist
 
 CLOS wandelt die Slot-Definition anschließend noch in Slot-Objekte um. %Diese Umwandlung wird Racket für uns übernehmen.
 
-Mit den den CLOS-Konzepten, die wir bisher kennengelernt haben, lässt sich  unser Makro erweitern um Funktionen, die Informationen über die Klasse in Form eines Metaobjektes speichern, die Klassenpräzedenzliste bestimmen und  die effektiven Felder ermitteln. Die Vererbung von Feldern ist damit bereits abgedeckt. Was noch fehlt, ist die Vererbung von Methoden.
+Mit den CLOS-Konzepten, die wir bisher kennengelernt haben, lässt sich  unser Makro erweitern um Funktionen, die Informationen über die Klasse in Form eines Metaobjektes speichern, die Klassenpräzedenzliste bestimmen und  die effektiven Felder ermitteln. Die Vererbung von Feldern ist damit bereits abgedeckt. Was noch fehlt, ist die Vererbung von Methoden.
 
 \section{Mehrfachvererbung und Methodenkombination}
 Analog zu Klassen gibt es auch für Methoden und generische Funktionen Metaobjekte, um eine Übersicht über die relevanten Informationen zu behalten. Eine generische Funktion fasst eine Menge von Methoden mit der gleichen Signatur zusammen und das zugehörige Metaobjekt merkt sich genau diese Dinge: den Namen, die Parameterliste sowie die Methoden, die die generische Funktion implementieren.
