@@ -8,6 +8,8 @@ This module introduces the following changes to the class macro:
 * it is possible to specify a list of superclasses
 * you can definie generic functions with define/generic and specify a
   method combination
+* fields can be re-declared in classes that have multiple superclasses or
+  where a method combination is involved
 * implementing methods can be (re-)declared with define/public in any subclass
   of the class with the generic function
 
@@ -144,7 +146,8 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 ; Generates all class options we'll need to supply to the class
 ; macro if we put together the class ourselves.
 (define (generate-class-options my-eval meta)
-  (let* ([inherited-fields  (get-field inherited-fields meta)]
+  (let* ([inherited-fields  (get-field inherited-fields meta)] 
+         [not-redeclared    (send meta not-redeclared-fields)] ; !!
          [direct-methods    (get-field direct-methods meta)]
          [inherited-methods (get-field inherited-methods meta)])
     (append
@@ -158,10 +161,11 @@ This module was created by Manuela Beckert as master thesis project. The corresp
      (if (empty? (applicable-generic-functions meta))
          '()
          ; if method combination is involved
-         (append ; an inherit-field clause for every inherited field;
+         (append ; an inherit-field clause for every inherited field
+                 ; that is not redefined in the current class;
                  ; they could possibly be used by the combined methods
                  (map (λ (field) (list 'inherit-field (get-name field)))
-                      (send meta not-redeclared-fields))
+                      not-redeclared)
                  ; combination methods
                  (map (curry combine-method meta)
                       (applicable-generic-functions meta)))))))

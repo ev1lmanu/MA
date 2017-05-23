@@ -420,14 +420,15 @@ Die zusammengesetzte Syntax des \texttt{class}-Aufrufes muss dann nur noch mit \
                             inherited-fields
                             (filter (negate (curryr is-generic? meta))
                                     inherited-methods))))
-     ; if method combination is involved
-     (when (not (empty? (applicable-generic-functions meta)))
+     (if (empty? (applicable-generic-functions meta))
+       '()
+       ; if method combination is involved
        (append ; inherit-field clauses
                (map (lambda (field) (list 'inherit-field (get-name field)))
                     inherited-fields)
                ; combination methods
                (map (curry combine-method meta)
-                    (applicable-generic-functions meta)))))))
+                    (applicable-generic-functions meta))))))
 \end{lstlisting}
 
 \section{Methodenkombination}

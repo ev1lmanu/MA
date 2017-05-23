@@ -161,7 +161,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
          (append ; an inherit-field clause for every inherited field;
                  ; they could possibly be used by the combined methods
                  (map (λ (field) (list 'inherit-field (get-name field)))
-                      (send meta not-redeclared-fields))
+                      inherited-fields)
                  ; combination methods
                  (map (curry combine-method meta)
                       (applicable-generic-functions meta)))))))
@@ -189,13 +189,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                      num-of-classes)]
            [class-precedence-list '()]
            [inherited-fields '()]
-           [inherited-methods '()])
-
-    ; inherited fields that were not redeclared !!
-    (define/public (not-redeclared-fields)
-      (filter (lambda (field) (not (member (get-name field)
-                                           (map get-name direct-fields))))
-              inherited-fields))
+           [inherited-methods '()])    
 
     ; effective fields
     (define/public (effective-fields)

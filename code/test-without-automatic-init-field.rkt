@@ -12,23 +12,24 @@
                   (compose reverse list))
                 (define/generic (x) list)))
 
-(define Element (class Thing (super-new)
-                  (when (equal? name "a Thing")
-                        (set! name "an Element"))
+(define Element (class Thing 
+                  (init [name "an Element"])
+                  (super-new [name name])
                   (init-field [attr 'water])
                   (define/public (hot?) (equal? attr 'fire))
                   (define/public (attack) attr)))
 
-(define Animal (class Thing (super-new)
-                 (when (equal? name "a Thing")
-                   (set! name "an Animal"))
+(define Animal (class Thing
+                 (init [name "an Animal"])
+                 (super-new [name name])
                  (init-field [size 'small])
                  (define/public (attack) size)))
 
 ; Mehrfachvererbung durch Angabe einer (ungequoteten) Liste von Superklassen
-(define Pokemon (class (Element Animal) (super-new)
-                  (when (equal? name "a Thing")
-                    (set! name "a Pokemon"))
+(define Pokemon (class (Element Animal)
+                  (inherit-field attr size)
+                  (init [name "a Pokemon"])
+                  (super-new [name name])
                   (define/public (attack) 'ball)))
 
 ; Beispiel für die Methodenkombination

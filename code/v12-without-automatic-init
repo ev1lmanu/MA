@@ -158,13 +158,13 @@ This module was created by Manuela Beckert as master thesis project. The corresp
      (if (empty? (applicable-generic-functions meta))
          '()
          ; if method combination is involved
-         (append ; an inherit-field clause for every inherited field;
+         ;(append ; an inherit-field clause for every inherited field;
                  ; they could possibly be used by the combined methods
-                 (map (λ (field) (list 'inherit-field (get-name field)))
-                      (send meta not-redeclared-fields))
+                 ;(map (λ (field) (list 'inherit-field (get-name field)))
+                 ;     (send meta not-redeclared-fields))
                  ; combination methods
                  (map (curry combine-method meta)
-                      (applicable-generic-functions meta)))))))
+                      (applicable-generic-functions meta))))))
 
 ; --------------------- META CLASSES ----------------------
 
