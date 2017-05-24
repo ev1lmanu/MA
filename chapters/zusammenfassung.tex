@@ -1,0 +1,21 @@
+\chapter{Zusammenfassung und Ausblick}
+Wir haben betrachtet, wie in Racket und CLOS mit Mehrfachvererbung umgegangen wird und darauf aufbauend untersucht, wie die zur Implementation von Mehrfachvererbung verwendeten Konzepte aus CLOS benutzt werden können, um Mehrfachvererbung auch in Racket zu ermöglichen.
+
+Entstanden ist dabei der Prototyp einer Racket-Erweiterung. Die Erweiterung erlaubt es, Felder und mit \texttt{define/public} definierte Methoden mehrerer Superklassen zu vererben, generische Funktionen zu definieren und Methoden zu kombinieren.
+
+Der Prototyp löst das eingangs erwähnte Diamond-Problem durch Klassenpräzedenz und Methodenkombination und ermöglicht es, die in dieser Arbeit verwendete Beispiel-Vererbungshierarchie auf sehr einfache, CLOS-ähnliche Weise zu erreichen.
+
+Es wurden die Einschränkungen betrachtet, die dabei zu auftreten und das Fazit ist: das Metaobjekt-Protokoll lässt sich auch verwenden, um andere Objektsysteme zu erweitern.
+
+\section{Erweiterungsvorschläge}
+
+Für mögliche Anschlussarbeiten sind an dieser Stelle Erweiterungsvorschläge zusammengefasst:
+\begin{itemize}
+ \item Ergänzungsmethoden implementieren
+ \item ermitteln, welche Klassenoptionen mit der Erweiterung kompatibel sind und welche nicht
+ \item evaluieren, welche anderen Klassenoptionen sich für Mehrfachvererbung eignen und diese implementieren
+ \item die Effizienz verbessern
+ \item die Erweiterung im Übungsbetrieb von ``Softwareentwicklung III'' testen
+ \item dafür Sorgen, dass in einer neueren Racket-Version \texttt{compute-std-cpl} exportiert wird, damit der Quelltext nicht kopiert werden muss
+ \item dafür Sorgen, dass die Erweiterung zu einer zukünftigen Version von Racket hinzugefügt wird 
+\end{itemize}

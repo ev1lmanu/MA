@@ -1,5 +1,5 @@
 #lang racket
-(require "classmacro.rkt")
+(require "multiple-inheritance.rkt")
 
 (define Thing (class object% (super-new)
                 (init-field [name "a Thing"])
@@ -7,7 +7,9 @@
                   (string-append "I am " name "!"))
                 ; generic function
                 (define/generic (attack)
-                  (compose reverse list))))
+                  (compose reverse list))
+                ; implementing method
+                (define/public (attack) 'a)))
 
 ;> (send (new Thing) who-are-you?)
 ;> (send (new Thing [name "Bob"]) who-are-you?)

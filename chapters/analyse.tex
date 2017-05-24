@@ -196,7 +196,7 @@ Der Makro-Befehl ist sehr ähnlich zu \texttt{define-syntaxrule}: das Pattern mi
 
 Es werden die expandierten Klassenoptionen genommen und mit ihnen ein neues Metaobjekt erstellt. Das Metaobjekt wird zur Liste der bekannten Klassen hinzugefügt und anschließend zurückgegeben. 
 
-Es gibt demnach eine Tabelle von Klassen-Metaobjekten, die bereits erstellt wurden, sowie Funktionen zum Abfragen, ob ein Objekt bereits existiert und zum Hinzufügen eines Objekts:
+Es gibt demnach eine Tabelle von Klassenmetaobjekten, die bereits erstellt wurden, sowie Funktionen zum Abfragen, ob ein Objekt bereits existiert und zum Hinzufügen eines Objekts:
 
 \begin{lstlisting}
 (let ((class-table (make-hash-table :test #'eq)))
@@ -208,8 +208,7 @@ Es gibt demnach eine Tabelle von Klassen-Metaobjekten, die bereits erstellt wurd
           class)))
   
   (defun (setf find-class) (new-value symbol)
-    (setf (gethash symbol class-table) new-value))
-)
+    (setf (gethash symbol class-table) new-value)))
 \end{lstlisting}
 
 \texttt{make-instance} ist eine Funktion der untersten Schicht und führt noch einige notwendige Initialisierungen durch, wie das Hinzufügen des Objekts als Subklasse zu seinen Superklassen, Konvertieren der Liste von Sloteigenschaften in tatsächliche Slot-Definitionen oder die Definition von Accessor-Methoden. 
@@ -232,7 +231,7 @@ Analog zu CLOS muss es dann auch eine Zwischenschicht geben, die dafür sorgt, d
 
 \section{Klassenpräzedenz}
 \label{cpl}
-Wir haben fast alle Schritte gesehen, die mit dem Erstellen eines Klassen-Metaobjekts zu tun haben: von \texttt{defclass} über \texttt{ensure-class} bis hin zu \texttt{make-instance}. Die verbleibenden Schritte haben mit Vererbung zu tun:
+Wir haben fast alle Schritte gesehen, die mit dem Erstellen eines Klassenmetaobjekts zu tun haben: von \texttt{defclass} über \texttt{ensure-class} bis hin zu \texttt{make-instance}. Die verbleibenden Schritte haben mit Vererbung zu tun:
 \begin{itemize}
  \item Berechnen und Speichern der Klassenpräzedenzliste.
  \item Berechnen und Speichern der vollständigen Menge von Slots, bestehend aus direkt in der Klasse definierten und von Superklassen geerbten Slots.
@@ -255,7 +254,7 @@ Die Klassenpräzedenzliste (nach \cite[S. 118ff]{keene}) beinhaltet die Klasse s
 
 \begin{enumerate}
  \item Eine Klasse hat immer Präzedenz über ihre Superklassen.
- \item Jede Klassendefinition legt die Präzedenzreihenfolge ihrer direkten Superklassen fest.
+ \item Jede Klassendefinition legt die Präzedenzreihenfolge der direkten Superklassen fest.
 \end{enumerate}
 
 Die erste Regel erlaubt es einer Klasse, Verhalten ihrer Superklasse zu überschreiben oder verändern.
@@ -288,7 +287,7 @@ Es gibt nur eine totale Ordnung, die alle Constraints erfüllt:
 
 (\texttt{Pokemon Element Animal Thing standard-object t})
 
-Oft ergeben die zwei Präzedenzregeln keine eindeutige Reihenfolge. Nehmen wir zum Beispiel an, Element und Animal haben keine gemeinsame Superklasse, sondern nur Element erbt von Thing und Animal von einer neuen Klasse Creature (Abb. \ref{creature}). 
+Oft ergeben die zwei Präzedenzregeln jedoch keine eindeutige Reihenfolge. Nehmen wir zum Beispiel an, Element und Animal haben keine gemeinsame Superklasse, sondern nur Element erbt von Thing und Animal von einer neuen Klasse Creature (Abb. \ref{creature}). 
 
 \begin{figure}[h]
  \centering

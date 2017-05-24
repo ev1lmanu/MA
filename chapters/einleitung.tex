@@ -33,7 +33,7 @@ Dafür haben sich im Laufe der Zeit in verschiedene Programmiersprachen verschie
  \item Gleichbenannte Features werden umbenannt. \texttt{D} würde zwei Methoden \texttt{ba()} und \texttt{ca()} erben. Beispiel: Eiffel, Logtalk.
  \item Man kann qualifiziert auf die Features zugreifen. In \texttt{D} kann man dann mit \texttt{B.a()} oder \texttt{C.a()} die Methode aufrufen. Beispiel: C++, OCaml.
  \item Features werden nach Präzedenz geerbt. Die Superklassen werden in eine bestimmte Reihenfolge (Präzedenzliste) gebracht und bei gleichbenannten Features wird immer nur dasjenige geerbt, das in der Präzedenzliste zuerst kommt. Wenn wir beispielweise die Klassen in die Reihenfolge \texttt{D,B,C,A} bringen, so würde das Feature je nach Implementierung entweder von \texttt{B} oder direkt von \texttt{A} geerbt, jedoch nur einmal. Beispiel: Common Lisp, Perl, Python.
- \item Kombination aller gleichbenannter Features. Der Programmierer kann angeben, wie die geerbten Features kombiniert werden sollen. Das funktioniert gegebenfalls sogar für indirekte Superklassen: Haben \texttt{A} und \texttt{B} ein gemeinsames Feature, dann gehen beide in die Kombination mit ein. Beispiel: Common Lisp, Eiffel.
+ \item Kombination aller gleichbenannten Features. Der Programmierer kann angeben, wie die geerbten Features kombiniert werden sollen. Das funktioniert gegebenfalls sogar für indirekte Superklassen. Haben \texttt{A} und \texttt{B} ein gemeinsames Feature, dann gehen beide in die Kombination mit ein. Beispiel: Common Lisp, Eiffel.
 \end{enumerate}
 
 % Für einen möglichst einfachen Einstieg in die Lehre von Mehrfachvererbung bietet sich Kategorie 6 am meisten an: Die Konfliktlösung passiert automatisch. Es reicht, eine Vererbungshierarchie anzugeben und den Rest übernimmt die Sprache. 
@@ -84,7 +84,7 @@ Das Kapitel \textbf{Umsetzung} beschreibt den in dieser Arbeit entstandene Proto
 
 In der \textbf{Auswertung} wird der entstandene Prototyp gestestet. Es werden Einschränkungen, die gemacht werden mussten, beleuchtet und ein Fazit über die Eignung des Metaobjekt-Protokolls zur Erweiterung eines Objektsystems gezogen.
 
-Zum Abschluss wird in \textbf{Zusammenfassung und Ausblick} über die Umsetzung reflektiert und Möglichkeiten der Erweiterung diskutiert.
+Zum Abschluss werden in \textbf{Zusammenfassung und Ausblick} noch einmal die Ergebnisse zusammengefasst und Möglichkeiten der Erweiterung diskutiert.
 
 \section{Beiliegende CD}
 Auf der beiliegenden CD befindet sich eine digitale Version dieser Arbeit sowie der entstandene Prototyp und eine Zusammenstellung der behandelten Beispiele als Racket-Dateien.

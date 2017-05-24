@@ -149,18 +149,18 @@
 ;; not using the restulting Mixin directly, but a subclass of it:
 (define Pokemon2 (class (Pokemon-Mixin Thing)
                    ;; add initialization arguments by hand
-                   (init [this-name "a Pokemon"]
-                         [this-size 'small]
-                         [this-attr 'water])
+                   (init [name "a Pokemon"]
+                         [size 'small]
+                         [attr 'water])
                    ;; name already is an init-field, we can just
                    ;; pass it to the super call
-                   (super-new [name this-name])
+                   (super-new [name name])
                    ;; to have access to the others, we first need
                    ;; to inherit them
-                   (inherit-field size attr)
+                   (inherit-field [super-size size] [super-attr attr])
                    ;; and then we can set them to the desired value
-                   (set! size this-size)
-                   (set! attr this-attr)))
+                   (set! super-size size)
+                   (set! super-attr attr)))
 
 ;; We can make Pokemon now! \o/
 (define p2 (new Pokemon2))

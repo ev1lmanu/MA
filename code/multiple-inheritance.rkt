@@ -379,7 +379,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
                      (get-name method)))))))
   ; compute all apllicable generic functions for the class
   (set-field! applicable-generic-functions meta
-              (applicable-generic-functions meta)))
+              (compute-applicable-generic-functions meta)))
 
 ; Creates a metaobject for gf and adds it to the list
 ; If it already exists, an error will be signaled.
@@ -403,7 +403,7 @@ This module was created by Manuela Beckert as master thesis project. The corresp
   (list 'λ (cdr (second method)) (third method)))
 
 ; Returns the applicable generic functions of a class
-(define (applicable-generic-functions meta)
+(define (compute-applicable-generic-functions meta)
   (apply append
          (map (lambda (x) (get-field generic-functions x))
               (get-field class-precedence-list meta))))
