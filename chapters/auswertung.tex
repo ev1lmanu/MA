@@ -8,7 +8,7 @@ Das im Rahmen dieser Arbeit entstandene Modul kann mit \texttt{require} eingebun
 (require "multiple-inheritance.rkt")
 \end{lstlisting}
 
-Wir betrachten noch einmal das Pokemon-Beispiel aus der Racket-Einführung. Es gab die drei Klassen Thing, Element und Animal. Das Problem, das sich in Racket zuvor nicht befriedigend lösen ließ, war es, eine Klasse Pokemon mit einer Methode \texttt{attack} zu definieren, die eine Kombination der Methoden der Superklassen ist. 
+Wir betrachten noch einmal das Pokemon-Beispiel aus der Racket-Einführung. Es gab die drei Klassen Thing, Element und Animal. Das Problem, das sich in Racket zuvor nicht befriedigend lösen ließ, war eine Klasse Pokemon mit einer Methode \texttt{attack} zu definieren, die eine Kombination der Methoden der Superklassen ist. 
 
 Durch Verwenden des in dieser Arbeit entstandenen Moduls lassen sich Mehrfachvererbung und Methodenkombination deutlich einfacher umsetzen. Mit \texttt{define/generic} können wir \texttt{attack} in der Klasse Thing als generische Funktion deklarieren:
 
@@ -162,7 +162,7 @@ Das Modul bietet damit einen deutlich einfacheren und intuitiveren Umgang mit Me
 \section{Einschränkungen und Grenzen}
 Das Modul ist nur ein Prototyp. Das bedeutet, dass es  Einschränkungen und noch nicht implementierte Funktionalität gibt, die hier kurz angesprochen werden sollen.
 
-Die Implementation beinhaltet noch keine Ergänzungsmethoden. Racket bietet bereits eine eigene Sammlung von Methoden, die geerbtes Verhalten überschreiben und ergänzen können. Das Verhalten der Around-Methode lässt sich beispielsweise durch die Klassenoption \texttt{define/override} bereits erreichen. Vor- und Nachmethoden sind in Racket jedoch bisher nicht möglich und werden auch durch den Prototypen nicht abgedeckt.
+Die Implementation beinhaltet noch keine Ergänzungsmethoden. Racket bietet bereits eine eigene Sammlung von Methoden, die geerbtes Verhalten überschreiben und ergänzen können. Das Verhalten der redefinierenden Methode lässt sich beispielsweise durch die Klassenoption \texttt{define/override} bereits erreichen. Vor- und Nachmethoden sind in Racket jedoch bisher nicht möglich und werden auch durch den Prototypen nicht abgedeckt.
 
 Bei Einfachvererbung ohne Methodenkombination verhalten sich die Klassen genauso wie in Racket. Ansonsten ergeben sich Einschränkungen in Bezug auf die erstellte Superklasse und Methodenkombination:
 
@@ -187,21 +187,27 @@ Generische Methoden und Methodenkombination:
 
 Diese Einschränkungen können dazu führen, dass einige der Klassenoptionen, die Racket bietet, nicht auf Klassen anwendbar sind, die durch Mehrfachvererbung entstanden sind oder für die eine generische Funktion definiert ist.
 
+Der Prototyp eigent sich bereits für die Verwendung in der Lehre, wenn anstelle der Ergänzungsmethoden von CLOS die überschreibenden und ergänzenden Methoden von Racket behandelt werden. Auch in CLOS werden nur primäre Methoden kombiniert und in der Lehre verwendete Übungsaufgaben sind daran angepasst. Daher ist eine Einschränkung auf mit \texttt{define/public} definierte Methoden für die Lehre nicht problematisch. Die Angabe der Kombinationsart und die Definition eigener Kombinationen ist in dem Prototypen sogar deutlich einfacher als in CLOS.
+
+Darüber hinaus lässt sich der Prototyp gut in Projekten nutzen, in denen Felder und Methoden überwiegend mit den unterstützten Schlüsselwörtern definiert werden. 
+
+Vererbungshierarchien, in denen Methoden oft überschrieben und ergänzt werden oder in denen ein Großteil der Funktionalität außerhalb der Feld- und Methodendefinitionen stattfindet (zum Beispiel durch Nutzen von \texttt{init} oder \texttt{set!}), sind für die hier entstandene Implentierung von Mehrfachvererbung weniger gut geeignet. Eine Klasse, die in einer solchen Hierarchie durch Mehrfachvererbung entsteht, wird nur Zugriff auf einen sehr geringen Teil der Funktionalität ihrer Superklassen haben.
+
 \section{Fazit}
 Es ist mit Hilfe von Makros und dem Metaobjekt-Protokoll gelungen, einen Prototypen für Mehrfachvererbung in Racket zu implementieren, der die im Entwurf formulierten Anforderungen erfüllt.
 
 Die Anforderung, dass die Erzeugung von Klassen und Objekten weiterhin von dem zugrundeligenden Objektsystem übernommen werden sollte, nimmt es uns ab, Klassen komplett neu definieren zu müssen. Stattdessen muss lediglich eine Superklasse erstellt werden, die die zu erbenden Eigenschaften vereinigt. Das Metaobjekt-Protokoll ließ sich leicht auf diesen Unterschied anpassen.
 
-Dadurch, dass sich die neue Funktionalität gut in das bestehende Objektsystem einpassen soll, sind beispielsweise Felder im Gegensatz zu CLOS nicht automatisch in der Klassendefinition von erbenden Klassen sichtbar. Einschränkung dieser Art hatten jedoch keinen großen Einfluss auf die generelle Implementierung des Metaobjektprotokolls.
+Dadurch, dass sich die neue Funktionalität gut in das bestehende Objektsystem einpassen soll, müssen beispielsweise Felder im Gegensatz zu CLOS manuell in der Klassendefinition von erbenden Klassen sichtbar gemacht werden. Einschränkung dieser Art hatten jedoch keinen großen Einfluss auf die generelle Implementierung des Metaobjektprotokolls.
 
 Der Quelltext ist außerdem sehr kompakt; bis auf wenige Hilfsmethoden wurde er komplett im Kapitel Umsetzung abgedruckt.
 
 CLOS hat im Gegensatz zu Racket jedoch nur eine sehr kleine Menge an Befehlen: es gibt Klassen mit Slots und Klassenoptionen, vier Arten von Methoden und generische Funktionen. Racket bietet etliche Klassenoptionen, sogar verschiedene Klassen-Makros.
 
-Für den Prototyp wurde sich auf eine Teilmenge dieser Optionen beschränkt, die sehr ähnlich zu dem Umfang von CLOS ist: Felder und mit \texttt{define/public} definierte Methoden. Eine Erweiterung um andere (oder gar alle) Klassenoptionen würde sehr wahrscheinlich sowohl die Metaobjekte als auch das Bestimmen der zu vererbenden Eigenschaften deutlich komplexer machen. 
+Für den Prototyp wurden diese Optionen auf eine Teilmenge beschränkt, die sehr ähnlich zu dem Umfang von CLOS ist: Felder und mit \texttt{define/public} definierte Methoden. Eine Erweiterung um andere (oder gar alle) Klassenoptionen würde sehr wahrscheinlich sowohl die Metaobjekte als auch das Bestimmen der zu vererbenden Eigenschaften deutlich komplexer machen. 
 
 Die Implementierung folgt der in AMOP beschriebenen Implementierung von Closette, einem simplen CLOS-Interpreter, der die Verständnisgrundlage für die später im Buch vorgestellte, vollständige CLOS-Implementierung bildet. In den Worten der Autoren: ``Closette is simple, but it is woefully inefficient'' \cite[S.45]{amop}. 
 
-Für kleine Klassenhierarchien wie das Pokemon-Beispiel ist kein deutlicher Unterschied in der Übersetzungzeit zu merken, aber für größere Programme kann das Vorgehen, das für den Prototyp verwendet wurde, zu einem Effizienzproblem werden. Die Grundidee der Optimierung von CLOS in AMOP ist Memoisierung: kritische Komponenten nur einmal zu berechnen und dann wiederzuverwenden. Es kann bei größeren Projekten oder mehr erlaubten Klassenoptionen notwendig sein, auch im Prototyp mit Memoisierung zu arbeiten.
+Für kleine Klassenhierarchien wie das Pokemon-Beispiel ist kein deutlicher Unterschied in der Übersetzungzeit messbar, aber für größere Programme kann das Vorgehen, das für den Prototyp verwendet wurde, zu einem Effizienzproblem werden. Die Grundidee der Optimierung von CLOS in AMOP ist Memoisierung: kritische Komponenten nur einmal zu berechnen und dann wiederzuverwenden. Es kann bei größeren Projekten oder mehr erlaubten Klassenoptionen notwendig sein, auch im Prototyp mit Memoisierung zu arbeiten.
 
 Insgesamt lässt sich jedoch sagen: das Metaobjektprotokoll eignet sich zur Erweiterung eines bestehenden Objektsystems. Obwohl das zugrundeligende Objektsystem von Racket sich deutlich von CLOS unterscheidet, waren nur sehr geringe Anpassungen des in AMOP vorgestellten Metaobjektprotokolls notwendig, um einen funktionierenden Prototyp zu erhalten.

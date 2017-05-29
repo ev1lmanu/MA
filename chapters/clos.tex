@@ -28,7 +28,7 @@ Objekte dieser Klasse können mit dem Schlüsselwort \texttt{make} erzeugt werde
 \end{lstlisting}
 {\routput \#Thing}
 
-Felder (oder Slots, wie sie in CLOS üblicherweise genannt werden) werden nach der Superklasse angegeben. Ein großer Unterschied zu dem Objektsystem von Racket ist, dass innerhalb einer Klassendefinition \textit{nur} Slots definiert werden, keine Methoden. Methoden werden außerhalb der Klasse definiert. Das bedeutet, dass kein Schlüsselwort benötigt wird, um anzugeben, ob gerade ein Slot oder eine Methode definiert wird. Wir können also für die Definition des Namens einfach schreiben:
+Felder (oder Slots, wie sie in CLOS üblicherweise genannt werden) werden nach der Superklasse angegeben. Ein großer Unterschied zu dem Objektsystem von Racket ist, dass innerhalb einer Klassendefinition \textit{nur} Slots definiert werden, keine Methoden. Methoden werden außerhalb der Klasse definiert. Das bedeutet, dass kein Schlüsselwort notwendig ist, um anzugeben, ob gerade ein Slot oder eine Methode definiert wird. Wir können also für die Definition des Namens einfach schreiben:
 
 \begin{lstlisting}
 (defclass Thing ()
@@ -190,12 +190,12 @@ Wir sehen, dass automatisch der Name und die \texttt{attack}-Methode einer der b
 
 Und wir sehen, dass überschüssige Parameter ignoriert werden.
 
-Die Liste von Superklassen in einer Klassendefnition wird auch Klassenpräzendenzliste genannt. Sie bestimmt im Zweifel von Konflikten, welche Slots oder Methoden (im Standardfall) vererbt werden. Die am weitesten links stehende Klasse ist die spezifischste, die am weitesten rechts stehende die unspezifischste. Bei Slots kann die Vererbung nicht beeinflusst werden, es wird immer der Slot des am weitesten links in der Liste stehenden Klasse (die diesen Slot bereitstellt) genommen. Auf die Klassenpräzedenz wird noch im Detail im Kapitel \ref{cpl} eingegangen.
+Die Liste von Superklassen in einer Klassendefnition wird auch Klassenpräzendenzliste genannt. Sie bestimmt im Zweifel bei Konflikten, welche Slots oder Methoden (im Standardfall) vererbt werden. Die am weitesten links stehende Klasse ist die spezifischste, die am weitesten rechts stehende die unspezifischste. Bei Slots kann die Vererbung nicht beeinflusst werden, es wird immer der Slot der am weitesten links in der Liste stehenden Klasse (die diesen Slot bereitstellt) genommen. Auf die Klassenpräzedenz wird noch im Detail im Kapitel \ref{cpl} eingegangen.
 
 \subsection{Generische Funktionen und Methodenkombination}
-An die Klasse Pokemon wird, falls wir nichts weiter festlegen, analog zu den Slots die spezifischste Methode vererbt, also die von Animal. Stattdessen sollen beide Werte in einer Liste zu vereint werden. Eine Methode, die auf Pokemon spezialisiert ist, würde das Problem lösen, aber CLOS bietet für die Kombination der Methoden aller (Ober-)Klassen einen Automatismus: generische Funktionen und Methodenkombination. 
+An die Klasse Pokemon wird, falls wir nichts weiter festlegen, analog zu den Slots die spezifischste Methode vererbt, also die von Animal. Für eine Methodenkombination sollen die Werte beider Oberklassen in einer Liste vereint werden. Eine Methode, die auf Pokemon spezialisiert ist, würde das Problem lösen, aber CLOS bietet für die Kombination der Methoden aller (Ober-)Klassen einen Automatismus: generische Funktionen und Methodenkombination. 
 
-Die generische Funktion beschreibt, wie sich das Ergebnis aus den Ergebnissen der Klasse und aller Oberklassen zusammensetzt. Generische Funktionen werden in CLOS mit \texttt{defgeneric} definiert. Tatsächlich gibt es zu jeder Methode, die wir definieren, automatisch eine entsprechende genererische Funktion, selbst wenn wir sie nicht explizit hinschreiben. 
+Das Ergebnis einer generischen Funktion setzt sich aus den Rückgabewerten aller implementierenden Methoden in der Vererbungshierarchie zusammen. Generische Funktionen werden in CLOS mit \texttt{defgeneric} definiert. Tatsächlich gibt es zu jeder Methode, die wir definieren, automatisch eine entsprechende generische Funktion, selbst wenn wir sie nicht explizit angeben. 
 
 Racket bietet bereits eine Reihe von vordefinierten Methodenkombinationen, wie zum Beispiel für Addition, den logischen Und-Operator, das Maximum oder das Erstellen einer Liste. Falls es für ein Problem keine Standardlösung gibt, können auch eigene Methodenkombinationen definiert werden. Wir benutzen die Listenkombination.
 
@@ -227,9 +227,7 @@ Nicht für alle in der Klassenhierarchie vorhanden Klassen muss tatsächlich ein
 \label{ergmeth}
 Für jede der drei Klassen gibt es nun eine \texttt{attack}-Methode, das Ergebnis der jeweiligen Methoden-Kombination. Diese Methoden werden Primärmethoden (primary methods) genannt.
 
-Methodenkombination wurde als eine Möglichkeit eingeführt, um geschickt Methoden aus mehreren Superklassen zu verbinden. Tatsächlich geschieht jedoch immer eine Methodenkombination, selbst dann, oder gerade dann wenn, wir sie nicht angeben: die Standard Method Combination.
-
-Sie sorgt zum Beispiel dafür, dass bei einem Methodenaufruf die Primärmethode aufgerufen wird. Aber zusätzlich erlaubt sie es auch, drei spezielle Methoden zu definieren: Vor,- Nach- und Around-Methoden (\emph{before, after, around methods}). Sie werden zusammenfassend als Ergänzungsmethoden  bezeichnet. Wie der Name vermuten lässt, sind das Methoden, die vor, nach oder um eine Primärmethode herum ausgeführt werden. Sie werden in CLOS mit dem Schlüsselwort \texttt{:before}, \texttt{:after} beziehungsweise \texttt{:around} nach dem Methodennamen definiert.
+Methodenkombination wurde als eine Möglichkeit eingeführt, um geschickt Methoden aus mehreren Superklassen zu verbinden. Tatsächlich findet jedoch immer eine Methodenkombination statt -- selbst dann, oder gerade dann, wenn sie nicht explizit angegeben wird: die \textit{standard method combination}. Sie sorgt zum Beispiel dafür, dass bei einem Methodenaufruf die Primärmethode aufgerufen wird. Aber zusätzlich erlaubt sie es auch, drei spezielle Methoden zu definieren: Vor,- Nach- und redefinierende Methoden (\emph{before, after, around methods}). Sie werden zusammenfassend als Ergänzungsmethoden  bezeichnet. Wie der Name vermuten lässt, sind das Methoden, die vor, nach oder um eine Primärmethode herum ausgeführt werden. Sie werden in CLOS mit dem Schlüsselwort \texttt{:before}, \texttt{:after} beziehungsweise \texttt{:around} nach dem Methodennamen definiert.
 
 Nehmen wir beispielsweise eine Klasse für Pokemontrainer. Der tägliche Job eines Trainers ist es, Pokemon zu fangen. Falls er vorher das Haus verlässt und abends zurückkehrt, so lässt sich das in einer Vor- und Nachmethode festhalten:
 
@@ -260,11 +258,11 @@ Weiterhin soll es unter den Pokemontrainern Frühaufsteher geben. Wir halten das
 Im Unterschied zu einer simplen Redefinition oder Erweiterung einer Methode, wird bei Vor- und Nachmethoden sichergestellt, dass keine andere Vor- oder Nachmethode und auch nicht die Primärmethode die Ausführung verhindern kann.
 
 Es werden alle Vormethoden der zwei Klassen, alle Nachmethoden der zwei Klassen sowie der Rumpf der spezifischsten Primärmethode ausgeführt und zwar in folgender Reihenfolge (vgl. \cite[S. 50]{keene}):
-\begin{itemize}
- \item Alle Vormethoden, beginnend mit der spezifischsten. Das gibt einer spezifischeren Klasse die Möglichkeit eine Operation auszuführen, die vor allem anderen passiert, inklusive geerbten Vormethoden, der Primärmethode und Nachmethoden.
+\begin{enumerate}
+ \item Alle Vormethoden, beginnend mit der spezifischsten. Das gibt einer spezifischeren Klasse die Möglichkeit eine Operation vor dem restlichen Verhalten der Methode auszuführen und damit insbesondere vor allen geerbten Vormethoden, der Primärmethode und Nachmethoden.
  \item Die spezifischste Primärmethode. Das erlaubt einer spezifischeren Klasse, die geerbte Methode zu redefinieren.
- \item Alle Nachmethoden, beginnend mit der am wenigstens spezifischen. Das gibt einer spezifischeren Klasse die Möglichkeit eine Operation auszuführen nachdem alles andere passiert ist, inklusive Vormethoden, der Primärmethode und geerbten Nachmethoden.
-\end{itemize}
+ \item Alle Nachmethoden, beginnend mit der am wenigstens spezifischen. Das gibt einer spezifischeren Klasse die Möglichkeit eine Operation nach dem restlichen Verhalten der Methode auszuführen und damit insbesondere nach allen Vormethoden, der Primärmethode und geerbten Nachmethoden.
+\end{enumerate}
 
 Eine spezifischere Methode hat somit die Möglichkeit, etwas vor beziehungsweise nach dem geerbten Verhalten zu tun. In dem Beispiel mit den Pokemontrainern bedeutet das, dass sich bei einen Aufruf der \texttt{daily-routine}-Methode mit einem Objekt der Klasse Earlybird die folgende Reihenfolge an Methodenaufrufen ergibt:
 
@@ -275,12 +273,12 @@ Eine spezifischere Methode hat somit die Möglichkeit, etwas vor beziehungsweise
 
 Natürlich kann jede der Vor- und Nachmethoden vorhanden sein oder nicht. Das einzige, was immer vorhanden sein muss, ist eine anwendbare Primärmethode. Außerdem haben Vor- und Nachmethoden weder Wissen von noch Einfluss auf das Ergebnis der Primärmethode. Sie eignen sich daher nur für Seiteneffekte. Dafür bieten sie der Klasse, die später erweitert wird, eine Möglichkeit, sicherzustellen, dass eine bestimmte Operation garantiert in allen Subklassen ausgeführt wird. Das kann zum Beispiel bei einer Methode zum Malen eines Bildes das Erstellen der Leinwand sein.
 
-Zusätzlich zu Vor- und Nachmethoden gibt es noch Around-Methoden. Sie sind ähnlich zu einer Redefinition mit Super-Aufruf. Die Methode bestimmt selbst, ob und an welcher Stelle in ihrem Rumpf mit \texttt{call-next-method} (das CLOS-Äquivalent zu super) die nächste Methode aufegrufen werden soll. Die Aufrufreihenfolge ist wie folgt (vgl. \cite[S.103]{keene}):
+Zusätzlich zu Vor- und Nachmethoden gibt es noch redefinierende Methoden. Sie sind ähnlich zu einer Redefinition mit Super-Aufruf. Die Methode bestimmt selbst, ob und an welcher Stelle in ihrem Rumpf mit \texttt{call-next-method} (das CLOS-Äquivalent zu super) die nächste Methode aufegrufen werden soll. Die Aufrufreihenfolge ist wie folgt (vgl. \cite[S.103]{keene}):
 \begin{itemize}
- \item CLOS ruft die spezifischste Around-Methode auf. Sie erhält die gleichen Parameter wie die generische Funktion bzw. Primärmethode.
- \item Falls eine Around-Methode \texttt{call-next-method} aufruft:
+ \item CLOS ruft die spezifischste redefinierende Methode auf. Sie erhält die gleichen Parameter wie die generische Funktion bzw. Primärmethode.
+ \item Falls eine redefinierende Methode \texttt{call-next-method} aufruft:
  \begin{itemize}
-  \item Wenn es weitere anwendbare Around-Methoden gibt, wird die nächstspezifischste aufgerufen und das Ergebnis zurückgegeben.
+  \item Wenn es weitere anwendbare redefinierende Methoden gibt, wird die nächstspezifischste aufgerufen und das Ergebnis zurückgegeben.
   \item Ansonsten wird das komplette Framework aus Vor-, Primär- und Nachmethoden aufgerufen und das Ergebnis zurückgegeben.
  \end{itemize}
 \end{itemize}
@@ -302,7 +300,7 @@ Wir können uns eine Klasse Nightowl definieren, die den Rückgabewert der Prim�
 \phantom{.}He walked back home.\\
 \phantom{.}(\#<void> 42)}
 
-Da Around-Methoden entscheiden können, \texttt{call-next-method} nicht aufzurufen, können sie den Aufruf aller Vor-, Nach- und Primärmethoden verhindern. Eine Around-Methode muss auch nicht das Ergebnis der Primärmethode zurückgeben. Ein Beispiel ist die folgende Klasse Lazybum:
+Da redefinierende Methoden entscheiden können, \texttt{call-next-method} nicht aufzurufen, können sie den Aufruf aller Vor-, Nach- und Primärmethoden verhindern. Eine redefinierende Methode muss auch nicht das Ergebnis der Primärmethode zurückgeben. Ein Beispiel ist die folgende Klasse Lazybum:
 
 \begin{lstlisting}
 (defclass Lazybum (Trainer))
@@ -314,9 +312,9 @@ Da Around-Methoden entscheiden können, \texttt{call-next-method} nicht aufzuruf
 \end{lstlisting}
 {\routput And that was it.}
 
-Wir sehen, dass die Around-Methode alle weiteren Methodenaufrufe verhindert hat. 
+Wir sehen, dass die redefinierende Methode alle weiteren Methodenaufrufe verhindert hat. 
 
-Bei mehreren Oberklassen beziehen sich die ``nächstspezifischste Around-Methode'' und ``alle Vor- bzw. Nachmethoden'' auf den kompletten Vererbungsbaum. Wir können beispielsweise die Klasse Lazyowl definieren, die sowohl von Nightowl als auch von Lazybum erbt:
+Bei mehreren Oberklassen beziehen sich die ``nächstspezifischste redefinierende Methode'' und ``alle Vor- bzw. Nachmethoden'' auf den kompletten Vererbungsbaum. Wir können beispielsweise die Klasse Lazyowl definieren, die sowohl von Nightowl als auch von Lazybum erbt:
 
 \begin{lstlisting}
 (defclass Lazyowl (Nightowl Lazybum))
@@ -327,7 +325,7 @@ Bei mehreren Oberklassen beziehen sich die ``nächstspezifischste Around-Methode
 \phantom{.}And that was it.\\
 \phantom{.}(\#<void> 42)}
 
-Ein Aufruf von \texttt{daily-routine} zeigt, dass die Around-Methoden beider Oberklassen aufgerufen werden. 
+Ein Aufruf von \texttt{daily-routine} zeigt, dass die redefinierende Methoden beider Oberklassen aufgerufen werden. 
 
 Im Gegensatz zu Racket sind Ergänungsmethoden jedoch nicht kompatibel mit Methodenkombination: Sobald eine Kombination in der generischen Funktion für die Methode angegeben wird, führt der Versuch der Definition einer Ergänzungsmethode zu einem Fehler:
 
@@ -342,9 +340,9 @@ Im Gegensatz zu Racket sind Ergänungsmethoden jedoch nicht kompatibel mit Metho
 \vspace{-0.3cm}
 {\rerror swindle/clos.rkt: arity mismatch; the expected number of arguments does not match the given number; expected: 2; given: 1.}
 
-Ergänzungsmethoden sind lediglich Bestandteil der \emph{standard method combination}, also derjenigen Kombination, die geschieht, wenn wir keine andere Methodenkombination angeben. Sobald eine Kombination angegeben wird, ersetzt diese die \textit{standard method combination} und ein Benutzen von \texttt{:before}, \texttt{:after} und \texttt{:around} führt zu einem Fehler.
+Ergänzungsmethoden sind lediglich Bestandteil der \emph{standard method combination}, also derjenigen Kombination, die ausgeführt wird, wenn wir keine andere Methodenkombination angeben. Sobald eine Kombination angegeben wird, ersetzt diese die \textit{standard method combination} und ein Benutzen von \texttt{:before}, \texttt{:after} und \texttt{:around} führt zu einem Fehler.
 
-Eine Ausnahme sind Around-Methoden, die \texttt{call-next-method} nicht aufrufen; sie sind auch in der Lage, Methodenkombination zu verhindern.
+Eine Ausnahme sind redefinierende Methoden, die \texttt{call-next-method} nicht aufrufen; sie sind auch in der Lage, Methodenkombination zu verhindern.
 
 % \subsection{Ergänzungmethoden und Methodenkombination}
 % Ergänzungsmethoden sind in CLOS Teil der Standard-Method-Combination (SMC), also der Methodenkombination, die ausgeführt wird, wenn wir nichts anderes angeben. Sobald wir in einer generischen Funktion eine Kombinationsart für die Methode angeben, ist es nicht mehr möglich, auch Ergänzungsmethoden für diese Methode zu definieren.
@@ -371,4 +369,4 @@ Eine Ausnahme sind Around-Methoden, die \texttt{call-next-method} nicht aufrufen
 Wir haben damit gesehen, dass ein Umgang mit Mehrfachvererbung in CLOS sehr intuitiv und einfach bereitgestellt werden kann.
 
 \section{Zwischenfazit}
-Das Objektsystem von Racket bietet zwar Mixins und Traits, beide sind jedoch geschickt verpackte Einfachvererbung und werden sehr schnell sehr kompliziert, wenn die Anzahl an Klassen steigt und gleichbenannte Methoden und Felder vorkommen. CLOS hingegen bietet einen sehr intuitiven Umgang mit Mehrfachvererbung. Es gibt generische Methoden, Methodenkombination und Ergänzungsmethoden.
+Das Objektsystem von Racket bietet zwar Mixins und Traits, beide sind jedoch geschickt verpackte Einfachvererbung und werden sehr schnell sehr kompliziert, wenn die Anzahl an Klassen steigt und gleichbenannte Methoden und Felder vorkommen. CLOS hingegen bietet einen sehr intuitiven Umgang mit Mehrfachvererbung. Es ermöglicht generische Methoden, Methodenkombination und Ergänzungsmethoden.

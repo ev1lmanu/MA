@@ -81,7 +81,7 @@ und anschließend die Liste wieder in Syntax umgewandelt. Diese Syntax wird vom 
 
 Der Syntax-Transformer wird zur Übersetzungszeit ausgewertet. Das bedeutet, dass die Teilstücke der Syntax zwar verschoben und ersetzt werden -- aber nicht ausgewertet. Das geschieht erst zur Laufzeit. Dadurch ermöglichen uns Makros beispielsweise die Definition eines eigenen \texttt{if} durch Benutzen von \texttt{cond}.
 
-Würden wir \texttt{if} als normale Racket-Funtion definieren, so würden alle Parameter ausgewertet, bevor sie überhaupt an die Funktion gegeben werden. Das wird spätestens dann sichtbar, wenn sie Seiteneffekte beinhalten oder in einem Zweig der Fallunterscheidung ein rekursiver Aufruf steckt. Durch die Definition als Makro haben wir die Möglichkeit das \texttt{if} bereits zur Übersetzungszeit durch ein \texttt{cond} zu ersetzten.
+Würden wir \texttt{if} als normale Racket-Funtion definieren, so würden alle Parameter ausgewertet, bevor sie überhaupt an die Funktion gegeben werden. Das wird spätestens dann sichtbar, wenn sie Seiteneffekte beinhalten oder in einem Zweig der Fallunterscheidung ein rekursiver Aufruf steckt. Durch die Definition als Makro haben wir die Möglichkeit das \texttt{if} bereits zur Übersetzungszeit durch ein \texttt{cond} zu ersetzen.
 
 
 Eine Liste immer mit \texttt{car}, \texttt{cadr} und so weiter zu zerlegen ist jedoch sehr anstrengend und fehleranfällig. Eleganter geht es mithilfe von Pattern-Matching. %Racket bietet dafür die Funktion \texttt{match}. 
@@ -100,7 +100,7 @@ Das Makrosystem von Racket bietet eine sehr bequeme Funktion für Pattern Matchi
 Diese Definition sieht so einfach aus, dass man denken könnte, es wäre eine normale Laufzeit-Funktion -- aber sie ist es nicht. Sie läuft zur Übersetzungszeit. 
 
 
-\texttt{define-syntax-rule} bindet ein Makro, das ein einzelnes Pattern abgleicht. Rackets Makro-System unterstützt mit \texttt{syntax-rules} jedoch auch Transformer für mehrere Patterns, die mit dem gleichen Bezeichner starten.
+Durch das Schlüsselwort \texttt{define-syntax-rule} wird ein Makro gebunden, das ein einzelnes Pattern abgleicht. Rackets Makro-System unterstützt mit \texttt{syntax-rules} jedoch auch Transformer für mehrere Patterns, die mit dem gleichen Bezeichner starten.
 
 Beispielsweise könnten wir ein Makro definieren, das sowohl zwei als auch drei Werte miteinander vertauschen kann (nach \cite{racketguide-macros}):
 
@@ -126,7 +126,7 @@ Mit \texttt{syntax-rules} lässt sich recht leicht ein Makro schreiben, das  \te
 
 
 \section{Grundstruktur von CLOS}
-Es gibt drei Schlüsselwörter, die die Objektstruktur von CLOS definieren:  \texttt{defclass}, \texttt{defgeneric} und \texttt{defmethod}. Implementiert sind sie als Makros, die die interne Repräsentation der Klassen, generischen Funktionen und Methoden erzeugen und damit die Übersicht über die Informationen behalten, die in ihren Definitionen angegeben wurden.
+Es gibt drei Schlüsselwörter, die die Objektstruktur von CLOS definieren:  \texttt{defclass}, \texttt{defgeneric} und \texttt{defmethod}. Implementiert sind sie als Makros, die die interne Repräsentation der Klassen, generischen Funktionen und Methoden erzeugen und damit die Übersicht über die Informationen beinhalten, die in ihren Definitionen angegeben wurden.
 
 Das \texttt{defclass}-Makro expandiert beispielsweise zu einem internen Funktionsaufruf. Es werden die angegebenen Superklassen, Slots und anderen Optionen übergeben und die Funktion sorgt dafür, dass eine interne Repräsentation dieser Klasse erstellt und anschließend das Klassenobjekt zurückgegeben wird.
 
@@ -142,11 +142,11 @@ Es entsteht eine Struktur in drei Schichten:
 Wir werden untersuchen, ob ein analoges Vorgehen auch für die Implementierung von Mehrfachvererbung in Racket möglich ist. Um diese Struktur zu verstehen, wollen wir daher die einzelnen Schichten genauer betrachten. Wir fangen mit der untersten Schicht an: bei den Metaobjekten.
 
 \section{Metaobjekte}
-CLOS ist zirkulär definiert: Der Code, der CLOS implementiert, benutzt CLOS-Klassen und -Objekte. CLOS hat Wege gefunden, diese Zirkularität zu umgehen, über Bootstrapping und Reflection, aber das zu verstehen ist nicht Bestandteil dieser Arbeit. 
+CLOS ist zirkulär definiert: Der Code, der CLOS implementiert, benutzt CLOS-Klassen und -Objekte. CLOS hat Wege gefunden, diese Zirkularität zu umgehen, über Bootstrapping und Reflection, aber das zu untersuchen ist nicht Bestandteil dieser Arbeit. 
 
 Wir wollen später ein bereits fertig definiertes Objektsystem verwenden, um darauf aufbauend ein mächtigeres Objektsystem zu definieren -- das Objektsystem von Racket. Mit einer etwas anderen Sichtweise bietet die CLOS-Implementierung uns genau das: es wird ein Objektsystem verwendet, um das Verhalten eines anderen Objektsystems zu definieren. Das erste Objektsystem besteht aus den intern benutzten Klassen und Objekten, das zweite aus den externen Klassen und Objekten, die dem Anwender bereitgestellt werden.
 
-Es gibt in CLOS also interne Objekte, die das Verhalten der dem Benutzer sichtbaren Klassen und Objekte definieren. Objekte über andere Objekte -- Metaobjekte. Es gibt solche Metaobjekte für alle Konstrukte, die für den Benutzer definiert werden sollen und über die daher Informationen gesammelt werden müssen: Klassenmetaobjekte für Klassen, Generische-Funktionen-Metaobjekte für generische Funktionen und Methodenmetaobjekte für Methoden. 
+Es gibt in CLOS also interne Objekte, die das Verhalten der dem Benutzer sichtbaren Klassen und Objekte definieren. Diese Objekte über andere Objekte werden Metaobjekte genannt. Es gibt solche Metaobjekte für alle Konstrukte, die für den Benutzer definiert werden sollen und über die daher Informationen gesammelt werden müssen: Klassenmetaobjekte für Klassen, Generische-Funktionen-Metaobjekte für generische Funktionen und Methodenmetaobjekte für Methoden. 
 
 Wo es Objekte gibt, muss es auch eine Klasse geben, die ihr Verhalten definiert. Die Klasse, die das Verhalten von Metaobjekten definiert, wird Metaklasse genannt. 
 
@@ -196,7 +196,7 @@ Der Makro-Befehl ist sehr ähnlich zu \texttt{define-syntaxrule}: das Pattern mi
 
 Es werden die expandierten Klassenoptionen genommen und mit ihnen ein neues Metaobjekt erstellt. Das Metaobjekt wird zur Liste der bekannten Klassen hinzugefügt und anschließend zurückgegeben. 
 
-Es gibt demnach eine Tabelle von Klassenmetaobjekten, die bereits erstellt wurden, sowie Funktionen zum Abfragen, ob ein Objekt bereits existiert und zum Hinzufügen eines Objekts:
+Es gibt demnach eine Tabelle von Klassenmetaobjekten, die bereits erstellt wurden, eine Funktion zum Abfragen, ob ein Objekt bereits existiert sowie eine Funktion zum Hinzufügen eines Objekts:
 
 \begin{lstlisting}
 (let ((class-table (make-hash-table :test #'eq)))
@@ -225,13 +225,15 @@ Anstelle von CLOS-Metaobjekten über CLOS-Klassen wollen wir also Racket-Metaobj
  \texttt{direct-methods} & Die Methoden, die die Klasse definiert.
 \end{tabular}
 
-Da Racket-Klassen nicht benannt sind, entfällt das Feld für den Namen. Um die Metaobjekte für Testzwecke unterscheiden zu können, bietet es sich jedoch gegebenenfalls an, sie zu nummerieren. Die Information über die Subklassen einer Klasse wird in CLOS hauptsächlich für spätere Verwendung durch den Benutzer bereitgestellt, sie ist nicht notwendig für die Umsetzung von Mehrfachbererbung. 
+Da Racket-Klassen nicht benannt sind, entfällt das Feld für den Namen. Um die Metaobjekte für Testzwecke unterscheiden zu können, bietet es sich jedoch gegebenenfalls an, sie zu nummerieren. Die Information über die Subklassen einer Klasse wird in CLOS hauptsächlich für die spätere Verwendung durch den Benutzer bereitgestellt, sie ist nicht notwendig für die Umsetzung von Mehrfachbererbung. 
 
 Analog zu CLOS muss es dann auch eine Zwischenschicht geben, die dafür sorgt, dass die Metaobjekte erstellt und verwaltet werden. Da Racket-Klassen nicht benannt sind, wird selbst bei identischer Klassendefinition immer eine neue Klasse erzeugt; der Test auf Enthaltensein in der Liste der bereits erzeugten Klassen entfällt demnach.
 
 \section{Klassenpräzedenz}
 \label{cpl}
-Wir haben fast alle Schritte gesehen, die mit dem Erstellen eines Klassenmetaobjekts zu tun haben: von \texttt{defclass} über \texttt{ensure-class} bis hin zu \texttt{make-instance}. Die verbleibenden Schritte haben mit Vererbung zu tun:
+Wir haben fast alle Schritte gesehen, die mit dem Erstellen eines Klassenmetaobjekts zu tun haben: von \texttt{defclass} über \texttt{ensure-class} bis hin zu \texttt{make-instance}. 
+
+Die verbleibenden Schritte haben mit Vererbung zu tun:
 \begin{itemize}
  \item Berechnen und Speichern der Klassenpräzedenzliste.
  \item Berechnen und Speichern der vollständigen Menge von Slots, bestehend aus direkt in der Klasse definierten und von Superklassen geerbten Slots.
@@ -257,7 +259,7 @@ Die Klassenpräzedenzliste (nach \cite[S. 118ff]{keene}) beinhaltet die Klasse s
  \item Jede Klassendefinition legt die Präzedenzreihenfolge der direkten Superklassen fest.
 \end{enumerate}
 
-Die erste Regel erlaubt es einer Klasse, Verhalten ihrer Superklasse zu überschreiben oder verändern.
+Die erste Regel erlaubt es einer Klasse, Verhalten ihrer Superklasse zu überschreiben oder zu verändern.
 
 Die zweite Regel bewirkt, dass die Reihenfolge direkter Superklassen durch die Reihenfolge der Superklassen im \texttt{defclass}-Makro festgelegt ist. Das heißt, jede angegebene Klasse ist spezifischer als die Klassen, die weiter hinten in der Liste stehen.
 
@@ -376,18 +378,18 @@ Analog zu Klassen gibt es auch für Methoden und generische Funktionen Metaobjek
             :accessor generic-function-methods)))
 \end{lstlisting}
 
-Die Makros \texttt{defgeneric} und \texttt{defmethod} expandieren dann, analog zu \texttt{defclass}, zu einem Aufruf von \texttt{ensure-generic-function} beziehungsweise \texttt{ensure-method}. \texttt{ensure-generic-function} fügte eine neue generische Funktion zur Liste hinzu während \texttt{ensure-method} die Methode zu einer bestehenden generischen Funktion hinzufügt. Falls es noch keine generische Funktion für die Methode gibt, wird sie erzeugt. In CLOS gibt es zu jeder Methode eine generische Funktion, unabhängig davon, ob der Benutzer sie explizit angibt oder nicht.
+Die Makros \texttt{defgeneric} und \texttt{defmethod} expandieren dann, analog zu \texttt{defclass}, zu einem Aufruf von \texttt{ensure-generic-function} beziehungsweise \texttt{ensure-method}. \texttt{ensure-generic-function} fügt eine neue generische Funktion zur Liste hinzu während \texttt{ensure-method} die Methode zu einer bestehenden generischen Funktion hinzufügt. Falls es noch keine generische Funktion für die Methode gibt, wird sie erzeugt. In CLOS gibt es zu jeder Methode eine generische Funktion, unabhängig davon, ob der Benutzer sie explizit angibt oder nicht.
 
 Welche Methode bei dem Aufruf einer generischen Funktion ausgeführt wird, hängt von den Argumenten und der Kombinationsart ab. In CLOS ist die Klasse (oder die Klassen), auf die eine Methode spezialisiert ist, Teil der Methodenparameter. 
 
-Falls der Benutzer nichts anderes angibt, geschieht die \emph{standard method combination}, also die Ausführung der spezifischsten Primärmethode und ihrer Ergänzungsmethoden. Sie erfolgt in drei Schritten:
+Falls der Benutzer nichts anderes angibt, wird die \emph{standard method combination} durchgeführt, also die Ausführung der spezifischsten Primärmethode und ihrer Ergänzungsmethoden. Sie erfolgt in drei Schritten:
 \begin{enumerate}
  \item Bestimmen, welche Methoden anwendbar sind. Methoden sind anwendbar, wenn sie auf die gleiche Klasse wie die auszuführende Methode oder eine ihrer Oberklassen spezialisiert sind.
  \item Sortieren der anwendbaren Methoden nach Präzedenz.
  \item Ausführen der Liste anwendbarer Methoden.
 \end{enumerate}
 
-Andere Kombinationsarten werden in AMOP nicht behandelt, aber das gleiche Schema lässt sich sowohl an Ergänzungsmethoden als auch an Methodenkombination anpassen. Sie unterscheiden sich nur darin, welche Methoden anwendbar send, welche Art der Präzedenz für die Sortierung gewählt wird und wie die Methoden anschließend ausgeführt werden (Tabelle \ref{combination}). Falls keine anwendbare Primärmethode gefunden wurde, so wird ein Fehler signalisiert.
+Andere Kombinationsarten werden in AMOP nicht behandelt, aber das gleiche Schema lässt sich sowohl an Ergänzungsmethoden als auch an Methodenkombination anpassen. Sie unterscheiden sich nur darin, welche Methoden anwendbar send, welche Art der Präzedenz für die Sortierung gewählt wird und wie die Methoden anschließend ausgeführt werden (Tabelle \ref{combination}). Falls keine anwendbare Primärmethode gefunden wurde, wird ein Fehler signalisiert.
 
 \begin{table}[h]
 \begin{tabular}{|p{4.7cm}|p{4.5cm}|p{4.5cm}|}
@@ -404,4 +406,4 @@ Andere Kombinationsarten werden in AMOP nicht behandelt, aber das gleiche Schema
 Auf analoge Weise lässt sich Methodenkombination auch für Racket umsetzen: 
 Wir erlauben die Optionen \texttt{define/generic}, \texttt{define/before}, \texttt{define/around} und \texttt{define/after} im \texttt{class}-Makro. Wann immer eine generische Funktion oder Methode angegeben wird, merken wir uns die relevanten Informationen in Form eines Metaobjekts. Und wir sorgen dafür, dass die Methodendefinitionen, für die eine Kombination existiert, durch eine entsprechende Kombinationsmethode ersetzt werden, bevor Racket die Klassendefinition auswertet.
 
-Damit bietet CLOS uns bereits alle Konzepte, die für eine Umsetzung des Entwurfs benötigt werden. Insbesondere die dritte Anforderung lässt sich auf diese Weise sehr elegant umsetzen: da die Funktionalität, die von CLOS übertragen wird, auf analoge Weise implementiert wird, wird sie auch das gleiche Verhalten zeigen.
+Damit bietet CLOS uns bereits alle Konzepte, die für eine Umsetzung des Entwurfs benötigt werden. Insbesondere die dritte Anforderung lässt sich so sehr elegant umsetzen: da die Funktionalität, die von CLOS übertragen wird, auf analoge Weise implementiert wird, ist es einfach, das gleiche Verhalten zu erzielen.
