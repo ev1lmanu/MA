@@ -16,7 +16,7 @@ Alle Code-Beispiele befinden sich auch auf der beiliegenden CD und sind noch ein
 Für die Definition von Klassen in CLOS gibt es das Makro \texttt{defclass}. Im Gegensatz zu dem Objektsystem von Racket erstellt das Makro eine benannte Klasse. Der Name wird beim Aufruf mit übergeben, damit erübrigt sich eine anschließende Benennung mit \texttt{define}. Auch in CLOS wird die Superklasse mit angegeben. Da es jedoch mehrere Superklassen geben kann, werden diese in einer Liste übergeben. Hat die Klasse keine Superklassen (außer der Wurzelklasse), so wird die leere Liste übergeben. Die explizite Angabe der Wurzelklasse als Superklasse ist nicht nötig. Anschließend können noch die Slots der Klasse angegeben werden. Für eine minimale Klasse ohne Superklasse(n) genügt der Name und die leere Liste: 
 
 \begin{lstlisting}
-((defclass Thing ())
+(defclass Thing ())
 \end{lstlisting}
 
 % Zur Objekterzeugung gibt es in CLOS zwei verschiedene Möglichkeiten, je nachdem ob \texttt{:automaker} als Klassen-Option gesetzt wurde oder nicht. 

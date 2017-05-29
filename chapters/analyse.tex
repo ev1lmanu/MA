@@ -173,7 +173,7 @@ Das \texttt{defclass}-Makro parst die Klassendefinition und verwandelt sie in ei
 
 \begin{lstlisting}
 (defmacro defclass (name direct-superclasses direct-slots &rest options)
-  ´(ensure-class ',name
+  `(ensure-class ',name
     :direct-superclasses ,(canonicalize-direct-superclasses 
                             direct-superclasses)
     :direct-slots ,(canonicalize-direct-slots direct-slots)
@@ -182,7 +182,7 @@ Das \texttt{defclass}-Makro parst die Klassendefinition und verwandelt sie in ei
 
 Der Makro-Befehl ist sehr ähnlich zu \texttt{define-syntaxrule}: das Pattern mit Name, Superklassen, Slots und anderen Optionen wird gematcht und im anschließenden Template benutzt -- einem Aufruf der Funktion \texttt{ensure-class}. Die \texttt{canonicalize}-Funktionen übernehmen die weitere Makro-Expansion, wie das Auswerten der Slot-Optionen, das Expandieren von Accessor-Optionen zu den Readern und Writern, Ersetzen der Namen der Superklassen durch die zugehören Metaobjekte und so weiter. Sie tun praktisch ``die ganze Arbeit'' der Expansion.
 
-\texttt{ensure-class} nimmt dann den Namen und die Argumente der Klasse und definiert ein Klassenobjekt mit dem Namen:
+Die Funktion \texttt{ensure-class} nimmt dann den Namen und die Argumente der Klasse und definiert ein Klassenobjekt mit dem Namen:
 
 \begin{lstlisting}
 (defun ensure-class (name &rest all-keys)
@@ -350,7 +350,7 @@ CLOS nutzt dann die Klassenpräzedenzliste, um die effektiven Slots zu berechnen
 
 \begin{lstlisting}
 (defun compute-slots (class)
-  ... ; conversion to slot object here
+  ... ; conversion to slot object
   (remove-duplicates
     (apply #'append 
            (mapcar #'class-direct-slots
@@ -368,6 +368,16 @@ Mit den CLOS-Konzepten, die wir bisher kennengelernt haben, lässt sich  unser M
 \section{Mehrfachvererbung und Methodenkombination}
 Analog zu Klassen gibt es auch für Methoden und generische Funktionen Metaobjekte, um eine Übersicht über die relevanten Informationen zu behalten. Eine generische Funktion fasst eine Menge von Methoden mit der gleichen Signatur zusammen und das zugehörige Metaobjekt merkt sich genau diese Dinge: den Namen, die Parameterliste sowie die Methoden, die die generische Funktion implementieren.
 
+\lstset{literate=
+	  *{(}{{{\color{brown}{(}}}}{1}
+	  {)}{{{\color{brown}{)}}}}{1}
+	  {{[}}{{{\color{brown}{{[}}}}}{1}
+	  {{]}}{{{\color{brown}{{]}}}}}{1}
+	  {\{}{{{\color{brown}{\{}}}}{1}
+	  {\}}{{{\color{brown}{\}}}}}{1}
+	  {'}{{{\bfseries\color{green}{\textquotesingle}}}}{1}
+	  {\#}{{{\color{green}{\#}}}}{1}
+	  {`}{{{\textquoteleft}}}{1}}
 \begin{lstlisting}
 (defclass standard-generic-function ()
   ((name :initarg :name
@@ -377,6 +387,17 @@ Analog zu Klassen gibt es auch für Methoden und generische Funktionen Metaobjek
    (methods :initform ()
             :accessor generic-function-methods)))
 \end{lstlisting}
+\lstset{literate=
+	  *{(}{{{\color{brown}{(}}}}{1} 	% colored brackets
+	  {)}{{{\color{brown}{)}}}}{1}	 	
+	  {{[}}{{{\color{brown}{{[}}}}}{1}
+	  {{]}}{{{\color{brown}{{]}}}}}{1}
+	  {\{}{{{\color{brown}{\{}}}}{1}
+	  {\}}{{{\color{brown}{\}}}}}{1}
+	  {'}{{{\bfseries\color{green}{\textquotesingle}}}}{1}
+	  {\#}{{{\color{green}{\#}}}}{1}
+	  {`}{{{\textquoteleft}}}{1}
+	  {lambda}{{$\lambda$}}{1}}
 
 Die Makros \texttt{defgeneric} und \texttt{defmethod} expandieren dann, analog zu \texttt{defclass}, zu einem Aufruf von \texttt{ensure-generic-function} beziehungsweise \texttt{ensure-method}. \texttt{ensure-generic-function} fügt eine neue generische Funktion zur Liste hinzu während \texttt{ensure-method} die Methode zu einer bestehenden generischen Funktion hinzufügt. Falls es noch keine generische Funktion für die Methode gibt, wird sie erzeugt. In CLOS gibt es zu jeder Methode eine generische Funktion, unabhängig davon, ob der Benutzer sie explizit angibt oder nicht.
 
