@@ -28,8 +28,8 @@
                   (define/override (who-are-you?)
                     (string-append (super who-are-you?)
                                    (if (hot?) " And I am hot!" "")))
-                  (inherit-field [newname name])
-                  (define/public (get-name) newname)))
+                  (inherit-field [super-name name])
+                  (define/public (get-name) super-name)))
                                    
 
 ;; We can access both inherited and new behavior

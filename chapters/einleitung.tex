@@ -28,19 +28,19 @@ Dafür haben sich im Laufe der Zeit in verschiedene Programmiersprachen (im folg
 
 \begin{enumerate}
  \item Mehrfachvererbung wird nicht unterstützt. Als Alternative werden teils Mixins oder Traits genutzt. Beispiel: Java bis Version 7.
- \item Es ist nicht erlaubt, mehrdeutige Features zu verwenden. Wenn in der Klasse \texttt{D} die Methode \texttt{a()} aufgerufen wird, so führt das zu einem Fehler. Beispiel: Go, Java 8.
- \item Zu vererbende Features werden per Hand gewählt. Die Klasse \texttt{D} kann sich also entscheiden, entweder \texttt{B.a()} zu erben oder \texttt{C.a()}. Beispiel: Eiffel.
- \item Gleichbenannte Features werden umbenannt. \texttt{D} würde zwei Methoden \texttt{ba()} und \texttt{ca()} erben. Beispiel: Eiffel, Logtalk.
- \item Man kann qualifiziert auf die Features zugreifen. In \texttt{D} kann man dann mit \texttt{B.a()} oder \texttt{C.a()} die Methode aufrufen. Beispiel: C++, OCaml.
- \item Features werden nach Präzedenz geerbt. Die Superklassen werden in eine bestimmte Reihenfolge (Präzedenzliste) gebracht und bei gleichbenannten Features wird immer nur dasjenige geerbt, das in der Präzedenzliste zuerst kommt. Wenn wir beispielweise die Klassen in die Reihenfolge \texttt{D,B,C,A} bringen, so würde das Feature je nach Implementierung entweder von \texttt{B} oder direkt von \texttt{A} geerbt, jedoch nur einmal. Beispiel: Common Lisp, Perl, Python.
- \item Kombination aller gleichbenannten Features. Der Programmierer kann angeben, wie die geerbten Features kombiniert werden sollen. Das funktioniert gegebenfalls sogar für indirekte Superklassen. Haben \texttt{A} und \texttt{B} ein gemeinsames Feature, dann gehen beide in die Kombination mit ein. Beispiel: Common Lisp, Eiffel.
+ \item Es ist nicht erlaubt, mehrdeutige Eigenschaften zu verwenden. Wenn in der Klasse \texttt{D} die Methode \texttt{a()} aufgerufen wird, so führt das zu einem Fehler. Beispiel: Go, Java 8.
+ \item Zu vererbende Eigenschaften werden per Hand gewählt. Die Klasse \texttt{D} kann sich also entscheiden, entweder \texttt{B.a()} zu erben oder \texttt{C.a()}. Beispiel: Eiffel.
+ \item Gleichbenannte Eigenschaften werden umbenannt. \texttt{D} würde zwei Methoden \texttt{ba()} und \texttt{ca()} erben. Beispiel: Eiffel, Logtalk.
+ \item Man kann qualifiziert auf die Eigenschaften zugreifen. In \texttt{D} kann man dann mit \texttt{B.a()} oder \texttt{C.a()} die Methode aufrufen. Beispiel: C++, OCaml.
+ \item Eigenschaften werden nach Präzedenz geerbt. Die Superklassen werden in eine bestimmte Reihenfolge (Präzedenzliste) gebracht und bei gleichbenannten Eigenschaften wird immer nur dasjenige geerbt, das in der Präzedenzliste zuerst kommt. Wenn wir beispielweise die Klassen in die Reihenfolge \texttt{D,B,C,A} bringen, so würde die Eigenschaft je nach Implementierung entweder von \texttt{B} oder direkt von \texttt{A} geerbt, jedoch nur einmal. Beispiel: Common Lisp, Perl, Python.
+ \item Kombination aller gleichbenannten Eigenschaften. Der Programmierer kann angeben, wie die geerbten Eigenschaften kombiniert werden sollen. Das funktioniert gegebenfalls sogar für indirekte Superklassen. Haben \texttt{A} und \texttt{B} eine gemeinsame Eigenschaft, dann gehen beide in die Kombination mit ein. Beispiel: Common Lisp, Eiffel.
 \end{enumerate}
 
 % Für einen möglichst einfachen Einstieg in die Lehre von Mehrfachvererbung bietet sich Kategorie 6 am meisten an: Die Konfliktlösung passiert automatisch. Es reicht, eine Vererbungshierarchie anzugeben und den Rest übernimmt die Sprache. 
 
 Racket nutzt die erste Strategie. Mehrfachvererbung wird nicht unterstützt.
 
-Das Common Lisp Object System (CLOS) \cite{keene} vereint die Ansätze 6 und 7: Wird nichts anderes angegeben, so wird das Feature der Klasse mit der höchsten Präzedenz vererbt; der Programmierer hat jedoch für Methoden alternativ auch die Möglichkeit, eine Kombinationsart anzugeben. Diese Art der Mehrfachvererbung bietet auch einen einfachen Einstieg für die Lehre. Die Konfliktlösung ist automatisiert. Es reicht, eine Vererbungshierarchie anzugeben und den Rest übernimmt die Sprache. Gleichzeitig erhält der Programmierer durch Angabe einer Kombinationsart auch selbst die Möglichkeit der Kontrolle.
+Das Common Lisp Object System (CLOS) \cite{keene} vereint die Ansätze 6 und 7: Wird nichts anderes angegeben, so wird die Eigenschaft der Klasse mit der höchsten Präzedenz vererbt; der Programmierer hat jedoch für Methoden alternativ auch die Möglichkeit, eine Kombinationsart anzugeben. Diese Art der Mehrfachvererbung bietet auch einen einfachen Einstieg für die Lehre. Die Konfliktlösung ist automatisiert. Es reicht, eine Vererbungshierarchie anzugeben und den Rest übernimmt die Sprache. Gleichzeitig erhält der Programmierer durch Angabe einer Kombinationsart auch selbst die Möglichkeit der Kontrolle.
 
 Die Funktionsweise von CLOS ist sehr ausführlich in dem Buch ``Object-oriented programming in Common Lisp. A programmer's guide to CLOS'' von Sonya E. Keene \cite{keene} dokumentiert. Einen Blick hinter die Implementierung werfen Gregor Kiczales, Jim Des Rivieres und Daniel Gureasko Bobrow mit dem Werk ``The art of the metaobject protocol'' (AMOP) \cite{amop}. Sie zeigen wie eine objektorientierte Sprache auf Basis von Lisp, Makros und Metaobjekten implementiert werden kann. 
 
