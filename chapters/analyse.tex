@@ -1,17 +1,17 @@
 \chapter{Analyse der Implementierungsdetails von CLOS}
-Um die Konzepte von CLOS auf ein anderes Objektsystem anwenden zu können, ist es notwendig zu verstehen, wie CLOS funktioniert. Wir wollen deshalb die relevanten Konzepte der Implementierung aufzeigen und evaluieren, ob sie sich auch auf Racket anwenden lassen.
+Um die Konzepte von CLOS auf ein anderes Objektsystem anwenden zu können, ist es notwendig zu verstehen, wie CLOS funktioniert. Es werden deshalb die relevanten Konzepte der Implementierung aufgezeigt und evaluiert, ob sie sich auch auf Racket anwenden lassen.
 
-Makros sind ein Sprachmittel, mit dem die Syntax in vielen Programmiersprachen verändert werden kann, so auch in Lisp. Der Einstiegspunkt einer Erweiterung der Sprache ist demnach ein Makro -- das gilt sowohl für die Implementierung von CLOS als auch für die Erweiterung, die im Rahmen dieser Arbeit entstehen soll. Deshalb soll zunächst kurz auf die Grundlagen von Makros eingegangen werden. Wir betrachten dafür das Makrosystem von Racket. Dieser Teil basiert auf dem Guide ``Fear of Macros'' von Greg Hendershott \cite{fearofmacros} und dem Racketguide für Makros \cite{racketguide-macros}.
+Makros sind ein Sprachmittel, mit dem die Syntax in vielen Programmiersprachen verändert werden kann, so auch in Lisp. Der Einstiegspunkt einer Erweiterung der Sprache ist demnach ein Makro -- das gilt sowohl für die Implementierung von CLOS als auch für die Erweiterung, die im Rahmen dieser Arbeit entstehen soll. Deshalb soll zunächst kurz anhand des Makrosystems von Racket auf die Grundlagen von Makros eingegangen werden. Dieser Teil basiert auf dem Guide ``Fear of Macros'' von Greg Hendershott \cite{fearofmacros} und dem Racketguide für Makros \cite{racketguide-macros}.
 
-Anschließend schauen wir uns an, wie CLOS implementiert ist. CLOS ist dabei nicht nur ein Ratgeber zur Implementierung von Mehrfachvererbung. Es gibt uns außerdem einen Einblick, wie eine bestehende Sprache mithilfe von Makros und Metaobjekten um ein Objektsystem erweitert werden kann -- eine wichtige Grundlage für die Erweiterung von Racket. Die Implementierungsdetails von CLOS sind dem Buch ``The Art of the Metaobject Protocol'' (AMOP) \cite{amop} entnommen. Die CLOS-Implementierung in AMOP ist nicht in Racket, sondern in Common Lisp geschrieben und die Quelltextbeispiele wurden unverändert übernommen. Es wird daher zu leichten Abweichungen zu der bisher eingeführten Syntax von Racket oder Makros kommen; die grundlegende Funktionalität ist jedoch die gleiche.
+Anschließend erfolgt eine Analyse der CLOS-Implementierung. CLOS ist dabei nicht nur ein Ratgeber zur Implementierung von Mehrfachvererbung. Es bietet außerdem einen Einblick, wie eine bestehende Sprache mithilfe von Makros und Metaobjekten um ein Objektsystem erweitert werden kann -- eine wichtige Grundlage für die Erweiterung von Racket. Die Implementierungsdetails von CLOS sind dem Buch ``The Art of the Metaobject Protocol'' (AMOP) \cite{amop} entnommen. Die CLOS-Implementierung in AMOP ist nicht in Racket, sondern in Common Lisp geschrieben und die Quelltextbeispiele wurden unverändert übernommen. Es wird daher zu leichten Abweichungen zu der bisher eingeführten Syntax von Racket oder Makros kommen; die grundlegende Funktionalität ist jedoch die gleiche.
 
-Im Folgenden wird eine Unterscheidung zwischen Funktionen, Methoden und generischen Funktionen gemacht. Methoden und generische Funktionen sind Bestandteil des Verhaltens von Objekten und werden innerhalb einer Klassendefinition durch eine entprechende Klassenoption angegeben. ``Funktionen'' sind die normalen Funktionen, die wir in Racket mit \texttt{$\lambda$} oder \texttt{define} auch außerhalb von Klassen definieren können. Die Unterscheidung erleichtert es hervorzuheben, wann von einer Methode die Rede ist, die Bestandteil einer Klassendefinition ist, und wann von einer Funktion, die außerhalb definiert wurde.
+Im Folgenden wird eine Unterscheidung zwischen Funktionen, Methoden und generischen Funktionen gemacht. Methoden und generische Funktionen sind Bestandteil des Verhaltens von Objekten und werden innerhalb einer Klassendefinition durch eine entprechende Klassenoption angegeben. ``Funktionen'' sind die normalen Funktionen, die in Racket mit \texttt{$\lambda$} oder \texttt{define} auch außerhalb von Klassen definieret werden. Die Unterscheidung erleichtert es hervorzuheben, wann von einer Methode die Rede ist, die Bestandteil einer Klassendefinition ist, und wann von einer Funktion, die außerhalb definiert wurde.
 
 \section{Makros} 
 \label{makros}
 % \subsection{Transformers}
 
-Ein Makro ist im Grunde eine Funktion. Sie erhält ein Stück Syntax als Eingabe und gibt ein anderes Stück Syntax zurück. Sie \textit{transformiert} Syntax. Wir können einen solchen Syntaxtransformer mit \texttt{define-syntax} definieren:
+Ein Makro ist im Grunde eine Funktion. Sie erhält ein Stück Syntax als Eingabe und gibt ein anderes Stück Syntax zurück. Sie \textit{transformiert} Syntax. Ein solcher Syntaxtransformer lässt sich in Racket mit \texttt{define-syntax} definieren:
 
 \begin{lstlisting}
 (define-syntax foo
@@ -26,17 +26,17 @@ Ein Aufruf von \texttt{foo} ergibt dann:
 \end{lstlisting}
 {\routput {\qq}I am foo{\qq}}
 
-Durch die Verwendung von \texttt{define-syntax} geschieht eine Transformerbindung. Wir teilen dem Racketcompiler mit: ``Wann immer du im Quelltext ein Stück Syntax findest, das mit \texttt{foo} startet, gib es an meine Transformerfunktion und ersetze es mit der Syntax, die ich dir zurück gebe.'' Racket gibt also alles, das aussieht wie \texttt{(foo ...)} an unsere Funktion und wir können neue Syntax zurückgeben, die stattdessen verwendet wird, ähnlich zu einer Suchen-und-Ersetzen-Operation.
+Durch die Verwendung von \texttt{define-syntax} geschieht eine Transformerbindung. Wir teilen dem Racketcompiler mit: ``Wann immer du im Quelltext ein Stück Syntax findest, das mit \texttt{foo} startet, gib es an meine Transformerfunktion und ersetze es mit der Syntax, die ich dir zurück gebe.'' Racket gibt also alles, das aussieht wie \texttt{(foo ...)} an die soeben definierte Funktion und diese kann neue Syntax zurückgeben, die stattdessen verwendet wird, ähnlich zu einer Suchen-und-Ersetzen-Operation.
 
 \begin{lstlisting}
 > (foo 1 2 3)
 \end{lstlisting}
 {\routput {\qq}I am foo\qq}
 
-Die Transformation wird rein auf Syntaxebene durchgeführt. Erst \textit{nachdem} die Syntax ersetzt wurde, geschieht die Auswertung. Wir könnten anstelle des Parameters \texttt{1} auch eine Division durch 0 schreiben und es würde kein Fehler signalisiert, da die Parameter von \texttt{foo} nach der Transformation nicht mehr Teil der Syntax sind.
+Die Transformation wird rein auf Syntaxebene durchgeführt. Erst \textit{nachdem} die Syntax ersetzt wurde, geschieht die Auswertung. Der Parameter \texttt{1} könnte  durch eine Division durch 0 ersetzt werden und es würde kein Fehler signalisiert, da die Parameter von \texttt{foo} nach der Transformation nicht mehr Teil der Syntax sind.
 
 % \subsection{Syntax-Objekte}
-Üblicherweise soll die Eingabesyntax transformiert werden. Wenn wir Syntax definieren, erhalten wir ein Syntaxobjekt:
+Üblicherweise soll die Eingabesyntax transformiert werden. Das Ergebnis einer Syntaxdefinition ist ein Syntaxobjekt:
 
 \begin{lstlisting}
 (syntax (+ 1 (* 2 3)))
@@ -79,16 +79,16 @@ umgewandelt. Nachdem der Name der Funktion, \texttt{reverse-me}, abgeschnitten w
 und anschließend die Liste wieder in Syntax umgewandelt. Diese Syntax wird vom Compiler ausgewertet und ergibt schließlich die oben genannte Ausgabe.
 
 
-Der Syntaxtransformer wird zur Übersetzungszeit ausgewertet. Das bedeutet, dass die Teilstücke der Syntax zwar verschoben und ersetzt werden -- aber nicht ausgewertet. Das geschieht erst zur Laufzeit. Dadurch ermöglichen uns Makros beispielsweise die Definition eines eigenen \texttt{if} durch Benutzen von \texttt{cond}.
+Der Syntaxtransformer wird zur Übersetzungszeit ausgewertet. Das bedeutet, dass die Teilstücke der Syntax zwar verschoben und ersetzt werden -- aber nicht ausgewertet. Das geschieht erst zur Laufzeit. Dadurch ermöglichen Makros beispielsweise die Definition eines eigenen \texttt{if} durch Benutzen von \texttt{cond}.
 
-Würden wir \texttt{if} als normale Racketfunktion definieren, so würden alle Parameter ausgewertet werden, bevor sie überhaupt an die Funktion gegeben wurden. Das wird spätestens dann sichtbar, wenn sie Seiteneffekte beinhalten oder in einem Zweig der Fallunterscheidung ein rekursiver Aufruf steckt. Durch die Definition als Makro haben wir die Möglichkeit das \texttt{if} bereits zur Übersetzungszeit durch ein \texttt{cond} zu ersetzen.
+Wäre if \texttt{if} als normale Racketfunktion definiert, so würden alle Parameter ausgewertet werden, bevor sie überhaupt an die Funktion gegeben wurden. Das wird spätestens dann sichtbar, wenn sie Seiteneffekte beinhalten oder in einem Zweig der Fallunterscheidung ein rekursiver Aufruf steckt. Durch die Definition als Makro bietet die Möglichkeit, \texttt{if} bereits zur Übersetzungszeit durch ein \texttt{cond} zu ersetzen.
 
 
 Eine Liste immer mit \texttt{car}, \texttt{cadr} und so weiter zu zerlegen ist jedoch sehr anstrengend und fehleranfällig. Eleganter geht es mithilfe von Patternmatching. %Racket bietet dafür die Funktion \texttt{match}. 
 
 
 % \subsection{Pattern Matching}
-Das Makrosystem von Racket bietet eine sehr bequeme Funktion für Pattern Matching: \texttt{syntax-case} und dessen Kurzform \texttt{define-syntax-rule}. Anstatt die Syntax per Hand auseinanderzunehmen, stellen wir ein Template bereit, welches Variablen aus dem Pattern nutzt.
+Das Makrosystem von Racket bietet eine sehr bequeme Funktion für Pattern Matching: \texttt{syntax-case} und dessen Kurzform \texttt{define-syntax-rule}. Anstatt die Syntax per Hand auseinanderzunehmen, wird ein Template bereitgestellt, welches Variablen aus dem Pattern nutzt.
 
 \begin{lstlisting}
 (define-syntax-rule 
@@ -102,7 +102,7 @@ Diese Definition sieht so einfach aus, dass man denken könnte, es wäre eine no
 
 Durch das Schlüsselwort \texttt{define-syntax-rule} wird ein Makro gebunden, das ein einzelnes Pattern abgleicht. Rackets Makrosystem unterstützt mit \texttt{syntax-rules} jedoch auch Transformer für mehrere Patterns, die mit dem gleichen Bezeichner starten.
 
-Beispielsweise könnten wir ein Makro definieren, das sowohl zwei als auch drei Werte miteinander vertauschen kann (nach \cite{racketguide-macros}):
+Beispielsweise lässt sich ein Makro definieren, das sowohl zwei als auch drei Werte miteinander vertauschen kann (nach \cite{racketguide-macros}):
 
 \begin{lstlisting}
 (define-syntax rotate
@@ -139,12 +139,12 @@ Es entsteht eine Struktur in drei Schichten:
  \item Die Supportschicht: Hier ist das Verhalten von Klassen, Instanzen, generischen Funktionen und Methoden implementiert. Das Metaobjektprotokoll konzentriert sich hauptsächlich auf diese Schicht.
 \end{itemize}
 
-Wir werden untersuchen, ob ein analoges Vorgehen auch für die Implementierung von Mehrfachvererbung in Racket möglich ist. Um diese Struktur zu verstehen, wollen wir daher die einzelnen Schichten genauer betrachten. Wir fangen mit der untersten Schicht an: bei den Metaobjekten.
+Im Folgen wird untersucht werden, ob ein analoges Vorgehen auch für die Implementierung von Mehrfachvererbung in Racket möglich ist. Um diese Struktur zu verstehen, werden daher die einzelnen Schichten genauer betrachtet. Den Anfang bildet die untersten Schicht, bestehend aus Metaobjekten.
 
 \section{Metaobjekte}
 CLOS ist zirkulär definiert: Der Code, der CLOS implementiert, benutzt CLOS-Klassen und -Objekte. CLOS hat Wege gefunden, diese Zirkularität zu umgehen, über Bootstrapping und Reflection, aber das zu untersuchen ist nicht Bestandteil dieser Arbeit. 
 
-Wir wollen später ein bereits fertig definiertes Objektsystem verwenden, um darauf aufbauend ein mächtigeres Objektsystem zu definieren -- das Objektsystem von Racket. Mit einer etwas anderen Sichtweise bietet die CLOS-Implementierung uns genau das: es wird ein Objektsystem verwendet, um das Verhalten eines anderen Objektsystems zu definieren. Das erste Objektsystem besteht aus den intern benutzten Klassen und Objekten, das zweite aus den externen Klassen und Objekten, die dem Anwender bereitgestellt werden.
+Später soll ein bereits fertig definiertes Objektsystem verwendet werden, um darauf aufbauend ein mächtigeres Objektsystem zu definieren -- das Objektsystem von Racket. Mit einer etwas anderen Sichtweise bietet die CLOS-Implementierung genau das: es wird ein Objektsystem verwendet, um das Verhalten eines anderen Objektsystems zu definieren. Das erste Objektsystem besteht aus den intern benutzten Klassen und Objekten, das zweite aus den externen Klassen und Objekten, die dem Anwender bereitgestellt werden.
 
 Es gibt in CLOS also interne Objekte, die das Verhalten der dem Benutzer sichtbaren Klassen und Objekte definieren. Solche ``Metaobjekte'' existieren für alle Konstrukte, die für den Benutzer definiert werden sollen und über die daher Informationen gesammelt werden müssen: Klassenmetaobjekte für Klassen, Generische-Funktionen-Metaobjekte für generische Funktionen und Methodenmetaobjekte für Methoden. 
 
@@ -213,9 +213,9 @@ Es gibt eine Tabelle von Klassenmetaobjekten, die bereits erstellt wurden, eine 
 
 \texttt{make-instance} ist eine Funktion der untersten Schicht und führt noch einige notwendige Initialisierungen durch, wie das Hinzufügen des Objekts als Subklasse zu seinen Superklassen, Konvertieren der Liste von Sloteigenschaften in tatsächliche Slot-Definitionen oder die Definition von Accessormethoden. 
 
-Für eine Implementierung von Mehrfachvererbung in Racket brauchen wir ebenfalls Informationen darüber, welche Klassen mit welchen Superklassen, Feldern und Methoden bereits definiert wurden. Die Methodenkombination beispielsweise basiert auf den Ergebnissen aller Methoden in allen Superklassen -- nach dieser Information können wir ein Klassenobjekt nach der Erstellung durch Racket jedoch nicht mehr fragen; in ihm existiert jede Methode nur genau einmal.
+Für eine Implementierung von Mehrfachvererbung in Racket werdeb ebenfalls Informationen darüber benötigt, welche Klassen mit welchen Superklassen, Feldern und Methoden bereits definiert wurden. Die Methodenkombination beispielsweise basiert auf den Ergebnissen aller Methoden in allen Superklassen -- darüber kann ein Klassenobjekt nach der Erstellung durch Racket jedoch keine Auskunft mehr geben; in ihm existiert jede Methode nur genau einmal.
 
-Anstelle von CLOS-Metaobjekten über CLOS-Klassen wollen wir also Racketmetaobjekte über Racketklassen erstellen. Um Mehrfachvererbung und Methodenkombination zu implementieren, müssen wir wissen, in welcher Vererbungshierarchie die Klassen stehen und welche Felder und Methoden sie definieren. Das sind genau die Informationen, die sich auch das Metaobjekt in CLOS merkt:
+Anstelle von CLOS-Metaobjekten über CLOS-Klassen werden also Racketmetaobjekte über Racketklassen erstellt. Um Mehrfachvererbung und Methodenkombination zu implementieren, ist es notwendig zu wissen, in welcher Vererbungshierarchie die Klassen stehen und welche Felder und Methoden sie definieren. Das sind genau die Informationen, die sich auch das Metaobjekt in CLOS merkt:
 
 \begin{tabular}{p{5cm}p{9cm}}
  \texttt{direct-superclasses} & Die Liste der direkten Superklassen. \\
@@ -231,7 +231,7 @@ Analog zu CLOS muss es dann auch eine Zwischenschicht geben, die dafür sorgt, d
 
 \section{Klassenpräzedenz}
 \label{cpl}
-Wir haben fast alle Schritte gesehen, die mit dem Erstellen eines Klassenmetaobjekts zu tun haben: von \texttt{defclass} über \texttt{ensure-class} bis hin zu \texttt{make-instance}. 
+Damit wurden fast alle Schritte gezeigt, die mit dem Erstellen eines Klassenmetaobjekts zu tun haben: von \texttt{defclass} über \texttt{ensure-class} bis hin zu \texttt{make-instance}. 
 
 Die verbleibenden Schritte haben mit Vererbung zu tun:
 \begin{itemize}
@@ -239,7 +239,7 @@ Die verbleibenden Schritte haben mit Vererbung zu tun:
  \item Berechnen und Speichern der vollständigen Menge von Slots, bestehend aus direkt in der Klasse definierten und von Superklassen geerbten Slots
 \end{itemize}
 
-Auch für Racketobjekte müssen wir diese Berechnungen durchführen.
+Auch für Racketobjekte müssen diese Berechnungen durchführt werden.
 
 In CLOS führt die Funktion \texttt{finalize-inheritance}, die von \texttt{make-instance} aufgerufen wird, beide Schritte aus:
 
@@ -263,7 +263,7 @@ Die erste Regel erlaubt es einer Klasse, Verhalten ihrer Superklasse zu übersch
 
 Die zweite Regel bewirkt, dass die Reihenfolge direkter Superklassen durch die Reihenfolge der Superklassen im \texttt{defclass}-Makro festgelegt ist. Das heißt, jede angegebene Klasse ist spezifischer als die Klassen, die weiter hinten in der Liste stehen.
 
-Anhand der ersten Regel kennen wir sofort die spezifischste und unspezifischste Klasse jeder Klassenpräzedenzliste. Die Klasse selbst ist die spezifischste und die Wurzelklasse, in Common Lisp \texttt{t} (und noch eine Ebene tiefer \texttt{standard-object}), die unspezifischste in jeder Klassenpräzedenzliste.
+Anhand der ersten Regel ist sofort die spezifischste und unspezifischste Klasse jeder Klassenpräzedenzliste bekannt. Die Klasse selbst ist die spezifischste und die Wurzelklasse, in Common Lisp \texttt{t} (und noch eine Ebene tiefer \texttt{standard-object}), die unspezifischste in jeder Klassenpräzedenzliste.
 
 Wenn CLOS die Klassenpräzedenzliste einer Klasse bestimmt, startet es bei der Definition der Klasse. Es wendet beide Regeln auf die Klassendefinition an und erhält so eine Liste von Ordnungsconstraints für die direkten Superklassen. Anschließend werden die Regeln auch auf jede direkte Superklasse angewendet, und so weiter, bis alle Pfade in der Wurzelklasse \texttt{t} enden. Das Ergebnis ist eine Menge von Ordnungsconstraints aller beteiligten Klassen.
 
@@ -289,7 +289,7 @@ Es gibt nur eine totale Ordnung, die alle Constraints erfüllt:
 
 (\texttt{Pokemon Element Animal Thing standard-object t})
 
-Oft ergeben die zwei Präzedenzregeln jedoch keine eindeutige Reihenfolge. Nehmen wir zum Beispiel an, Element und Animal haben keine gemeinsame Superklasse, sondern nur Element erbt von Thing und Animal von einer neuen Klasse Creature (Abb. \ref{creature}). 
+Oft ergeben die zwei Präzedenzregeln jedoch keine eindeutige Reihenfolge. Angenommen, Element und Animal haben keine gemeinsame Superklasse, sondern nur Element erbt von Thing und Animal von einer neuen Klasse Creature (Abb. \ref{creature}). 
 
 \begin{figure}[h]
  \centering
@@ -304,9 +304,9 @@ Für Element und Creature sowie Thing und Creature gibt es dann nach den bisher 
 (\texttt{Pokemon Element Animal Thing Creature standard-object t})\\ 
 (\texttt{Pokemon Element Thing Animal Creature standard-object t})
 
-CLOS entscheidet sich in dem Fall deterministisch für eine der möglichen Reihenfolgen: diejenige, in der Klassen aus einem Teilbaum möglichst nah beieinander sind. Wenn wir die Klassenhierarchie betrachten, so bilden Element und Thing einen Teilbaum, Animal und Creature einen anderen. CLOS würde demnach die dritte Möglichkeit bevorzugen, in der die Klassen direkt aufeinander folgen.
+CLOS entscheidet sich in dem Fall deterministisch für eine der möglichen Reihenfolgen: diejenige, in der Klassen aus einem Teilbaum möglichst nah beieinander sind. In der Beispielklassenhierarchie bilden Element und Thing einen Teilbaum, Animal und Creature einen anderen. CLOS würde demnach die dritte Möglichkeit bevorzugen, in der die Klassen direkt aufeinander folgen.
 
-Falls die Reihenfolge der indirekten Superklassen für das Programm relevant ist, so ist es auch möglich, dies als zusätzliches Constraint anzugeben. Nehmen wir beispielweise an, wir wollen, dass Creature in der Klassenpräzedenzliste vor Thing kommt. Wir können dieses Verhalten erzielen, indem wir die Klassen per Hand zu den ``direkten'' Superklassen in der Klassendefinition von Pokemon hinzufügen:
+Falls die Reihenfolge der indirekten Superklassen für das Programm relevant ist, so ist es auch möglich, dies als zusätzliches Constraint anzugeben. Angenommen beispielsweise, die Klasse Creature soll in der Klassenpräzedenzliste vor Thing kommen. Dieses Verhalten kann erzielt werden, indem die Klassen per Hand zu den ``direkten'' Superklassen in der Klassendefinition von Pokemon hinzufügt wird:
 
 \begin{lstlisting}
 (defclass Pokemon (Element Animal Creature Thing)
@@ -326,7 +326,7 @@ Diese zusätzlichen Regeln bewirken, dass es nun nur noch eine mögliche Klassen
 
 (\texttt{Pokemon Element Animal Creature Thing standard-object t})\\
 
-Der Fall, dass keine Reihenfolge alle Constraints erfüllt, tritt auf, wenn zwei Oberklassen gegensätzliche Vererbungsreihenfolgen haben. Das ist zum Beispiel gegeben, wenn wir per Hand eine der Klassen Creature oder Thing vor den Klassen Element und Animal in der Klassendefinition anführen:
+Der Fall, dass keine Reihenfolge alle Constraints erfüllt, tritt auf, wenn zwei Oberklassen gegensätzliche Vererbungsreihenfolgen haben. Das ist zum Beispiel gegeben, wenn eine der Klassen Creature oder Thing vor den Klassen Element und Animal in der Klassendefinition aufgeführt wird:
 
 \begin{lstlisting}
 (defclass Pokemon (Element Creature Animal)
@@ -363,7 +363,7 @@ Es werden die direkten Slots aller Klassen in der Reihenfolge der Präzedenzlist
 
 CLOS wandelt die Slotdefinition anschließend noch in Slotobjekte um. %Diese Umwandlung wird Racket für uns übernehmen.
 
-Mit den CLOS-Konzepten, die wir bisher kennengelernt haben, lässt sich  unser Makro erweitern um Funktionen, die Informationen über die Klasse in Form eines Metaobjektes speichern, die Klassenpräzedenzliste bestimmen und  die effektiven Felder ermitteln. Die Vererbung von Feldern ist damit bereits abgedeckt. Was noch fehlt, ist die Vererbung von Methoden.
+Mit den CLOS-Konzepten, die bisher betrachtet wurden, lässt sich das im Rahmen dieser Arbeit entstehende Makro erweitern um Funktionen, die Informationen über die Klasse in Form eines Metaobjektes speichern, die Klassenpräzedenzliste bestimmen und  die effektiven Felder ermitteln. Die Vererbung von Feldern ist damit bereits abgedeckt. Was noch fehlt, ist die Vererbung von Methoden.
 
 \section{Mehrfachvererbung und Methodenkombination}
 Analog zu Klassen gibt es auch für Methoden und generische Funktionen Metaobjekte, um eine Übersicht über die relevanten Informationen zu behalten. Eine generische Funktion fasst eine Menge von Methoden mit der gleichen Signatur zusammen und das zugehörige Metaobjekt merkt sich genau diese Dinge: den Namen, die Parameterliste sowie die Methoden, die die generische Funktion implementieren.
@@ -425,6 +425,6 @@ Andere Kombinationsarten werden in AMOP nicht behandelt, aber das gleiche Schema
 \end{table}
 
 Auf analoge Weise lässt sich Methodenkombination auch für Racket umsetzen: 
-Wir erlauben die Optionen \texttt{define/generic}, \texttt{define/before}, \texttt{define/around} und \texttt{define/after} im \texttt{class}-Makro. Wann immer eine generische Funktion oder Methode angegeben wird, merken wir uns die relevanten Informationen in Form eines Metaobjekts. Wir sorgen ebenfalls dafür, dass die Methodendefinitionen, für die eine Kombination existiert, durch eine entsprechende Kombinationsmethode ersetzt werden, bevor Racket die Klassendefinition auswertet.
+durch Erlauben der Optionen \texttt{define/generic}, \texttt{define/before}, \texttt{define/around} und \texttt{define/after} im \texttt{class}-Makro. Wann immer eine generische Funktion oder Methode angegeben wird, werden die relevanten Informationen in Form eines Metaobjekts festgehalten. Außerdem müssen Methodendefinitionen, für die eine Kombination existiert, durch eine entsprechende Kombinationsmethode ersetzt werden, bevor Racket die Klassendefinition auswertet.
 
-Damit bietet CLOS uns bereits alle Konzepte, die für eine Umsetzung des Entwurfs benötigt werden. Insbesondere die dritte Anforderung lässt sich so sehr elegant lösen: da die Funktionalität, die von CLOS übertragen wird, auf analoge Weise implementiert wird, ist es einfach, das gleiche Verhalten zu erzielen.
+Damit bietet CLOS bereits alle Konzepte, die für eine Umsetzung des Entwurfs benötigt werden. Insbesondere die dritte Anforderung lässt sich so sehr elegant lösen: da die Funktionalität, die von CLOS übertragen wird, auf analoge Weise implementiert wird, ist es einfach, das gleiche Verhalten zu erzielen.

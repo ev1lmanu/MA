@@ -8,7 +8,7 @@ Das Common Lisp Object System ist der Standard für objektorientierte Programmie
 #lang swindle
 \end{lstlisting}
 
-Wir wollen nun versuchen, die Klassen Thing, Element, Animal und Pokemon auch in CLOS zu schreiben, um zu sehen, welche Unterschiede in der Syntax es gibt und wie Mehrfachvererbung hier umgesetzt ist. 
+Es sollen die Klassen Thing, Element, Animal und Pokemon auch in CLOS implementiert werden, um zu sehen, welche Unterschiede in der Syntax es gibt und wie Mehrfachvererbung hier umgesetzt ist. 
 
 Alle Codebeispiele befinden sich auch auf der beiliegenden CD und sind noch einmal zusammenhängend in Anhang \ref{clos-example} aufgeführt.
 
@@ -28,16 +28,16 @@ Objekte dieser Klasse können mit dem Schlüsselwort \texttt{make} erzeugt werde
 \end{lstlisting}
 {\routput \#Thing}
 
-Slots werden nach der Superklasse angegeben. Ein großer Unterschied zu dem Objektsystem von Racket ist, dass innerhalb einer Klassendefinition \textit{nur} Slots definiert werden, keine Methoden. Methoden werden außerhalb der Klasse definiert. Das bedeutet, dass kein Schlüsselwort notwendig ist, um anzugeben, ob gerade ein Slot oder eine Methode definiert wird. Wir können also für die Definition des Namens einfach schreiben:
+Slots werden nach der Superklasse angegeben. Ein großer Unterschied zu dem Objektsystem von Racket ist, dass innerhalb einer Klassendefinition \textit{nur} Slots definiert werden, keine Methoden. Methoden werden außerhalb der Klasse definiert. Das bedeutet, dass kein Schlüsselwort notwendig ist, um anzugeben, ob gerade ein Slot oder eine Methode definiert wird. Für die Definition des Namens reicht es zu schreiben:
 
 \begin{lstlisting}
 (defclass Thing ()
-  name)
+  (name))
 \end{lstlisting}
 
 Die Klasse hat genau einen Slot namens \texttt{name}, der jedoch so noch nicht sehr nützlich ist.
 
-Damit mit diesem Slot auch interagiert werden kann, benötigt er noch Accessoren: einen Getter (in CLOS Reader genannt) und einen Setter (in CLOS Writer genannt). Außerdem  ist es gegebenenfalls nötig, einen Initialwert anzugeben, der Slot zu dokumentieren, typisieren und so weiter. All dies geschieht durch Slotoptionen. Sie folgen nach dem Namen des Slots (der nun geklammert werden muss, damit klar ist, wann die Slotdefinition zuende ist) und beginnen per Konvention mit einem Doppelpunkt. Um auf das Attribut \texttt{name} beispielsweise lesend oder schreibend zugreifen zu können, kann die Slotoption \texttt{:reader} beziehungsweise \texttt{:writer} gesetzt werden oder, falls beides über das gleiche Schlüsselwort möglich sein soll, auch die Option \texttt{:accessor}. Accessoren müssen benannt werden, der Name muss sich jedoch nicht vom Namen des Slots unterscheiden. Hier also die vollständige Definition der Klasse:
+Damit mit diesem Slot auch interagiert werden kann, benötigt er noch Accessoren: einen Getter (in CLOS Reader genannt) und einen Setter (in CLOS Writer genannt). Außerdem  ist es gegebenenfalls nötig, einen Initialwert anzugeben, der Slot zu dokumentieren, typisieren und so weiter. All dies geschieht durch Slotoptionen. Sie folgen nach dem Namen des Slots und beginnen per Konvention mit einem Doppelpunkt. Um auf das Attribut \texttt{name} beispielsweise lesend oder schreibend zugreifen zu können, kann die Slotoption \texttt{:reader} beziehungsweise \texttt{:writer} gesetzt werden oder, falls beides über das gleiche Schlüsselwort möglich sein soll, auch die Option \texttt{:accessor}. Accessoren müssen benannt werden, der Name muss sich jedoch nicht vom Namen des Slots unterscheiden. Hier also die vollständige Definition der Klasse:
 
 \begin{lstlisting}
 (defclass Thing ()
@@ -50,7 +50,7 @@ Damit mit diesem Slot auch interagiert werden kann, benötigt er noch Accessoren
 
 Für die Klasse gibt es drei nützliche Slot- und Klassenoption: \texttt{:initarg}, \texttt{:printer} und \texttt{:automaker}. Die \texttt{:initarg}-Option bewirkt, dass der Parameter bei der Objekterzeugung initialisiert werden kann.
 
-Durch die \texttt{:printer}-Option erhalten wir bei Aufruf der \texttt{print}-Funktion an einem Objekt oder bei Auswertung des Objekts in der Direkteingabe einen formattierten String. Das hat den Vorteil, dass zur Überprüfung des Zustandes des Objekts nicht jeder Slot einzeln abgefragt werden muss.
+Durch die \texttt{:printer}-Option liefert der Aufruf der \texttt{print}-Funktion an einem Objekt oder die Auswertung des Objekts in der Direkteingabe einen formattierten String. Das hat den Vorteil, dass zur Überprüfung des Zustandes des Objekts nicht jeder Slot einzeln abgefragt werden muss.
 
 \begin{lstlisting}
 (make Thing :name "Bob")
@@ -73,7 +73,7 @@ Der Wert eines Slots, der einen Writer oder Accessor besitzt, kann nach der Obje
 \end{lstlisting}
 {\routput {\qq}Bob\qq}
 
-Eine weitere nützliche Klassenoption ist \texttt{:autoaccessors :slot}, die automatisch für jeden Slot Accessorfunktionen generiert. Der Name der Accessorfunktion ist dann identisch zum Slot. Wir verwenden sie für die Klassen Element und Animal.
+Eine weitere nützliche Klassenoption ist \texttt{:autoaccessors :slot}, die automatisch für jeden Slot Accessorfunktionen generiert. Der Name der Accessorfunktion ist dann identisch zum Slot. Sie wird für die Klassen Element und Animal verwendet.
 
 \begin{lstlisting}
 (defclass Element (Thing)
@@ -91,7 +91,7 @@ Eine weitere nützliche Klassenoption ist \texttt{:autoaccessors :slot}, die aut
   :printer #t)
 \end{lstlisting}
 
-Wir können den geerbten Slot ohne weiteres redefinieren. Da im Folgenden die Objekte nur noch mit \texttt{make-} erzeugt werden, wurde die \texttt{:initarg}-Option weggelassen. Es können beliebig viele Argumente an \texttt{make-} übergeben werden, im Zweifelsfalls werden die Slots mit Standardwerten belegt oder überschüssige Parameter ignoriert.
+Der geerbte Slot lässt sich ohne weiteres redefinieren. Da im Folgenden die Objekte nur noch mit \texttt{make-} erzeugt werden, wurde die \texttt{:initarg}-Option weggelassen. Es können beliebig viele Argumente an \texttt{make-} übergeben werden, im Zweifelsfalls werden die Slots mit Standardwerten belegt oder überschüssige Parameter ignoriert.
 
 \begin{lstlisting}
 > (make-Animal "Bob" 'large 42)
@@ -100,7 +100,7 @@ Wir können den geerbten Slot ohne weiteres redefinieren. Da im Folgenden die Ob
 
 Methoden werden mit \texttt{defmethod} definiert. Die Definition findet außerhalb der Klasse statt und die Klasse, für die die Methode spezialisiert ist, wird per Konvention als erstes Argument angegeben. Prinzipiell ist jedoch eine beliebige Parameterreihenfolge möglich. Eine Methode kann auch auf mehrere Klassen spezialisiert sein, in dem Fall werden einfach mehrere Objekte als Parameter angegeben.
 
-Wir können die Methoden \texttt{who-are-you?}, \texttt{hot?} und \texttt{attack} definieren:
+Die Methoden \texttt{who-are-you?}, \texttt{hot?} und \texttt{attack} lassen sich wie folgt definieren:
 
 \begin{lstlisting}
 (defmethod (who-are-you? (t Thing))
@@ -149,7 +149,7 @@ Die Methoden lassen sich an einem Objekt der angegebenen Klasse oder einer Subkl
 {\rsymbol small}
 
 \subsection{Mehrfachvererbung in CLOS}
-Für Mehrfachvererbung in CLOS genügt es, mehr als eine Klasse in der Liste der Superklassen anzugeben. Um eine Klasse Pokemon aus Element und Animal zu definieren können wir also schreiben:
+Für Mehrfachvererbung in CLOS genügt es, mehr als eine Klasse in der Liste der Superklassen anzugeben. Um eine Klasse Pokemon aus Element und Animal zu definieren, genügt es schreiben:
 
 \begin{lstlisting}
 (defclass Pokemon (Animal Element)
@@ -180,7 +180,7 @@ Objekte der Klasse erben alle Slots.
 \end{lstlisting}
 {\rsymbol small}
 
-Wir sehen, dass automatisch der Name und die \texttt{attack}-Methode einer der beiden Oberklassen vererbt wurde: der Klasse Animal, die weiter links in der Liste der Superklassen steht. Die Reihenfolge der Initialisierungsargumente hängt ebenfalls von der Reihenfolge der Superklassen in der Klassendefinition ab:
+Es wurden automatisch der Name und die \texttt{attack}-Methode einer der beiden Oberklassen vererbt: der Klasse Animal, die weiter links in der Liste der Superklassen steht. Die Reihenfolge der Initialisierungsargumente hängt ebenfalls von der Reihenfolge der Superklassen in der Klassendefinition ab:
 
 \begin{lstlisting}
 (define p2 (make-Pokemon "Charmander" 'fire 'large 4))
@@ -193,13 +193,13 @@ Wir sehen, dass automatisch der Name und die \texttt{attack}-Methode einer der b
 Die Liste von Superklassen in einer Klassendefnition wird auch Klassenpräzendenzliste genannt. Sie bestimmt im Zweifel bei Konflikten, welche Slots oder Methoden (im Standardfall) vererbt werden. Die am weitesten links stehende Klasse ist die spezifischste, die am weitesten rechts stehende die unspezifischste. Bei Slots kann die Vererbung nicht beeinflusst werden, es wird immer der Slot der am weitesten links in der Liste stehenden Klasse (die diesen Slot bereitstellt) genommen. Auf die Klassenpräzedenz wird noch im Detail im Kapitel \ref{cpl} eingegangen.
 
 \subsection{Generische Funktionen und Methodenkombination}
-An die Klasse Pokemon wird, falls wir nichts weiter festlegen, analog zu den Slots die spezifischste Methode vererbt, also die von Animal. Stattdessen sollen nun die Werte beider Oberklassen in einer Liste vereint werden. Eine Methode, die auf Pokemon spezialisiert ist, würde das Problem lösen, aber CLOS bietet für die Kombination der Methoden aller (Ober-)Klassen einen Automatismus: generische Funktionen und Methodenkombination. 
+An die Klasse Pokemon wird, sofern nichts weiter festgelegt wurde, analog zu den Slots die spezifischste Methode vererbt, also die von Animal. Stattdessen sollen nun die Werte beider Oberklassen in einer Liste vereint werden. Eine Methode, die auf Pokemon spezialisiert ist, würde das Problem lösen, aber CLOS bietet für die Kombination der Methoden aller (Ober-)Klassen einen Automatismus: generische Funktionen und Methodenkombination. 
 
 Das Ergebnis einer generischen Funktion setzt sich aus den Rückgabewerten aller implementierenden Methoden in der Superklassenhierarchie zusammen. Der Vorgang zur Bestimmung des Ergebnisses der generischen Funktion wird Methodenkombination genannt.
 
-Generische Funktionen werden in CLOS mit \texttt{defgeneric} definiert. Tatsächlich gibt es zu jeder Methode, die wir definieren, automatisch eine entsprechende generische Funktion, selbst wenn wir sie nicht explizit angeben. 
+Generische Funktionen werden in CLOS mit \texttt{defgeneric} definiert. Tatsächlich gibt es zu jeder definierten Methode automatisch eine entsprechende generische Funktion, selbst wenn sie nicht explizit angeben wird. 
 
-Racket bietet bereits eine Reihe von vordefinierten Methodenkombinationen, wie zum Beispiel für Addition, den logischen Und-Operator, das Maximum oder das Erstellen einer Liste. Falls es für ein Problem keine Standardlösung gibt, können auch eigene Methodenkombinationen definiert werden. Wir benutzen die Listenkombination.
+Racket bietet bereits eine Reihe von vordefinierten Methodenkombinationen, wie zum Beispiel für Addition, den logischen Und-Operator, das Maximum oder das Erstellen einer Liste. Falls es für ein Problem keine Standardlösung gibt, können auch eigene Methodenkombinationen definiert werden. Für die \texttt{attack}-Funktion wird die Listenkombination verwendet.
 
 \begin{lstlisting}
 (defgeneric attack ((t Thing))
@@ -231,7 +231,7 @@ Für jede der drei Klassen gibt es nun eine \texttt{attack}-Methode -- das Ergeb
 
 Methodenkombination wurde als eine Möglichkeit eingeführt, um geschickt Methoden aus mehreren Superklassen zu verbinden. Tatsächlich findet jedoch immer eine Methodenkombination statt -- selbst dann, oder gerade dann, wenn sie nicht explizit angegeben wird: die \textit{standard method combination}. Sie sorgt zum Beispiel dafür, dass bei einem Methodenaufruf die Primärmethode aufgerufen wird. Aber zusätzlich erlaubt sie es auch, drei spezielle Methoden zu definieren: Vor-, Nach- und redefinierende Methoden (\emph{before, after, around methods}). Sie werden zusammenfassend als Ergänzungsmethoden  bezeichnet. Wie der Name vermuten lässt, sind das Methoden, die vor, nach oder um eine Primärmethode herum ausgeführt werden. Sie werden in CLOS mit dem Schlüsselwort \texttt{:before}, \texttt{:after} beziehungsweise \texttt{:around} nach dem Methodennamen definiert.
 
-Nehmen wir beispielsweise eine Klasse für Pokemontrainer. Der tägliche Job eines Trainers ist es, Pokemon zu fangen. Falls er vorher das Haus verlässt und abends zurückkehrt, so lässt sich das in einer Vor- und Nachmethode festhalten:
+Als Beispiel soll eine Klasse für Pokemontrainer dienen. Der tägliche Job eines Trainers ist es, Pokemon zu fangen. Falls er vorher das Haus verlässt und abends zurückkehrt, so lässt sich das in einer Vor- und Nachmethode festhalten:
 
 \begin{lstlisting}
 (defclass Trainer ())
@@ -244,7 +244,7 @@ Nehmen wir beispielsweise eine Klasse für Pokemontrainer. Der tägliche Job ein
   (display "He walked back home.\n"))
 \end{lstlisting}
 
-Weiterhin soll es unter den Pokemontrainern Frühaufsteher geben. Wir halten das Verhalten ebenfalls in drei Methoden fest.
+Weiterhin soll es unter den Pokemontrainern Frühaufsteher geben. Drei Methoden halten dieses Verhalten fest.
 
 \begin{lstlisting}
 (defclass Earlybird (Trainer))
@@ -285,7 +285,7 @@ Zusätzlich zu Vor- und Nachmethoden gibt es noch redefinierende Methoden. Sie b
  \end{itemize}
 \end{itemize}
 
-Wir können uns eine Klasse Nightowl definieren, die den Rückgabewert der Primärmethode verändert:
+Es lässt sich eine Klasse Nightowl definieren, die den Rückgabewert der Primärmethode verändert:
 
 \begin{lstlisting}
 (defclass Nightowl (Trainer))
@@ -314,9 +314,9 @@ Da redefinierende Methoden entscheiden können, \texttt{call-next-method} nicht 
 \end{lstlisting}
 {\routput And that was it.}
 
-Wir sehen, dass die redefinierende Methode alle weiteren Methodenaufrufe verhindert hat. 
+Die redefinierende Methode verhindert alle weiteren Methodenaufrufe. 
 
-Bei mehreren Oberklassen beziehen sich die ``nächstspezifischste redefinierende Methode'' und ``alle Vor- bzw. Nachmethoden'' auf den kompletten Vererbungsbaum. Wir können beispielsweise die Klasse Lazyowl definieren, die sowohl von Nightowl als auch von Lazybum erbt:
+Bei mehreren Oberklassen beziehen sich die ``nächstspezifischste redefinierende Methode'' und ``alle Vor- bzw. Nachmethoden'' auf den kompletten Vererbungsbaum. Es ist möglich eine Klasse Lazyowl zu definieren, die sowohl von Nightowl als auch von Lazybum erbt:
 
 \begin{lstlisting}
 (defclass Lazyowl (Nightowl Lazybum))
@@ -342,7 +342,7 @@ Im Gegensatz zu Racket sind Ergänungsmethoden jedoch nicht kompatibel mit Metho
 \vspace{-0.3cm}
 {\rerror swindle/clos.rkt: arity mismatch; the expected number of arguments does not match the given number; expected: 2; given: 1.}
 
-Ergänzungsmethoden sind lediglich Bestandteil der \emph{standard method combination}, also derjenigen Kombination, die ausgeführt wird, wenn wir keine andere Methodenkombination angeben. Sobald eine Kombination angegeben wird, ersetzt diese die \textit{standard method combination} und ein Benutzen von \texttt{:before}, \texttt{:after} und \texttt{:around} führt zu einem Fehler.
+Ergänzungsmethoden sind lediglich Bestandteil der \emph{standard method combination}, also derjenigen Kombination, die ausgeführt wird, wenn keine andere Methodenkombination angegeben wurde. Sobald eine Kombination angegeben wird, ersetzt diese die \textit{standard method combination} und ein Benutzen von \texttt{:before}, \texttt{:after} und \texttt{:around} führt zu einem Fehler.
 
 Eine Ausnahme von dieser Regel sind redefinierende Methoden, die \texttt{call-next-method} nicht aufrufen; sie sind auch in der Lage, Methodenkombination zu verhindern.
 
@@ -368,7 +368,7 @@ Eine Ausnahme von dieser Regel sind redefinierende Methoden, die \texttt{call-ne
 % 
 % Vor- und Nachmethoden sind weniger problematisch, denn ihre Auswertungsreihenfolge hängt nicht von ihrem Inhalt ab. Es ist dann vermutlich
 
-Wir haben damit gesehen, dass ein Umgang mit Mehrfachvererbung in CLOS sehr intuitiv und einfach bereitgestellt wird.
+Es wurde gezeigt, dass ein Umgang mit Mehrfachvererbung in CLOS sehr intuitiv und einfach bereitgestellt wird.
 
 \section{Zwischenfazit}
 Das Objektsystem von Racket bietet zwar Mixins und Traits, beide sind jedoch geschickt verpackte Einfachvererbung und werden sehr schnell sehr kompliziert, wenn die Anzahl an Klassen steigt und gleichbenannte Methoden und Felder vorkommen. CLOS hingegen bietet einen sehr intuitiven Umgang mit Mehrfachvererbung. Es ermöglicht generische Methoden, Methodenkombination und Ergänzungsmethoden.

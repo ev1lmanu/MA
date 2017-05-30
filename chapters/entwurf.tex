@@ -69,7 +69,7 @@ Für die Einbindung in Racket gibt es drei Möglichkeiten:
  \end{enumerate}
 \end{enumerate}
 
-Eine Veränderung der bestehenden Racketmodule hätte den Vorteil, dass wir direkten Zugriff auf alle Informationen, die zur Erzeugung der Klassen und Objekte von Racket verwendet werden, haben. Die Erzeugung von Klassen und Objekten kann direkt manipuliert werden und es ist vermutlich möglich wie in CLOS Instanzen von Methoden zu erzeugen und diese dann in einer festgelegten Reihenfolge auszuführen. 
+Eine Veränderung der bestehenden Racketmodule würde einen direkten Zugriff auf alle Informationen, die zur Erzeugung der Klassen und Objekte von Racket verwendet werden, erlauben. Die Erzeugung von Klassen und Objekten kann direkt manipuliert werden und es ist vermutlich möglich wie in CLOS Instanzen von Methoden zu erzeugen und diese dann in einer festgelegten Reihenfolge auszuführen. 
 
 Dafür ist jedoch ein sehr tiefgehehendes Verständnis der Racketimplementierung notwendig. Leider ist diese kaum dokumentiert. Das Modul, das beispielsweise für die Expansion des \texttt{class}-Makros zuständig ist, heißt \texttt{class-internal} und befindet sich in \texttt{racket/collects/racket/private}. Allein die Definition des \texttt{class}-makros erstreckt sich über fast 1400 Zeilen und es ist nicht ungewöhnlich, in über 100 Codezeilen keinen Kommentar anzutreffen. Das Objektsystem von Racket ist sehr umfangreich; es gibt unzählige Klassenoptionen und sie alle müssen in dem Makro abgedeckt werden. Allein die Stellen zu finden, die für eine Erweiterung des Objektsystems angepasst werden müssten, würde bereits einen erheblichen Anteil der Bearbeitungszeit ausmachen.
 
@@ -77,17 +77,17 @@ Eine direkte Veränderung des Objektsystems erschwert außerdem das Ziel, dass b
 
 Durch das Betrachten von Object-Racket als Blackbox würde die Verständlichkeit von Zusammenhängen und die Wartbarkeit stark erhöht. Die Erweiterung befände sich in einem einzelnen (oder wenigen) Modul und könnte daher leicht im Rahmen eines Übungsbetriebs verwendet und eingebunden werden.
 
-Der Nachteil ist, dass es dann keinen Zugriff auf die Implementierungsdetails von Racket gibt. Wissen über die Klassenhierarchie oder darüber, welche Felder und Methoden eine Klasse definiert, müssen wir selbst bereitstellen. Die Zeit, die aufgewendet werden muss um diese Informationen festzuhalten, wird jedoch deutlich geringer eingeschätzt als der Aufwand, die bestehende Racketimplementierung in vollem Umfang zu verstehen. 
+Der Nachteil ist, dass es dann keinen Zugriff auf die Implementierungsdetails von Racket gibt. Wissen über die Klassenhierarchie oder darüber, welche Felder und Methoden eine Klasse definiert, muss per Hand bereitgestellt werden. Die Zeit, die aufgewendet werden muss um diese Informationen festzuhalten, wird jedoch deutlich geringer eingeschätzt als der Aufwand, die bestehende Racketimplementierung in vollem Umfang zu verstehen. 
 
 Die Entscheidung fällt deshalb auf Option 2.
 
-Auf Racket aufbauend ein eigenes Objektsystem zu definieren (2a) ist sehr nah an der Idee, die in ``The art of the metaobject protocol'' \cite{amop} verfolgt wird. Es gibt uns die volle Kontrolle über das Verhalten von Vererbung und Objekten und bietet daher eine einfache Möglichkeit, beispielsweise Methodenkombination umzusetzen. Den vollen Umfang der Funktionalität von Object-Racket anzubieten bedeutet dann jedoch, dass jede Klassenoption und jedes Verhalten, das diese Optionen bewirkt, 1:1 nachgebaut werden oder zumindest an die der Implementation zugrundeliegenden Racketobjekte weitergeleitet werden müsste.
+Auf Racket aufbauend ein eigenes Objektsystem zu definieren (2a) ist sehr nah an der Idee, die in ``The art of the metaobject protocol'' \cite{amop} verfolgt wird. Es ermöglicht die volle Kontrolle über das Verhalten von Vererbung und Objekten und bietet daher eine einfache Möglichkeit, beispielsweise Methodenkombination umzusetzen. Den vollen Umfang der Funktionalität von Object-Racket anzubieten bedeutet dann jedoch, dass jede Klassenoption und jedes Verhalten, das diese Optionen bewirkt, 1:1 nachgebaut werden oder zumindest an die der Implementation zugrundeliegenden Racketobjekte weitergeleitet werden müsste.
 
-Außerdem existieren anschließend zwei Objektsysteme: das von Object-Racket und das darauf aufbauende und von uns definierte. Beide sind jedoch nicht miteinander kompatibel. Über Objekte, die in Object-Racket erzeugt wurden, haben wir keine Informationen; wir kennen nicht die Vererbungshierarchie, vorhandene Felder oder Methoden. 
+Außerdem existieren anschließend zwei Objektsysteme: das von Object-Racket und das darauf aufbauende, im Rahmen dieser Arbeit definierte. Beide sind jedoch nicht miteinander kompatibel. Über Objekte, die in Object-Racket erzeugt wurden, haben wir keine Informationen; die Vererbungshierarchie, vorhandenen Felder oder Methoden sind unbekannt. 
 
-Das bedeutet, dass Objekte in Modulen, die das von uns definierte Objektsystem nutzen, nicht mit Objekten in Modulen kommunizieren könnten, die es nicht benutzen. Sobald ein Modul eines bestehendes Racketsystem das erweiterte Objektsystem nutzt, müssten alle Module es benutzen. Das steht im Widerspruch zu der Anforderung, dass bestehende Racketimplementierung durch das Benutzen der Erweiterung nicht beeinflusst werden sollen.
+Das bedeutet, dass Objekte in Modulen, die das hier definierte Objektsystem nutzen, nicht mit Objekten in Modulen kommunizieren könnten, die es nicht benutzen. Sobald ein Modul eines bestehendes Racketsystem das erweiterte Objektsystem nutzt, müssten alle Module es benutzen. Das steht im Widerspruch zu der Anforderung, dass bestehende Racketimplementierung durch das Benutzen der Erweiterung nicht beeinflusst werden sollen.
 
-Option 2b, eine simple Veränderung der Klassenoptionen, die an das Makro übergeben werden, löst all diese Probleme, stellt uns jedoch vor eine andere Herausforderung: Mehrfachvererbung und Methodenkombination rein auf Syntaxebene zu implementieren. Wir können keine Felder oder Methoden definieren und auswerten; die Erzeugung all dieser Dinge übernimmt Object-Racket schließlich für uns. Das heißt, allein anhand der Sytax, die wir in das \texttt{class}-Makro injizieren (oder daraus entfernen), muss Mehrfachvererbung erreicht werden.
+Option 2b, eine simple Veränderung der Klassenoptionen, die an das Makro übergeben werden, löst all diese Probleme, erzeugt jedoch eine andere Herausforderung: Mehrfachvererbung und Methodenkombination rein auf Syntaxebene zu implementieren. Felder oder Methoden können nicht einfach ausgewertet werden; die Erzeugung all dieser Dinge übernimmt Object-Racket schließlich. Das heißt, allein anhand der Sytax, in das \texttt{class}-Makro injiziert wird (oder daraus entfernen), muss Mehrfachvererbung erreicht werden.
 
 Die Vor- und Nachteile der drei Optionen sind noch einmal in Tabelle \ref{einbindung} zusammengefasst.
 
@@ -105,4 +105,4 @@ Die Vor- und Nachteile der drei Optionen sind noch einmal in Tabelle \ref{einbin
 \label{einbindung}
 \end{table}
 
-Da wir auf die Anforderung, dass bestehende Objektsysteme unverändert funktionieren sollen, nicht verzichten wollen, wird im Folgenden Option 2b umgesetzt: eine reine Veränderung der Optionen, die an das \texttt{class}-Makro übergeben werden.
+Auf die Anforderung, dass bestehende Objektsysteme unverändert funktionieren, soll nicht verzichtet werden. Daher wird im Folgenden Option 2b umgesetzt: eine reine Veränderung der Optionen, die an das \texttt{class}-Makro übergeben werden.

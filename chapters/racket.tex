@@ -23,7 +23,7 @@ Die Installation von Racket beinhaltet eine integrierte Enwicklungsumgebung name
 
 \section{Ein Beispiel für Mehrfachvererbung} 
 
-Wir wollen beide Ansätze in Hinblick auf Syntax, Benutzung und Vererbung miteinander vergleichen. Dazu soll in beiden die folgende Vererbungshierarchie implementiert werden:
+Um beide Ansätze in Hinblick auf Syntax, Benutzung und Vererbung miteinander zu vergleichen, soll in beiden die folgende Vererbungshierarchie implementiert werden:
 
 \begin{figure}[h]
  \centering
@@ -32,10 +32,10 @@ Wir wollen beide Ansätze in Hinblick auf Syntax, Benutzung und Vererbung mitein
  \label{pokemon}
 \end{figure}
 
-Zunächst können wir mit der Klasse Thing sehen, wie eine einfache Klasse definiert wird. Anhand von Thing und den Klassen Element und Animal betrachten wir, wie Felder und Methoden definiert werden können und wie diese vererbt werden.
+Zunächst lässt sich mit der Klasse Thing sehen, wie eine einfache Klasse definiert wird. Anhand von Thing und den Klassen Element und Animal wird betrachtet, wie Felder und Methoden definiert werden können und wie diese vererbt werden.
 
-Schließlich vervollständigen wir die Hierarchie so, dass mit möglichst wenig Klassen möglichst viele Sonderfälle und Probleme abgedeckt werden können. Hierfür eignet sich das Diamond-Problem sehr gut: Eine Klasse, die von zwei Klassen erbt, die wiederum eine gemeinsame Superklasse haben. Element und Animal erben bereits von Thing. Wir nutzen den Umstand  aus und definieren eine Klasse Pokemon, die von beiden erbt.
+Schließlich muss die Hierarchie so vervollständigt werden, dass mit möglichst wenig Klassen möglichst viele Sonderfälle und Probleme abgedeckt werden können. Hierfür eignet sich das Diamond-Problem sehr gut: Eine Klasse, die von zwei Klassen erbt, die wiederum eine gemeinsame Superklasse haben. Element und Animal erben bereits von Thing. Der Umstand lässt sich für die Definition einer Klasse Pokemon nutzen, die von beiden erbt.
 
-In jedem Schritt wollen wir betrachten, was passiert, wenn Methoden redefiniert werden, wie disjunkte Mengen von Feldern und Methoden vererbt werden, wie mit gleichbenannten Merkmalen umgegangen wird und wie ein Programmierer die Vererbung bei gleichbenannten Merkmalen beeinflussen kann.
+In jedem Schritt soll betrachtet werden, was passiert, wenn Methoden redefiniert werden, wie disjunkte Mengen von Feldern und Methoden vererbt werden, wie mit gleichbenannten Merkmalen umgegangen wird und wie ein Programmierer die Vererbung bei gleichbenannten Merkmalen beeinflussen kann.
 
 Zusätzlich soll beleuchtet werden, welche Möglichkeiten es gibt, Methoden einer Superklasse in einer Subklasse zu ergänzen und ob diese kompatibel mit Mehrfachvererbung sind.
