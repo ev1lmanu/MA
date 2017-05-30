@@ -29,10 +29,10 @@ Für Mehrfachvererbung muss es zunächst möglich sein, mehrere Superklassen anz
 In der Liste sollen auch mehrere Klassen angegeben werden können. Die Superklassen werden nach ihrer Präzedenz geordnet angegeben; diejenige mit der höchsten Präzedenz kommt zuerst, diejenige mit der niedrigsten Präzedenz zuletzt. 
 
 \begin{lstlisting}
-(class (my-class my-other-class ...) (super-new)) 
+(class (my-class% my-other-class% ...) (super-new)) 
 \end{lstlisting}
 
-Die Funktion \texttt{super-new} sorgt dann dafür, dass die Konstruktoren aller angegebenen  Superklassen aufgerufen werden. Sie soll weiterhin an jeder Stelle in Rumpf der Klasse angegeben werden können. 
+Die Funktion \texttt{super-new} sorgt dann für die Superklasseninitialisierung. Sie soll weiterhin an jeder Stelle in Rumpf der Klasse angegeben werden können. 
 
 Gegebenenfalls ist auch eine alternative Definition mit Klassenparameter sinnvoll, sodass der Benutzer Kontrolle darüber hat, in welcher Reihenfolge die Konstruktoren der Superklasse aufgerufen werden. Dann muss jedoch auch mit dem Fall, dass der Benutzer nicht alle Superklassen aufruft, umgegangen werden -- beispielsweise durch Werfen eines Fehlers zur Auswertung oder beim Erstellen eines Objektes, oder durch automatisches Aufrufen aller fehlenden Superklassen am Ende des Rumpfes. Zudem muss abgewogen werden, ob diese Freiheit für den Benutzer die Implementierung nicht zu stark verkompliziert.
 
@@ -43,7 +43,7 @@ Da Methoden im Objektsystem von Racket innerhalb von Klassen definiert werden, s
 
 \texttt{(define/generic ({\textless}function-name{\textgreater} {\textless}args{\textgreater}) {\textless}combination{\textgreater})}
 
-Der Objekt-Parameter entfällt, da wir uns bereits in der Klasse, für die die Funktion spezialisiert ist, befinden. Subklassen können (müssen aber nicht) die generische Funktion durch eine öffentliche Methode implementieren. Für Klassen, die die Methode nicht explizit definieren, wird die Methode durch Methodenkombination erzeugt. Falls die Methodenkombination wegen fehlender Methoden fehlschlägt, gibt es wie in CLOS einen Laufzeitfehler.
+Der Objekt-Parameter entfällt, da wir uns bereits in der Klasse, für die die Funktion spezialisiert ist, befinden. Subklassen können (müssen aber nicht) die generische Funktion durch eine öffentliche Methode implementieren. Das Ergebnis der generischen Funktion ist die Kombination aller implementierenden Methoden in der Superklassenhierarchie des aktuellen Objekts. Falls die Methodenkombination wegen fehlender Methoden fehlschlägt, gibt es wie in CLOS einen Laufzeitfehler.
 
 Die in CLOS definierten Standardkombinationen sollen auch in Racket möglich sein: \texttt{+, min, max, list, append, begin, and, or}. 
 Zusätzlich soll es möglich sein, eigene Kombinationen zu definieren.
@@ -75,15 +75,15 @@ Dafür ist jedoch ein sehr tiefgehehendes Verständnis der Racket-Implementierun
 
 Eine direkte Veränderung des Objektsystems erschwert außerdem das Ziel, dass bestehende Objektsysteme genauso wie vorher funktionieren sollen. Die Seiteneffekte von Änderungen sind nur schwer abzuschätzen und ein Test der kompletten Funktionalität von Racket ist im Rahmen dieser Arbeit nicht möglich. Zudem ist diese Lösung nur schwer wartbar: Der Code wäre verteilt über die komplette Implementierung von Object-Racket. 
 
-Durch das Betrachten von Object-Racket als Blackbox würde die Verständlichkeit von Zusammenhängen und die Wartbarkeit stark erhöht. Die Erweiterung befindet sich in einem einzelnen (oder wenigen) Modul und kann daher leicht im Rahmen eines Übungsbetriebs verwendet und eingebunden werden.
+Durch das Betrachten von Object-Racket als Blackbox würde die Verständlichkeit von Zusammenhängen und die Wartbarkeit stark erhöht. Die Erweiterung befände sich in einem einzelnen (oder wenigen) Modul und könnte daher leicht im Rahmen eines Übungsbetriebs verwendet und eingebunden werden.
 
 Der Nachteil ist, dass es dann keinen Zugriff auf die Implementierungsdetails von Racket gibt. Wissen über die Klassenhierarchie oder darüber, welche Felder und Methoden eine Klasse definiert, müssen wir selbst bereitstellen. Die Zeit, die aufgewendet werden muss um diese Informationen festzuhalten, wird jedoch deutlich geringer eingeschätzt als der Aufwand, die bestehende Racket-Implementierung in vollem Umfang zu verstehen. 
 
 Die Entscheidung fällt deshalb auf Option 2.
 
-Auf Racket aufbauend ein eigenes Objektsystem zu definieren (2a) ist sehr nah an der Idee, die in AMOP verfolgt wird. Es gibt uns die volle Kontrolle über das Verhalten von Vererbung und Objekten und bietet daher eine einfache Möglichkeit, beispielsweise Methodenkombination umzusetzen. Den vollen Umfang der Funktionalität von Object-Racket anzubieten bedeutet dann jedoch, dass jede Klassenoption und jedes Verhalten, das diese Optionen bewirkt, 1:1 nachgebaut werden oder zumindest an die der Implementation zugrundeliegenden Racket-Objekte weitergeleitet werden müsste.
+Auf Racket aufbauend ein eigenes Objektsystem zu definieren (2a) ist sehr nah an der Idee, die in ``The art of the metaobject protocol'' \cite{amop} verfolgt wird. Es gibt uns die volle Kontrolle über das Verhalten von Vererbung und Objekten und bietet daher eine einfache Möglichkeit, beispielsweise Methodenkombination umzusetzen. Den vollen Umfang der Funktionalität von Object-Racket anzubieten bedeutet dann jedoch, dass jede Klassenoption und jedes Verhalten, das diese Optionen bewirkt, 1:1 nachgebaut werden oder zumindest an die der Implementation zugrundeliegenden Racket-Objekte weitergeleitet werden müsste.
 
-Die Tatsache, dass ein eigenes Objektsystem definiert wird, hat auch den Nachteil, dass wir nun zwei Objetsysteme haben: das von Object-Racket und das darauf aufbaunde und von uns definierte. Beide sind jedoch nicht miteinander kompatibel. Über Objekte, die in Object-Racket erzeugt wurden, haben wir keine Informationen; wir kennen nicht die Vererbungshierarchie, vorhandene Felder oder Methoden. 
+Außerdem existieren anschließend zwei Objektsysteme: das von Object-Racket und das darauf aufbauende und von uns definierte. Beide sind jedoch nicht miteinander kompatibel. Über Objekte, die in Object-Racket erzeugt wurden, haben wir keine Informationen; wir kennen nicht die Vererbungshierarchie, vorhandene Felder oder Methoden. 
 
 Das bedeutet, dass Objekte in Modulen, die das von uns definierte Objektsystem nutzen, nicht mit Objekten in Modulen kommunizieren könnten, die es nicht benutzen. Sobald ein Modul eines bestehendes Racket-System das erweiterte Objektsystem nutzt, müssten alle Module es benutzen. Das steht im Widerspruch zu der Anforderung, dass bestehende Racket-Implementationen durch das Benutzen der Erweiterung nicht beeinflusst werden sollen.
 
