@@ -1,11 +1,11 @@
 \section{Das Objektsystem von Racket}
-Als Grundlage für dieses Kapitel dient die Racket-Dokumentation \cite{racketguide-classes} und -Referenz \cite{racketref-classes} für Klassen und Objekte.
+Als Grundlage für dieses Kapitel dient die Racketdokumentation \cite{racketguide-classes} und -Referenz \cite{racketref-classes} für Klassen und Objekte.
 
-Racket ist eine Multipurpose-Sprache und erlaubt die Auswahl der Syntax auf Sprachebene. Eine einzelne Codezeile bestimmt die Sprache eines Moduls, also beispielsweise, ob Funktionen vorgezogen ausgewertet werden (\texttt{\#lang racket}) oder verzögert (\texttt{\#lang lazy}). Da das Objektsystem in die Sprache Racket integiert ist, ist es direkt in jedem Racket-Modul verwendbar.
+Racket ist eine Multipurpose-Sprache und erlaubt die Auswahl der Syntax auf Sprachebene. Eine einzelne Codezeile bestimmt die Sprache eines Moduls, also beispielsweise, ob Funktionen vorgezogen ausgewertet werden (\texttt{\#lang racket}) oder verzögert (\texttt{\#lang lazy}). Da das Objektsystem in die Sprache Racket integiert ist, ist es direkt in jedem Racketmodul verwendbar.
 
 Die wichtigsten Werkzeuge, die ein Programmierer in einer objektorientierten Sprache benötigt, sind das Definieren von Klassen, Feldern und Funktionen sowie das Erzeugen von Objekten. Auf diese soll deshalb im Folgenden kurz eingegangen werden, bevor wir dazu kommen, welche Möglichkeiten es in Bezug auf Mehrfachvererbung im Objektsystem von Racket bereits gibt.
 
-Alle Code-Beispiele befinden sich auch auf der beiligenden CD und sind noch einmal zusammenhängend in Anhang \ref{or-example} aufgeführt. 
+Alle Codebeispiele befinden sich auch auf der beiligenden CD und sind noch einmal zusammenhängend in Anhang \ref{or-example} aufgeführt. 
 
 \subsection{Einfache Klassen}
 
@@ -154,7 +154,7 @@ Wir haben Felder und Methoden der Superklasse bisher immer innerhalb eines \text
 \end{lstlisting}
 {\rerror  class: duplicate declared identifier in: name}
 
-Eine weitere Fehlermeldung wird ausgegeben, da zwei Deklarationen für das Feld \texttt{name} vorhanden sind: durch \texttt{init} und durch \texttt{inherit-field}. Es muss entschieden werden, welches Feld umbenannt werden kann. Ein Umbenennen des Initialisierungs-Paramters würde bedeuten, dass sich die Syntax der Objekterzeugung ändert; das wollen wir jedoch vermeiden. Es wird somit das geerbte Feld umbenannt:
+Eine weitere Fehlermeldung wird ausgegeben, da zwei Deklarationen für das Feld \texttt{name} vorhanden sind: durch \texttt{init} und durch \texttt{inherit-field}. Es muss entschieden werden, welches Feld umbenannt werden kann. Ein Umbenennen des Initialisierungsparamters würde bedeuten, dass sich die Syntax der Objekterzeugung ändert; das wollen wir jedoch vermeiden. Es wird somit das geerbte Feld umbenannt:
 
 \begin{lstlisting}
 (define Element (class Thing 
@@ -172,7 +172,7 @@ Es gibt keine weitere Fehlermeldung und die Methode kann aufgerufen werden:
 
 \subsection{Mehrfachvererbung in Racket}
 \label{mixins}
-Im Einleitungs-Kapitel wurde behauptet, mit Racket könne man keine Mehrfachvererbung modellieren. Tatsächlich gibt es zwei Arten von Klassen in Racket, deren Verhalten auf den ersten Blick wie Mehrfachvererbung aussieht: Mixins und Traits. Es werden deshalb beide kurz vorgestellt, um aufzuzeigen, welche Probleme und Grenzen sie haben.
+Im Einleitungskapitel wurde behauptet, mit Racket könne man keine Mehrfachvererbung modellieren. Tatsächlich gibt es zwei Arten von Klassen in Racket, deren Verhalten auf den ersten Blick wie Mehrfachvererbung aussieht: Mixins und Traits. Es werden deshalb beide kurz vorgestellt, um aufzuzeigen, welche Probleme und Grenzen sie haben.
 
 Dafür verwenden wir unsere vorher definierte Klasse Thing, eine vereinfachte Version von Element sowie die folgende Klasse Animal, die ebenfalls von Thing erbt:
 
@@ -345,7 +345,7 @@ Racket erlaubt es nicht, dass zwei Methoden in einer Klasse den gleichen Namen h
     (define/override (attack) attr))
 \end{lstlisting}
 
-Das führt dazu, dass wir nun bei der Erstellung der Element-Klasse nicht mehr Thing als Superklasse angeben können, denn die Klasse Thing bietet keine Funktion \texttt{attack}, die überschrieben werden könnte. Wollen wir also weiterhin, dass es möglich ist, Objekte von der Klasse Element zu erzeugen, so müssen wir eine Klasse bereitstellen, die eine solche Methode anbietet, damit Element von ihr erben kann.
+Das führt dazu, dass wir nun bei der Erstellung der Elementklasse nicht mehr Thing als Superklasse angeben können, denn die Klasse Thing bietet keine Funktion \texttt{attack}, die überschrieben werden könnte. Wollen wir also weiterhin, dass es möglich ist, Objekte von der Klasse Element zu erzeugen, so müssen wir eine Klasse bereitstellen, die eine solche Methode anbietet, damit Element von ihr erben kann.
 
 \begin{lstlisting}
 (define Element 
@@ -383,16 +383,16 @@ Es ist jedoch nicht mehr möglich, die Reihenfolge der Mixins zu vertauschen. Ei
 
 führt zu einem Fehler, aus dem gleichen Grund wie vorher bei Objekten der Klasse Element: da Element eine Superklasse erwartet, die eine Funktion \texttt{attack} anbietet. Da Thing nun die direkte Superklasse ist, ist das nicht mehr der Fall. Selbst wenn wir das beheben würden, würde die Erzeugung nun an Animal scheitern, da es die geerbte Methode aus Element nicht überschreibt, sondern versucht neu zu definieren. Wir müssten alle Schritte, die wir soeben zur erfolgreichen Vererbung von der Methode \texttt{attack} durchgeführt haben, für den umgekehrten Fall durchführen. 
 
-Wollen wir beide Vererbungs-Reihenfolgen erlauben, wird zudem die Funktion \texttt{attack} deutlich komplizierter, da nun anhand der Superklasse entschieden werden müsste, ob der Wert des Feldes direkt zurückgegeben werden kann oder eine Kombination mit dem Wert der Superklasse nötig ist.
+Wollen wir beide Vererbungsreihenfolgen erlauben, wird zudem die Funktion \texttt{attack} deutlich komplizierter, da nun anhand der Superklasse entschieden werden müsste, ob der Wert des Feldes direkt zurückgegeben werden kann oder eine Kombination mit dem Wert der Superklasse nötig ist.
 
 Wir haben bisher nur zwei Superklassen betrachtet. Bei drei, vier oder gar 20 Superklassen, die vielleicht selbst wiederum von mehreren Superklassen erben, wird, falls eine sinnvolle Modellierung von Methodenkombination mit Mixins überhaupt noch möglich ist, der Code extrem unübersichtlich und wartungsunfreundlich. Insbesondere für die Lehre eignen sie sich demnach nicht.
 
 \subsubsection{Traits}
-Traits sind ähnlich zu Mixins. Sie kapseln eine Menge von Methoden, die zu einer Klasse hinzugefügt werden sollen. Traits erlauben jedoch Kontrolle darüber, welche Methoden wie geerbt werden. Es ist möglich bestimmte Methoden nicht zu erben, sie unter einem Alias zu erben oder mit Trait-Operatoren zu manipulieren und die Ergebnisse mehrerer Methoden zu kombinieren.
+Traits sind ähnlich zu Mixins. Sie kapseln eine Menge von Methoden, die zu einer Klasse hinzugefügt werden sollen. Traits erlauben jedoch Kontrolle darüber, welche Methoden wie geerbt werden. Es ist möglich bestimmte Methoden nicht zu erben, sie unter einem Alias zu erben oder mit Traitoperatoren zu manipulieren und die Ergebnisse mehrerer Methoden zu kombinieren.
 
 Sie lösen damit eines der fundamentalen Probleme von Mixins: Die Vererbung und Kombination gleichbenannter Methoden. Wenn es in zwei Traits, die kombiniert werden sollen, gleichbenannte Methoden gibt, so hat der Programmierer die Möglichkeit (und Pflicht), anzugeben, wie diese Kollision gelöst werden soll -- üblicherweise durch Ausschließen oder Umbenennen einer der Methoden in der Subklasse, oder durch Methodenkombination.
 
-Die Definition von Traits ist syntaktisch oft fast identisch zu der Definition einer Klasse, es gibt nur zwei Unterschiede: Anstelle des Schlüssworts \texttt{class} wird \texttt{trait} benutzt und es müssen (und können) weder Superklasse noch Superkonstruktor-Aufruf angegeben werden. Traits unterstützen einen Großteil der Optionen, die auch \texttt{class} unterstützt. Unter anderem sind jedoch weder \texttt{init}- noch \texttt{init-field}-Deklarationen erlaubt. Das bedeutet, dass ein Zugriff auf \texttt{name} nicht möglich ist (wir lassen den Code daher weg) und wir die Felder mit \texttt{field} definieren müssen.
+Die Definition von Traits ist syntaktisch oft fast identisch zu der Definition einer Klasse, es gibt nur zwei Unterschiede: Anstelle des Schlüssworts \texttt{class} wird \texttt{trait} benutzt und es müssen (und können) weder Superklasse noch Superkonstruktoraufruf angegeben werden. Traits unterstützen einen Großteil der Optionen, die auch \texttt{class} unterstützt. Unter anderem sind jedoch weder \texttt{init}- noch \texttt{init-field}-Deklarationen erlaubt. Das bedeutet, dass ein Zugriff auf \texttt{name} nicht möglich ist (wir lassen den Code daher weg) und wir die Felder mit \texttt{field} definieren müssen.
 
 \begin{lstlisting}
 (require racket/trait)
@@ -407,14 +407,14 @@ Die Definition von Traits ist syntaktisch oft fast identisch zu der Definition e
          (define/public (attack) size)))
 \end{lstlisting}
 
-Wenn wir ein Pokemon-Trait aus diesen beiden Traits definieren wollen, müssen wir den Konflikt der beiden \texttt{attack}-Methoden beheben. Das geht jedoch im Gegensatz zu Mixins direkt im Pokemon-Trait. Zur Manipulation der Vererbung gibt es verschiedene Trait-Operationen, wie
+Wenn wir ein Pokemontrait aus diesen beiden Traits definieren wollen, müssen wir den Konflikt der beiden \texttt{attack}-Methoden beheben. Das geht jedoch im Gegensatz zu Mixins direkt im Pokemon-Trait. Zur Manipulation der Vererbung gibt es verschiedene Trait-Operationen, wie
 \begin{itemize}
  \item \texttt{trait-exclude}, das eine Methode von einem Trait entfernt,
  \item \texttt{trait-alias}, welches die Kopie einer Methode unter anderem Namen zum Trait hinzufügt und
  \item \texttt{trait-sum}, welches die Methoden von zwei Traits kombiniert.
 \end{itemize}
 
-Das Vorgehen bei einem Konflikt lässt sich generalisieren. Zunächst wird dafür gesorgt, dass es keinen Namenskonflikt mehr gibt. Dafür wird aus den zwei Traits mit kollidierender Methode jeweils ein neuer Trait erstellt, in dem diese Methode einen neuen, eindeutigen Namen erhält. Dafür würden wir beispielweise zum Trait Element mit \texttt{trait-alias} einen Alias für die \texttt{attack}-Methode hinzufügen, den wir \texttt{element-attack} nennen. Der Trait hat anschließend \emph{zwei} Funktionen für den Angriff, \texttt{attack} und \texttt{element-attack}, die beide das gleiche tun. Anschließend können wir mit \texttt{trait-exclude} die ursprüngliche \texttt{attack}-Methode von der Vererbung ausschließen. Es wird also nur die Alias-Methode \texttt{element-attack} vererbt.
+Das Vorgehen bei einem Konflikt lässt sich generalisieren. Zunächst wird dafür gesorgt, dass es keinen Namenskonflikt mehr gibt. Dafür wird aus den zwei Traits mit kollidierender Methode jeweils ein neuer Trait erstellt, in dem diese Methode einen neuen, eindeutigen Namen erhält. Dafür würden wir beispielweise zum Trait Element mit \texttt{trait-alias} einen Alias für die \texttt{attack}-Methode hinzufügen, den wir \texttt{element-attack} nennen. Der Trait hat anschließend \emph{zwei} Funktionen für den Angriff, \texttt{attack} und \texttt{element-attack}, die beide das gleiche tun. Anschließend können wir mit \texttt{trait-exclude} die ursprüngliche \texttt{attack}-Methode von der Vererbung ausschließen. Es wird also nur die Aliasmethode \texttt{element-attack} vererbt.
 
 Dieser Schritt wird für jeden Konflikt durchgeführt. Sobald alle Methoden einen eindeutigen Namen haben, können sie mit \texttt{trait-sum} kombiniert werden.
 

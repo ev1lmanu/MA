@@ -2,11 +2,11 @@
 \label{implementation}
 
 \vspace{-1em}
-Im Rahmen dieser Arbeit ist ein Prototyp entstanden, der das Racket-Objektsystem um Mehrfachvererbung und Methodenkombination erweitert. Ein redefiniertes \texttt{class}-Makro nimmt die übergebene Syntax, hält wichtige Informationen in Form von Metaobjekten fest und generiert schließlich die Syntax, die vom eigentlichen \texttt{class}-Makro ausgewertet wird.
+Im Rahmen dieser Arbeit ist ein Prototyp entstanden, der das Racketobjektsystem um Mehrfachvererbung und Methodenkombination erweitert. Ein redefiniertes \texttt{class}-Makro nimmt die übergebene Syntax, hält wichtige Informationen in Form von Metaobjekten fest und generiert schließlich die Syntax, die vom eigentlichen \texttt{class}-Makro ausgewertet wird.
 
 \section{eval im Defintionsfenster}
 
-Das erste Problem, das sich dabei stellt, ist, dass Racket es nicht erlaubt, mehrere Superklassen anzugeben. Wir können zwar ein Makro schreiben, das mehrere Superklassen akzeptiert, aber der Makroaufruf, zu dem schlussendlich expandiert wird, darf nur eine Superklasse beinhalten. Das bedeutet, wir müssen aus den angegebenen Klassen selbst eine Superklasse erzeugen, die alle Eigenschaften der Klassen in sich vereinigt und diese als offizielle Superklasse angeben. Wie genau das funktioniert, sehen wir später, aber wir werden dafür die Klassenoptionen ebenjener Superklasse zusammenbauen, in einen \texttt{class}-Aufruf stecken und dann auswerten müssen.
+Das erste Problem, das sich dabei stellt, ist, dass Racket es nicht erlaubt, mehrere Superklassen anzugeben. Wir können zwar ein Makro schreiben, das mehrere Superklassen akzeptiert, aber der Makroaufruf, zu dem schlussendlich expandiert wird, darf nur eine Superklasse beinhalten. Das bedeutet, wir müssen aus den angegebenen Klassen selbst eine Superklasse erzeugen, die alle Eigenschaften der Klassen in sich vereinigt und diese als offizielle Superklasse angeben. Wie genau das funktioniert, sehen wir später. Trotzdem werden dafür die Klassenoptionen ebenjener Superklasse zusammengebaut, in einen \texttt{class}-Aufruf gesteckt und dann ausgewertet werden müssen.
 
 \texttt{class} ist jedoch ein Makro, keine Funktion. Wir können es nicht einfach mit \texttt{apply} auf eine von uns zusammengestellte Liste von Klassenoptionen anwenden. Die andere naheliegende Option ist \texttt{eval}, welche jedoch nicht ohne weiteres außerhalb der Interaktionskonsole benutzt werden kann. Das Bereitstellen von \texttt{eval} auch innerhalb des Definitionsfensters geschieht noch vor der eigentlichen Expansion des Makros, deshalb soll auch hier zuerst darauf eingegangen werden.
 
@@ -35,19 +35,19 @@ Aber \texttt{eval} funktioniert ohne weiteres nur in der Interaktionskonsole. Ve
 {\color{red}\ttfamily\small\hspace{5pt} +: unbound identifier;}\\
 {\color{red}\ttfamily\small\hspace{5pt} also, no \#\%app syntax transformer is bound in: +}\\
 
-\texttt{eval} kann die Bindungen des Kontextes, in dem es aufgerufen wird, nicht sehen. Das beinhaltet auch alle importierten Racket-Funktionen, selbst \texttt{+}. Damit \texttt{eval} Zugriff auf die Umgebung hat, in der es aufgerufen wird, muss der Namescpace mitgeteilt werden. In der Interaktionskonsole passiert das automatisch; im Definitionsfenster müssen wir es per Hand machen. Dafür kann als zweiter Parameter ein Namespace-Wert übergeben werden. 
+\texttt{eval} kann die Bindungen des Kontextes, in dem es aufgerufen wird, nicht sehen. Das beinhaltet auch alle importierten Racketfunktionen, selbst \texttt{+}. Damit \texttt{eval} Zugriff auf die Umgebung hat, in der es aufgerufen wird, muss der Namescpace mitgeteilt werden. In der Interaktionskonsole passiert das automatisch; im Definitionsfenster müssen wir es per Hand machen. Dafür kann als zweiter Parameter ein Namensraum-Wert übergeben werden. 
 
-Die folgenden Definitionen und Beispiele sind dem Racket-Guide \cite{racketguide-namespace} entnommen.
+Die folgenden Definitionen und Beispiele sind dem Rackeguide \cite{racketguide-namespace} entnommen.
 
-Ein Namespace beinhaltet zwei Informationen:
+Ein Namensraum beinhaltet zwei Informationen:
 \begin{enumerate}
- \item Eine Abbildung von Schlüsselwörtern zu Bindungen (zum Beispiel der Name \texttt{+} zu der Funktion \texttt{+}). Ein leerer Namespace bildet jeden Namen auf eine unintialisierte Variable ab.
+ \item Eine Abbildung von Schlüsselwörtern zu Bindungen (zum Beispiel der Name \texttt{+} zu der Funktion \texttt{+}). Ein leerer Namensraum bildet jeden Namen auf eine unintialisierte Variable ab.
  \item Eine Abbildung von Modulnamen zu Moduldeklarationen und Instanzen.
 \end{enumerate}
 
 Die erste Abbildung ist notwendig, um Ausdrücke wie das Beispiel der Addition auszuwerten; die zweite für die Auwertung von \texttt{require}-Befehlen.
 
-Ein leerer Namespace kann mit der Funktion \texttt{make-empty-namespace} erzeugt werden. Da der Namespace jedoch leer ist, passiert das gleiche als wäre kein Namespace angegeben worden: die Auswertung schlägt fehl. Um einen Namespace benutzbar zu machen, müssen Module aus dem aktuellen Namespace angehängt werden. \texttt{make-base-empty-namespace} erzeugt beispielsweise einen Namespace, an den das Modul \texttt{racket/base} bereits angehängt ist. Andere Module lassen sich mit \texttt{namespace-attach-module} anhängen:
+Ein leerer Namensraum kann mit der Funktion \texttt{make-empty-namespace} erzeugt werden. Da der Namensraum jedoch leer ist, passiert das gleiche als wäre kein Namensraum angegeben worden: die Auswertung schlägt fehl. Um einen Namensraum benutzbar zu machen, müssen Module aus dem aktuellen Namensraum angehängt werden. \texttt{make-base-empty-namespace} erzeugt beispielsweise einen Namensraum, an den das Modul \texttt{racket/base} bereits angehängt ist. Andere Module lassen sich mit \texttt{namespace-attach-module} anhängen:
 
 \begin{lstlisting}
 (namespace-attach-module (current-namespace)
@@ -55,16 +55,16 @@ Ein leerer Namespace kann mit der Funktion \texttt{make-empty-namespace} erzeugt
                          (make-base-empty-namespace))
 \end{lstlisting}
 
-\texttt{current-namespace} liefert den aktuellen Namespace. Er beinhaltet alle Bindungen, die innerhalb des Kontextes, in dem die Funktion aufgerufen wird, vorhanden sind. Das \texttt{racket/class}-Modul aus dem aktuellen Namespace wird an den leeren Base-Namespace angehängt.
+\texttt{current-namespace} liefert den aktuellen Namensraum. Er beinhaltet alle Bindungen, die innerhalb des Kontextes, in dem die Funktion aufgerufen wird, vorhanden sind. Das \texttt{racket/class}-Modul aus dem aktuellen Namensraum wird an den leeren Base-Namensraum angehängt.
 
-Das Anhängen eines Moduls bewirkt, dass innerhalb des Namespaces nun eine Abbildung des Modulnamen existiert; Mappings für die Funktionen und Schlüsselwörter existieren noch nicht. Wir haben dem Namespace lediglich mitgeteilt, wo das Modul zu finden ist. Für das Importieren gibt es die Funktion \texttt{parameterize}:
+Das Anhängen eines Moduls bewirkt, dass innerhalb des Namensraums nun eine Abbildung des Modulnamen existiert; Mappings für die Funktionen und Schlüsselwörter existieren noch nicht. Wir haben dem Namensraum lediglich mitgeteilt, wo das Modul zu finden ist. Für das Importieren gibt es die Funktion \texttt{parameterize}:
 
 \begin{lstlisting}
 (parameterize ([current-namespace (make-base-empty-namespace)])
   (namespace-require 'racket/class))
 \end{lstlisting}
 
-Module, die nicht dem Namespace angehängt sind, wie hier \texttt{racket/class}, werden neu geladen und instanziiert. Das bedeutet, dass für den Namespace ein neuer, eigenständiger \texttt{class}-Datentyp erzeugt wird:
+Module, die nicht dem Namensraum angehängt sind, wie hier \texttt{racket/class}, werden neu geladen und instanziiert. Das bedeutet, dass für den Namensraum ein neuer, eigenständiger \texttt{class}-Datentyp erzeugt wird:
 
 \begin{lstlisting}
 > (require racket/class)
@@ -80,7 +80,7 @@ Module, die nicht dem Namespace angehängt sind, wie hier \texttt{racket/class},
 \end{lstlisting}
 {\routput \#f}
 
-Falls die gleiche Instanz des Datentyps benutzt werden soll, so muss das Modul zuerst an den Namespace angehängt werden:
+Falls die gleiche Instanz des Datentyps benutzt werden soll, so muss das Modul zuerst an den Namensraum angehängt werden:
 
 \begin{lstlisting}
 > (require racket/class)
@@ -95,7 +95,7 @@ Falls die gleiche Instanz des Datentyps benutzt werden soll, so muss das Modul z
 \end{lstlisting}
 {\routput \#f}
 
-Benötigt man den Namespace nur innerhalb eines Moduls, so kann man einen Name\-space-An\-chor definieren. Für das Benutzen von \texttt{eval} im Definitionsfenster können wir beispielsweise einfach schreiben:
+Benötigt man den Namensraum nur innerhalb eines Moduls, so kann man einen Name\-space-An\-chor definieren. Für das Benutzen von \texttt{eval} im Definitionsfenster können wir beispielsweise einfach schreiben:
 
 \begin{lstlisting}
 (define-namespace-anchor anchor)
@@ -106,7 +106,7 @@ Benötigt man den Namespace nur innerhalb eines Moduls, so kann man einen Name\-
 \end{lstlisting}
 {\routput 3}
 
-Unser Modul definiert jedoch ein Makro, das in einem anderen Modul expandiert wird; und somit auch in einem anderen Namespace. Wenn wir auf diesen Namespace innerhalb unseres Moduls zugreifen wollen, so müssen wir die Funktion \texttt{my-eval} innerhalb der Makroexpansion definieren. Dafür wird die vorhergehende Methode mit \texttt{namespace-attach-module} und \texttt{parameterize} benutzt. Da wir später in der eigentlichen Expansion des \texttt{class}-makros drei Fälle unterscheiden wollen, wurde die ``Zwischenexpansion'' in ein eigenes Makro ausgelagert:
+Unser Modul definiert jedoch ein Makro, das in einem anderen Modul expandiert wird; und somit auch in einem anderen Namensraum. Wenn wir auf diesen Namensraum innerhalb unseres Moduls zugreifen wollen, so müssen wir die Funktion \texttt{my-eval} innerhalb der Makroexpansion definieren. Dafür wird die vorhergehende Methode mit \texttt{namespace-attach-module} und \texttt{parameterize} benutzt. Da wir später in der eigentlichen Expansion des \texttt{class}-makros drei Fälle unterscheiden wollen, wurde die ``Zwischenexpansion'' in ein eigenes Makro ausgelagert:
 
 \begin{lstlisting}
 (define-syntax my-class
@@ -130,9 +130,9 @@ Unser Modul definiert jedoch ein Makro, das in einem anderen Modul expandiert wi
        (my-eval-class (lambda (x) (eval x ns)) arg . args))]))
 \end{lstlisting}
 
-Das Makro matcht Aufrufe von \texttt{my-class}. Wir erzeugen einen neuen Namespace, hängen dann die im Kontext des Makroaufrufes gebundenen Module \texttt{racket/class}, \texttt{racket/list} und \texttt{racket/function} an und binden sie anschließend ein. Der resultierende Namespace wird für die Definition einer \texttt{eval}-Funktion benutzt, die zu der Syntax des \texttt{my-class}-Aufrufes hinzugefügt wird. Anschließend wird das Makro \texttt{my-eval-class} aufgerufen, das die eigentliche Expansion übernimmt.
+Das Makro matcht Aufrufe von \texttt{my-class}. Wir erzeugen einen neuen Namensraum, hängen dann die im Kontext des Makroaufrufes gebundenen Module \texttt{racket/class}, \texttt{racket/list} und \texttt{racket/function} an und binden sie anschließend ein. Der resultierende Namensraum wird für die Definition einer \texttt{eval}-Funktion benutzt, die zu der Syntax des \texttt{my-class}-Aufrufes hinzugefügt wird. Anschließend wird das Makro \texttt{my-eval-class} aufgerufen, das die eigentliche Expansion übernimmt.
 
-Der Name des Makros ist \texttt{my-class}, damit wir intern weiterhin Racket-Klassen mittels \texttt{class} erzeugen können. Wir benennen das Makro erst beim Export um:
+Der Name des Makros ist \texttt{my-class}, damit wir intern weiterhin Racketklassen mittels \texttt{class} erzeugen können. Wir benennen das Makro erst beim Export um:
 
 \begin{lstlisting}
 (provide (rename-out [my-class class]))
@@ -199,7 +199,7 @@ Klassenmetaobjekte werden analog zu CLOS definiert. Es gibt eine interne Racketk
 
 Im Gegensatz zu CLOS manipulieren wir jedoch nur Syntax. Anstelle von Feld- und Methodenobjekten merkt sich die Metaklasse die Definitionen der Felder und Methoden. Sie werden erst ganz am Ende von Racket ausgewertet werden, als Teil der Definition des Klassenobjekts, das an den Nutzer zurückgegeben wird.
 
-Für die Klasse Thing aus dem Object-Racket-Kapitel
+Für die Klasse Thing aus dem Object-Racketkapitel
 
 \begin{lstlisting}
 (define Thing (class object% (super-new)
@@ -260,7 +260,7 @@ umgewandelt. Die Methode \texttt{compute-direct-fields} übernimmt diese Konvers
 
 Die Eigenschaften, die sich durch Einfach- oder Mehrfachvererbung ergeben, werden durch die Methode \texttt{finalize-inheritance} zu dem Metaobjekt hinzugefügt. Sie berechnet die Klassenpräzedenzliste und anhand dieser die geerbten Felder und Methoden und bestückt die entprechenden Felder des Metaobjekts.
 
-Für die Berechnung der Klassenpräzedenzliste wird die Funktion \texttt{compute-std-cpl} aus der CLOS-Implementierung im Racket-Paket \texttt{swindle} verwendet. Sie implementiert die Klassenpräzedenzliste bereits nach den in AMOP definierten Regeln. Die Funktion erhält das Objekt, für das die Klassenpräzedenzliste berechnet werden soll (wir verwenden das zugehörige Metaobjekt) sowie eine Funktion, die zu einem (Meta-)Objekt die direkten Superklassen zurückgibt -- und liefert uns die vollständige Klassenpräzedenzliste. Die Funktion befindet sich in \texttt{tinyclos.rkt}, wird jedoch nicht exportiert. Der Quelltext wurde in unser Modul kopiert, damit Benutzer des Moduls nicht erst \texttt{tinyclos.rkt} um einen Exportbefehl ergänzen müssen. 
+Für die Berechnung der Klassenpräzedenzliste wird die Funktion \texttt{compute-std-cpl} aus der CLOS-Implementierung im Racketpaket \texttt{swindle} verwendet. Sie implementiert die Klassenpräzedenzliste bereits nach den in AMOP definierten Regeln. Die Funktion erhält das Objekt, für das die Klassenpräzedenzliste berechnet werden soll (wir verwenden das zugehörige Metaobjekt) sowie eine Funktion, die zu einem (Meta-)Objekt die direkten Superklassen zurückgibt -- und liefert uns die vollständige Klassenpräzedenzliste. Die Funktion befindet sich in \texttt{tinyclos.rkt}, wird jedoch nicht exportiert. Der Quelltext wurde in unser Modul kopiert, damit Benutzer des Moduls nicht erst \texttt{tinyclos.rkt} um einen Exportbefehl ergänzen müssen. 
 
 Die Methoden \texttt{compute-inherited-fields} und \texttt{compute-inherited-methods} nutzen dann die Klassenpräzedenzliste, um die geerbten Felder und Methoden zu berechnen. Sie führen damit insbesondere die \textit{standard method combination} (ohne Ergänzungsmethoden) durch.
 
@@ -391,7 +391,7 @@ Zunächst müssen die \texttt{define/generic}-Ausdrücke aus der Klassendefiniti
 
 Auch bei Methodenkombination wird eine eigene Superklasse erstellt, selbst wenn in der Vererbungshierarchie keine Mehrfachvererbung auftritt. Das Grund hierfür ist, dass wir für die Methodenkombination die implementierenden Methoden aus den Superklassen entfernen und die Kombinationsmethode in die neue Klasse einfügen müssen. Wir benötigen somit eine Superklasse, die Methoden, die in die Kombination eingehen, nicht beinhaltet.
 
-Die zusammengesetzte Syntax des \texttt{class}-Aufrufes muss dann nur noch mit \texttt{my-eval} ausgewertet werden und wir erhalten die gewünschte Racket-Klasse:
+Die zusammengesetzte Syntax des \texttt{class}-Aufrufes muss dann nur noch mit \texttt{my-eval} ausgewertet werden und wir erhalten die gewünschte Racketklasse:
 
 \begin{lstlisting}
 (define (make-classobject my-eval supers args meta)
@@ -448,7 +448,7 @@ Nehmen wir zum Beispiel die generische Funktion \texttt{(foo x y)} mit \texttt{*
 \texttt{($\lambda$ (x y) (+ x y))\\
 ($\lambda$ (x y) (- x y))}
 
-Dann ist das Ergebnis von \texttt{combine-method} die Definition einer Racket-Klassenmethode, die die Kombination berechnet:
+Dann ist das Ergebnis von \texttt{combine-method} die Definition einer Racketklassenmethode, die die Kombination berechnet:
 
 \begin{lstlisting}
 '(define/public (foo x y)

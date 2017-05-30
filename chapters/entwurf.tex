@@ -1,15 +1,15 @@
 \chapter{Entwurf} 
-Das Objektsystem von Racket soll um die Features Mehrfachvererbung, generische Methoden und Ergänzungsmethoden erweitert werden. Es werden dafür zunächst die Anforderungen an eine solche Umsetzung formuliert und anschließend ein Enwurf erarbeitet, der diese Anforderungen erfüllt. Es wird ein Vorschlag für die Erweiterung der Racket-Syntax um Mehrfachvererbung vorgestellt und Möglichkeiten der Einbindung in Racket diskutiert.
+Das Objektsystem von Racket soll um die Features Mehrfachvererbung, generische Methoden und Ergänzungsmethoden erweitert werden. Es werden dafür zunächst die Anforderungen an eine solche Umsetzung formuliert und anschließend ein Enwurf erarbeitet, der diese Anforderungen erfüllt. Es wird ein Vorschlag für die Erweiterung der Racketsyntax um Mehrfachvererbung vorgestellt und Möglichkeiten der Einbindung in Racket diskutiert.
 
 \section{Anforderungen}
 Folgende Anforderungen sollen beachtet werden:
 \begin{enumerate}
- \item Bestehender Code in Object-Racket soll weiterhin genauso funktionieren wie vorher. Die Erweiterung soll keinen Einfluss auf bestehenden Racket-Code haben. Funktionalität, die das Objektsystem zur Zeit bietet, soll auch nach dem Hinzufügen der Features auf dieselbe Art funktionieren und das gleiche Ergebnis liefern.
+ \item Bestehender Code in Object-Racket soll weiterhin genauso funktionieren wie vorher. Die Erweiterung soll keinen Einfluss auf bestehenden Racketcode haben. Funktionalität, die das Objektsystem zur Zeit bietet, soll auch nach dem Hinzufügen der Features auf dieselbe Art funktionieren und das gleiche Ergebnis liefern.
  \item Die Syntax soll sich in das Objektsystem von Racket einpassen. Neu hinzugefügte Makros und Funktionen sollen konsistent mit bestehenden Makros und Funktionen benannt werden und auf die gleiche Art und Weise aufrufbar sein. 
  \item Die Benutzung ist für jemanden, der CLOS kennt, intuitiv. Die definierten Makros und Funktionen sollen möglichst ähnlich zu benutzen sein wie in CLOS und das gleiche Verhalten zeigen (unter Beachtung von 2.).
 \end{enumerate}
 
-Die erste Anforderung soll gewährleisten, dass die entstehende Erweiterung auch in bestehenden Racket-Projekten eingebunden werden kann, ohne dass das die Funktionalität bestehender Klassen und Objekte beeinflusst. Die Erweiterung soll dazu ermuntern, Mehrfachvererbung zu nutzen an den Stellen, an denen es sinnvoll ist und das mit dem geringstmöglichen Änderungsaufwand. Es soll niemand gezwungen sein, alle bestehenden Klassen umzuschreiben, nur damit eine einzelne Klasse Mehrfachvererbung nutzen kann.
+Die erste Anforderung soll gewährleisten, dass die entstehende Erweiterung auch in bestehenden Racketprojekten eingebunden werden kann, ohne dass das die Funktionalität bestehender Klassen und Objekte beeinflusst. Die Erweiterung soll dazu ermuntern, Mehrfachvererbung zu nutzen an den Stellen, an denen es sinnvoll ist und das mit dem geringstmöglichen Änderungsaufwand. Es soll niemand gezwungen sein, alle bestehenden Klassen umzuschreiben, nur damit eine einzelne Klasse Mehrfachvererbung nutzen kann.
 
 Die zweite Anforderung knüpft direkt an die erste an: Es ist einfacher, neue Funktionalität zu benutzen, wenn sie sehr ähnlich zu bereits bestehenden Konzepten ist. Für einen Entwickler, der sich bereits mit dem Objektsystem von Racket auskennt, soll die neue Funktionalität so intuitiv wie möglich sein. Dafür ist es ist beispielsweise hilfreich, wenn generische Funktionenen, die vom Konzept her sehr verwandt zu Methoden sind, auf eine ähnliche Weise benutzt werden können.
 
@@ -39,11 +39,11 @@ Gegebenenfalls ist auch eine alternative Definition mit Klassenparameter sinnvol
 Falls mehr als eine Superklasse angegeben wird, so erbt die Klasse alle Felder und Methoden der beiden Oberklassen. Gibt es gleichbenannte Felder, so werden im Standardfall die Felder beziehungsweise Methoden der Klasse mit der höheren Präzedenz geerbt.
 
 \subsection{Generische Funktionen}
-Da Methoden im Objektsystem von Racket innerhalb von Klassen definiert werden, soll das auch für generische Funktionen gelten. Sie werden in der entsprechenden Oberklasse definiert. Für das attack-Beispiel aus der Racketeinführung wäre das die Klasse Thing. Methodendefinitionen starten in Racket mit \texttt{define/}, daher sollen generische Funktionen mit dem Schlüsselwort \texttt{define/generic} definiert werden. Die Syntax ist wie folgt:
+Da Methoden im Objektsystem von Racket innerhalb von Klassen definiert werden, soll das auch für generische Funktionen gelten. Sie werden in der entsprechenden Oberklasse definiert. Für das \texttt{attack}-Beispiel aus der Racketeinführung wäre das die Klasse Thing. Methodendefinitionen starten in Racket mit \texttt{define/}, daher sollen generische Funktionen mit dem Schlüsselwort \texttt{define/generic} definiert werden. Die Syntax ist wie folgt:
 
 \texttt{(define/generic ({\textless}function-name{\textgreater} {\textless}args{\textgreater}) {\textless}combination{\textgreater})}
 
-Der Objekt-Parameter entfällt, da wir uns bereits in der Klasse, für die die Funktion spezialisiert ist, befinden. Subklassen können (müssen aber nicht) die generische Funktion durch eine öffentliche Methode implementieren. Das Ergebnis der generischen Funktion ist die Kombination aller implementierenden Methoden in der Superklassenhierarchie des aktuellen Objekts. Falls die Methodenkombination wegen fehlender Methoden fehlschlägt, gibt es wie in CLOS einen Laufzeitfehler.
+Der Objektparameter entfällt, da wir uns bereits in der Klasse, für die die Funktion spezialisiert ist, befinden. Subklassen können (müssen aber nicht) die generische Funktion durch eine öffentliche Methode implementieren. Das Ergebnis der generischen Funktion ist die Kombination aller implementierenden Methoden in der Superklassenhierarchie des aktuellen Objekts. Falls die Methodenkombination wegen fehlender Methoden fehlschlägt, gibt es wie in CLOS einen Laufzeitfehler.
 
 Die in CLOS definierten Standardkombinationen sollen auch in Racket möglich sein: \texttt{+, min, max, list, append, begin, and, or}. 
 Zusätzlich soll es möglich sein, eigene Kombinationen zu definieren.
@@ -61,31 +61,31 @@ Der Methodenname muss mit einer in der Klasse sichtbaren Primärmethode überein
 \section{Einbindung in Racket}
 Für die Einbindung in Racket gibt es drei Möglichkeiten:
 \begin{enumerate}
- \item Ändern der Racket-Module, die an der Implementierung des Objektsystems beteiligt sind.
- \item Das Racket-Objektsystem als Blackbox betrachten und 
+ \item Ändern der Racketmodule, die an der Implementierung des Objektsystems beteiligt sind.
+ \item Das Racketobjektsystem als Blackbox betrachten und 
  \begin{enumerate}
   \item darauf aufbauend ein eigenes Objektssystem definieren.
   \item die Optionen, die an das \texttt{class}-Makro übergeben werden verändern und anschließend Racket die Objekterzeugung überlassen.
  \end{enumerate}
 \end{enumerate}
 
-Eine Veränderung der bestehenden Racket-Module hätte den Vorteil, dass wir direkten Zugriff auf alle Informationen, die zur Erzeugung der Klassen und Objekte von Racket verwendet werden, haben. Die Erzeugung von Klassen und Objekten kann direkt manipuliert werden und es ist vermutlich möglich wie in CLOS Instanzen von Methoden zu erzeugen und diese dann in einer festgelegten Reihenfolge auszuführen. 
+Eine Veränderung der bestehenden Racketmodule hätte den Vorteil, dass wir direkten Zugriff auf alle Informationen, die zur Erzeugung der Klassen und Objekte von Racket verwendet werden, haben. Die Erzeugung von Klassen und Objekten kann direkt manipuliert werden und es ist vermutlich möglich wie in CLOS Instanzen von Methoden zu erzeugen und diese dann in einer festgelegten Reihenfolge auszuführen. 
 
-Dafür ist jedoch ein sehr tiefgehehendes Verständnis der Racket-Implementierung notwendig. Leider ist diese kaum dokumentiert. Das Modul, das beispielsweise für die Expansion des \texttt{class}-Makros zuständig ist, heißt \texttt{class-internal} und befindet sich in \texttt{racket/collects/racket/private}. Allein die Definition des \texttt{class}-makros erstreckt sich über fast 1400 Zeilen und es ist nicht ungewöhnlich, in über 100 Codezeilen keinen Kommentar anzutreffen. Das Objektsystem von Racket ist sehr umfangreich; es gibt unzählige Klassenoptionen und sie alle müssen in dem Makro abgedeckt werden. Allein die Stellen zu finden, die für eine Erweiterung des Objektsystems angepasst werden müssten, würde bereits einen erheblichen Anteil der Bearbeitungszeit ausmachen.
+Dafür ist jedoch ein sehr tiefgehehendes Verständnis der Racketimplementierung notwendig. Leider ist diese kaum dokumentiert. Das Modul, das beispielsweise für die Expansion des \texttt{class}-Makros zuständig ist, heißt \texttt{class-internal} und befindet sich in \texttt{racket/collects/racket/private}. Allein die Definition des \texttt{class}-makros erstreckt sich über fast 1400 Zeilen und es ist nicht ungewöhnlich, in über 100 Codezeilen keinen Kommentar anzutreffen. Das Objektsystem von Racket ist sehr umfangreich; es gibt unzählige Klassenoptionen und sie alle müssen in dem Makro abgedeckt werden. Allein die Stellen zu finden, die für eine Erweiterung des Objektsystems angepasst werden müssten, würde bereits einen erheblichen Anteil der Bearbeitungszeit ausmachen.
 
 Eine direkte Veränderung des Objektsystems erschwert außerdem das Ziel, dass bestehende Objektsysteme genauso wie vorher funktionieren sollen. Die Seiteneffekte von Änderungen sind nur schwer abzuschätzen und ein Test der kompletten Funktionalität von Racket ist im Rahmen dieser Arbeit nicht möglich. Zudem ist diese Lösung nur schwer wartbar: Der Code wäre verteilt über die komplette Implementierung von Object-Racket. 
 
 Durch das Betrachten von Object-Racket als Blackbox würde die Verständlichkeit von Zusammenhängen und die Wartbarkeit stark erhöht. Die Erweiterung befände sich in einem einzelnen (oder wenigen) Modul und könnte daher leicht im Rahmen eines Übungsbetriebs verwendet und eingebunden werden.
 
-Der Nachteil ist, dass es dann keinen Zugriff auf die Implementierungsdetails von Racket gibt. Wissen über die Klassenhierarchie oder darüber, welche Felder und Methoden eine Klasse definiert, müssen wir selbst bereitstellen. Die Zeit, die aufgewendet werden muss um diese Informationen festzuhalten, wird jedoch deutlich geringer eingeschätzt als der Aufwand, die bestehende Racket-Implementierung in vollem Umfang zu verstehen. 
+Der Nachteil ist, dass es dann keinen Zugriff auf die Implementierungsdetails von Racket gibt. Wissen über die Klassenhierarchie oder darüber, welche Felder und Methoden eine Klasse definiert, müssen wir selbst bereitstellen. Die Zeit, die aufgewendet werden muss um diese Informationen festzuhalten, wird jedoch deutlich geringer eingeschätzt als der Aufwand, die bestehende Racketimplementierung in vollem Umfang zu verstehen. 
 
 Die Entscheidung fällt deshalb auf Option 2.
 
-Auf Racket aufbauend ein eigenes Objektsystem zu definieren (2a) ist sehr nah an der Idee, die in ``The art of the metaobject protocol'' \cite{amop} verfolgt wird. Es gibt uns die volle Kontrolle über das Verhalten von Vererbung und Objekten und bietet daher eine einfache Möglichkeit, beispielsweise Methodenkombination umzusetzen. Den vollen Umfang der Funktionalität von Object-Racket anzubieten bedeutet dann jedoch, dass jede Klassenoption und jedes Verhalten, das diese Optionen bewirkt, 1:1 nachgebaut werden oder zumindest an die der Implementation zugrundeliegenden Racket-Objekte weitergeleitet werden müsste.
+Auf Racket aufbauend ein eigenes Objektsystem zu definieren (2a) ist sehr nah an der Idee, die in ``The art of the metaobject protocol'' \cite{amop} verfolgt wird. Es gibt uns die volle Kontrolle über das Verhalten von Vererbung und Objekten und bietet daher eine einfache Möglichkeit, beispielsweise Methodenkombination umzusetzen. Den vollen Umfang der Funktionalität von Object-Racket anzubieten bedeutet dann jedoch, dass jede Klassenoption und jedes Verhalten, das diese Optionen bewirkt, 1:1 nachgebaut werden oder zumindest an die der Implementation zugrundeliegenden Racketobjekte weitergeleitet werden müsste.
 
 Außerdem existieren anschließend zwei Objektsysteme: das von Object-Racket und das darauf aufbauende und von uns definierte. Beide sind jedoch nicht miteinander kompatibel. Über Objekte, die in Object-Racket erzeugt wurden, haben wir keine Informationen; wir kennen nicht die Vererbungshierarchie, vorhandene Felder oder Methoden. 
 
-Das bedeutet, dass Objekte in Modulen, die das von uns definierte Objektsystem nutzen, nicht mit Objekten in Modulen kommunizieren könnten, die es nicht benutzen. Sobald ein Modul eines bestehendes Racket-System das erweiterte Objektsystem nutzt, müssten alle Module es benutzen. Das steht im Widerspruch zu der Anforderung, dass bestehende Racket-Implementationen durch das Benutzen der Erweiterung nicht beeinflusst werden sollen.
+Das bedeutet, dass Objekte in Modulen, die das von uns definierte Objektsystem nutzen, nicht mit Objekten in Modulen kommunizieren könnten, die es nicht benutzen. Sobald ein Modul eines bestehendes Racketsystem das erweiterte Objektsystem nutzt, müssten alle Module es benutzen. Das steht im Widerspruch zu der Anforderung, dass bestehende Racketimplementierung durch das Benutzen der Erweiterung nicht beeinflusst werden sollen.
 
 Option 2b, eine simple Veränderung der Klassenoptionen, die an das Makro übergeben werden, löst all diese Probleme, stellt uns jedoch vor eine andere Herausforderung: Mehrfachvererbung und Methodenkombination rein auf Syntaxebene zu implementieren. Wir können keine Felder oder Methoden definieren und auswerten; die Erzeugung all dieser Dinge übernimmt Object-Racket schließlich für uns. Das heißt, allein anhand der Sytax, die wir in das \texttt{class}-Makro injizieren (oder daraus entfernen), muss Mehrfachvererbung erreicht werden.
 

@@ -1,7 +1,7 @@
 \section{CLOS}
 Grundlage für dieses Kapitel ist das Buch ``Object-Oriented Programming in Common Lisp. A Programmer's Guide to CLOS'' \cite{keene} von Sonya E. Keene. 
 
-Das Common Lisp Object System ist der Standard für objektorientierte Programmierung in der Sprache Common Lisp. Auch Racket bietet es an, in diesem Stil objektorientiert zu programmieren. Um anstatt des Racket-Objektsystems mit CLOS-Objekten zu arbeiten, muss lediglich die Sprache auf den Dialekt Swindle umgestellt werden:
+Das Common Lisp Object System ist der Standard für objektorientierte Programmierung in der Sprache Common Lisp. Auch Racket bietet es an, in diesem Stil objektorientiert zu programmieren. Um anstatt des Racketobjektsystems mit CLOS-Objekten zu arbeiten, muss lediglich die Sprache auf den Dialekt Swindle umgestellt werden:
 
 
 \begin{lstlisting}
@@ -10,7 +10,7 @@ Das Common Lisp Object System ist der Standard für objektorientierte Programmie
 
 Wir wollen nun versuchen, die Klassen Thing, Element, Animal und Pokemon auch in CLOS zu schreiben, um zu sehen, welche Unterschiede in der Syntax es gibt und wie Mehrfachvererbung hier umgesetzt ist. 
 
-Alle Code-Beispiele befinden sich auch auf der beiliegenden CD und sind noch einmal zusammenhängend in Anhang \ref{clos-example} aufgeführt.
+Alle Codebeispiele befinden sich auch auf der beiliegenden CD und sind noch einmal zusammenhängend in Anhang \ref{clos-example} aufgeführt.
 
 \subsection{Einfache Klassen}
 Für die Definition von Klassen in CLOS gibt es das Makro \texttt{defclass}. Im Gegensatz zu dem Objektsystem von Racket erstellt das Makro eine benannte Klasse. Der Name wird beim Aufruf mit übergeben; damit erübrigt sich eine anschließende Benennung mit \texttt{define}. Auch in CLOS wird die Superklasse mit angegeben. Da es jedoch mehrere Superklassen geben kann, werden diese in einer Liste übergeben. Hat die Klasse keine Superklassen (außer der Wurzelklasse), so wird die leere Liste übergeben. Die explizite Angabe der Wurzelklasse als Superklasse ist nicht nötig. Anschließend können noch die Felder der Klasse (oder Slots, wie sie in CLOS üblicherweise genannt werden) angegeben werden. Für eine minimale Klasse ohne Superklasse(n) genügt der Name und die leere Liste: 
@@ -37,7 +37,7 @@ Slots werden nach der Superklasse angegeben. Ein großer Unterschied zu dem Obje
 
 Die Klasse hat genau einen Slot namens \texttt{name}, der jedoch so noch nicht sehr nützlich ist.
 
-Damit mit diesem Slot auch interagiert werden kann, benötigt er noch Accessoren: einen Getter (in CLOS Reader genannt) und einen Setter (in CLOS Writer genannt). Außerdem  ist es gegebenenfalls nötig, einen Initialwert anzugeben, der Slot zu dokumentieren, typisieren und so weiter. All dies geschieht durch Slot-Optionen. Sie folgen nach dem Namen des Slots (der nun geklammert werden muss, damit klar ist, wann die Slot-Definition zuende ist) und beginnen per Konvention mit einem Doppelpunkt. Um auf das Attribut \texttt{name} beispielsweise lesend oder schreibend zugreifen zu können, kann die Slot-Option \texttt{:reader} beziehungsweise \texttt{:writer} gesetzt werden oder, falls beides über das gleiche Schlüsselwort möglich sein soll, auch die Option \texttt{:accessor}. Accessoren müssen benannt werden, der Name muss sich jedoch nicht vom Namen des Slots unterscheiden. Hier also die vollständige Definition der Klasse:
+Damit mit diesem Slot auch interagiert werden kann, benötigt er noch Accessoren: einen Getter (in CLOS Reader genannt) und einen Setter (in CLOS Writer genannt). Außerdem  ist es gegebenenfalls nötig, einen Initialwert anzugeben, der Slot zu dokumentieren, typisieren und so weiter. All dies geschieht durch Slotoptionen. Sie folgen nach dem Namen des Slots (der nun geklammert werden muss, damit klar ist, wann die Slotdefinition zuende ist) und beginnen per Konvention mit einem Doppelpunkt. Um auf das Attribut \texttt{name} beispielsweise lesend oder schreibend zugreifen zu können, kann die Slotoption \texttt{:reader} beziehungsweise \texttt{:writer} gesetzt werden oder, falls beides über das gleiche Schlüsselwort möglich sein soll, auch die Option \texttt{:accessor}. Accessoren müssen benannt werden, der Name muss sich jedoch nicht vom Namen des Slots unterscheiden. Hier also die vollständige Definition der Klasse:
 
 \begin{lstlisting}
 (defclass Thing ()
@@ -73,7 +73,7 @@ Der Wert eines Slots, der einen Writer oder Accessor besitzt, kann nach der Obje
 \end{lstlisting}
 {\routput {\qq}Bob\qq}
 
-Eine weitere nützliche Klassenoption ist \texttt{:autoaccessors :slot}, die automatisch für jeden Slot Accessor-Funktionen generiert. Der Name der Accessor-Funktion ist dann identisch zum Slot. Wir verwenden sie für die Klassen Element und Animal.
+Eine weitere nützliche Klassenoption ist \texttt{:autoaccessors :slot}, die automatisch für jeden Slot Accessorfunktionen generiert. Der Name der Accessorfunktion ist dann identisch zum Slot. Wir verwenden sie für die Klassen Element und Animal.
 
 \begin{lstlisting}
 (defclass Element (Thing)
@@ -229,7 +229,7 @@ Nicht für alle in der Klassenhierarchie vorhanden Klassen muss tatsächlich ein
 \label{ergmeth}
 Für jede der drei Klassen gibt es nun eine \texttt{attack}-Methode -- das Ergebnis der jeweiligen Methodenkombination. Diese Methoden werden Primärmethoden (primary methods) genannt.
 
-Methodenkombination wurde als eine Möglichkeit eingeführt, um geschickt Methoden aus mehreren Superklassen zu verbinden. Tatsächlich findet jedoch immer eine Methodenkombination statt -- selbst dann, oder gerade dann, wenn sie nicht explizit angegeben wird: die \textit{standard method combination}. Sie sorgt zum Beispiel dafür, dass bei einem Methodenaufruf die Primärmethode aufgerufen wird. Aber zusätzlich erlaubt sie es auch, drei spezielle Methoden zu definieren: Vor,- Nach- und redefinierende Methoden (\emph{before, after, around methods}). Sie werden zusammenfassend als Ergänzungsmethoden  bezeichnet. Wie der Name vermuten lässt, sind das Methoden, die vor, nach oder um eine Primärmethode herum ausgeführt werden. Sie werden in CLOS mit dem Schlüsselwort \texttt{:before}, \texttt{:after} beziehungsweise \texttt{:around} nach dem Methodennamen definiert.
+Methodenkombination wurde als eine Möglichkeit eingeführt, um geschickt Methoden aus mehreren Superklassen zu verbinden. Tatsächlich findet jedoch immer eine Methodenkombination statt -- selbst dann, oder gerade dann, wenn sie nicht explizit angegeben wird: die \textit{standard method combination}. Sie sorgt zum Beispiel dafür, dass bei einem Methodenaufruf die Primärmethode aufgerufen wird. Aber zusätzlich erlaubt sie es auch, drei spezielle Methoden zu definieren: Vor-, Nach- und redefinierende Methoden (\emph{before, after, around methods}). Sie werden zusammenfassend als Ergänzungsmethoden  bezeichnet. Wie der Name vermuten lässt, sind das Methoden, die vor, nach oder um eine Primärmethode herum ausgeführt werden. Sie werden in CLOS mit dem Schlüsselwort \texttt{:before}, \texttt{:after} beziehungsweise \texttt{:around} nach dem Methodennamen definiert.
 
 Nehmen wir beispielsweise eine Klasse für Pokemontrainer. Der tägliche Job eines Trainers ist es, Pokemon zu fangen. Falls er vorher das Haus verlässt und abends zurückkehrt, so lässt sich das in einer Vor- und Nachmethode festhalten:
 
