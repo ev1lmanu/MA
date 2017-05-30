@@ -114,21 +114,22 @@ Objekte der Klasse Pokemon haben automatisch alle Felder und Methoden der beiden
 {\routput {\qq}I am a Pokemon!\qq}
 
 \begin{lstlisting}
-> (send (new Pokemon) hot?)
+(define p (new Pokemon [name "Charmander"] [attr 'fire] [size 'big]))
+> (send p who-are-you?)
 \end{lstlisting}
-{\routput \#f}
+{\routput {\qq}I am Charmander!\qq}
 
 \begin{lstlisting}
-> (get-field size (new Pokemon [name "Bob"] [attr 'fire] [size 'big]))
+> (send p  hot?)
+\end{lstlisting}
+{\routput \#t}
+
+\begin{lstlisting}
+> (get-field size p)
 \end{lstlisting}
 {\rsymbol big}
 
 Die überschreibende Methode aus Element wird \emph{nicht} vererbt, da ausschließlich mit \texttt{define/public} definierte Methoden bei Mehrfachvererbung berücksichtigt werden. In Pokemon erhalten wir daher nur das Standardverhalten aus der Klasse Thing. Pokemon könnte die Methode natürlich selbst überschreiben.
-
-\begin{lstlisting}
-> (send (new Pokemon [attr 'fire]) who-are-you?)
-\end{lstlisting}
-{\routput {\qq}I am a Pokemon!\qq}
 
 Schließlich können wir mit einem Aufruf der \texttt{attack}-Funktion das Ergebnis der Methodenkombination sehen:
 
@@ -138,7 +139,7 @@ Schließlich können wir mit einem Aufruf der \texttt{attack}-Funktion das Ergeb
 {\rsymbol (small water ball)}
 
 \begin{lstlisting}
-> (send (new Pokemon [attr 'fire] [size 'big]) attack)
+> (send p attack)
 \end{lstlisting}
 {\rsymbol (big fire ball)}
 
@@ -169,8 +170,8 @@ Bei Einfachvererbung ohne Methodenkombination verhalten sich die Klassen genauso
 Die Superklasse:
 \begin{itemize}
  \item Es werden nur die Klassenoptionen \texttt{field}, \texttt{init-field} und \texttt{define/public} übernommen.
- \item Felder befinden sich vor den Methoden in der Definition, unabhängig von der Reihenfolge in den ursprünglichen Klassen.
- \item Die Reihenfolge von Methoden entspricht der Reihenfolge, in der sie geerbt werden.
+%  \item Felder befinden sich vor den Methoden in der Definition, unabhängig von der Reihenfolge in den ursprünglichen Klassen.
+%  \item Die Reihenfolge von Methoden entspricht der Reihenfolge, in der sie geerbt werden.
  \item Die Superklasse enthält keine Methoden, zu denen es eine generische Funktion gibt.
  \item Die direkte Superklasse der neuen Superklasse ist \texttt{object\%}.
 \end{itemize}
@@ -180,7 +181,7 @@ Generische Methoden und Methodenkombination:
  \item Methoden, für die eine generische Funktion existiert, können im Gegensatz zu Racket beliebig mit \texttt{define/public} redefiniert werden.
  \item Felder von Superklassen, die für die Kombination benötigt werden, müssen mit \texttt{inherit-field} in der Klasse sichtbar gemacht werden.
  \item Es können nicht zwei generische Funktionen mit dem gleichen Namen definiert werden, auch nicht mit unterschiedlichen Parametern oder in voneinander unabhängigen Vererbungshierarchien.
- \item Die Kombinationsmethoden werden vor allen anderen Klassenoptionen in die Klassendefinition eingefügt und damit insbesondere vor dem \texttt{super-new}-Aufruf.
+ \item Die Kombinationsmethoden werden nach allen anderen Klassenoptionen in die Klassendefinition eingefügt und damit insbesondere nach dem \texttt{super-new}-Aufruf.
  \item Methodenkombination ist wie in CLOS nicht kompatibel mit ergänzenden Methoden wie \texttt{override} oder \texttt{augment}. Methoden, die nicht mit \texttt{define/public} definiert wurden, werden bei der Vererbung ignoriert.
  \item Da generische Funktionen innerhalb von Klassen definiert werden, ist es im Gegensatz zu CLOS nicht möglich, sie auf mehr als eine Klasse zu spezialisieren.
 \end{itemize}

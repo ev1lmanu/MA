@@ -125,17 +125,21 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 (define (make-classobject my-eval supers args meta)
   ; remove define/generic forms
   (let ([args (filter (negate generic-function-definition?) args)])
-    ; if there's only a single superclass and no generic functions involved
-    (if (racket-only? meta)
-        ; then we can let racket handle object creation
-        (my-eval (append '(class) supers args))
-        ; else, put together the superclass and other class options
-        ; and use them for the new class
-        (my-eval (append '(class)
-                         (generate-class-options my-eval meta)
-                         ; other args, including the call to
-                         ; super-new
-                         (filter (negate (curryr is-generic? meta)) args))))))
+  ; if there's only a single superclass and no generic functions involved
+  (if (racket-only? meta)
+      ; then we can let racket handle object creation
+      (my-eval (append '(class) supers args))
+      ; else, put together the superclass and other class options
+      ; and use them for the new class
+      (my-eval (append '(class)
+                       ; superclass
+                       (generate-superclass-expression my-eval meta)
+                       ; other args, including the call to super-new
+                       (filter (negate (curryr is-generic? meta)) args)
+                       ; combination methods
+                       (map (curry combine-method meta)
+                            (get-field applicable-generic-functions
+                                       meta)))))))
 
 ; Returns whether we can let Racket handle object creation
 ; or if we need to put together the class ourselves
@@ -145,22 +149,13 @@ This module was created by Manuela Beckert as master thesis project. The corresp
 
 ; Generates all class options we'll need to supply to the class
 ; macro if we put together the class ourselves.
-(define (generate-class-options my-eval meta)
-  (let* ([inherited-fields  (get-field inherited-fields meta)]
-         [inherited-methods (get-field inherited-methods meta)]
-         [applicable-generic-functions
-          (get-field applicable-generic-functions meta)])
-    (append
-     ; superclass
-     (list (my-eval (append '(class object% (super-new))
-                            inherited-fields
-                            ; only  methods that aren't
-                            ; part of a method combination
-                            (filter (negate (curryr is-generic? meta))
-                                    inherited-methods))))
-     ; add combination methods
-     (map (curry combine-method meta)
-          applicable-generic-functions))))
+(define (generate-superclass-expression my-eval meta)
+  (list (my-eval (append '(class object% (super-new))
+                         (get-field inherited-fields meta)
+                         ; only  methods that aren't
+                         ; part of a method combination
+                         (filter (negate (curryr is-generic? meta))
+                                 (get-field inherited-methods meta))))))
 
 ; --------------------- META CLASSES ----------------------
 

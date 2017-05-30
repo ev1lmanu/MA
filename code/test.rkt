@@ -51,8 +51,9 @@
 
 ; Beispiel für die Methodenkombination
 (send (new Pokemon) who-are-you?)
-(send (new Pokemon) hot?)
-(get-field size (new Pokemon [name "Bob"] [attr 'fire] [size 'big]))
-(send (new Pokemon [attr 'fire] [size 'big]) who-are-you?)
+(define p (new Pokemon [name "Charmander"] [attr 'fire] [size 'big]))
+(send p hot?)
+(get-field size p)
+(send p who-are-you?)
 (send (new Pokemon) attack)
-(send (new Pokemon [attr 'fire] [size 'big]) attack)
+(send p attack)
