@@ -136,7 +136,7 @@ Es entsteht eine Struktur in drei Schichten:
 \begin{itemize}
  \item Die Makro-Expansions-Schicht: eine dünne Schicht, die die wenigen syntaktischen Konstrukte bereitstellt, die der Nutzer zu sehen bekommt, wie das \texttt{defclass}-Makro.
  \item Eine Ziwschenschicht: hier werden die externen Namen auf die intern benutzten Metaobjekte abgebildet, wie zum Beispiel die Funktion \texttt{find-class}, welche ein Metaobjekt anhand des Namens heraussucht.
- \item Die Support-Schicht: Hier ist das Verhalten von Klassen, Instanzen, generischen Funktionen und Methoden implementiert. Das Metaobjekt-Protokoll konzentriert sich hauptsächlich auf diese Schicht.
+ \item Die Support-Schicht: Hier ist das Verhalten von Klassen, Instanzen, generischen Funktionen und Methoden implementiert. Das Metaobjektprotokoll konzentriert sich hauptsächlich auf diese Schicht.
 \end{itemize}
 
 Wir werden untersuchen, ob ein analoges Vorgehen auch für die Implementierung von Mehrfachvererbung in Racket möglich ist. Um diese Struktur zu verstehen, wollen wir daher die einzelnen Schichten genauer betrachten. Wir fangen mit der untersten Schicht an: bei den Metaobjekten.
