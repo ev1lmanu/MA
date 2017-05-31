@@ -22,7 +22,7 @@ Durch Verwenden des in dieser Arbeit entstandenen Moduls lassen sich Mehrfachver
                   (compose reverse list))))
 \end{lstlisting}
 
-Das Ziel war eine Listenkombination. Das Ergebnis sieht am Ende jedoch mit einer umgekehrten Liste besser aus. Die Implementation der Methodenkombination erlaubt es praktischerweise, eine beliebige Funktion für die Kombination anzugeben, also auch eine Komposition von Funktionen.
+Das Ziel war eine Listenkombination. Das Ergebnis wird am Ende jedoch mit einer umgekehrten Liste besser dargestellt. Die Implementation der Methodenkombination erlaubt es praktischerweise, eine beliebige Funktion für die Kombination anzugeben, also auch eine Komposition von Funktionen.
 
 Die Klasse verhält sich sonst genauso wie zuvor:
 
@@ -94,7 +94,7 @@ An Thing lässt sich die Funktion nicht aufrufen, denn es gibt keine implementie
 \end{lstlisting}
 {\rerror No applicable methods found for generic function: attack}
 
-Eine Definition der Klasse Pokemon ist einfach durch die Angabe von zwei Superklassen möglich. Auch Pokemon kann das geerbte Feld redefinieren und eine implementierende Methode für \texttt{attack} anbieten. Da die Felder \texttt{attr} und \texttt{size} für die Methodenkombination benötigt werden, ist es notwendig sie mit \texttt{inherit-field} sichtbar zu machen.
+Eine Definition der Klasse Pokemon ist durch die Angabe von zwei Superklassen möglich. Auch Pokemon kann das geerbte Feld redefinieren und eine implementierende Methode für \texttt{attack} anbieten. Da die Felder \texttt{attr} und \texttt{size} für die Methodenkombination benötigt werden, ist es notwendig sie mit \texttt{inherit-field} sichtbar zu machen.
 
 \begin{lstlisting}
 (define Pokemon (class (Element Animal)  ; two superclasses
@@ -151,7 +151,7 @@ Methoden, für die eine generische Funktion existiert, können beliebig in der V
                 (define/public (attack) 'a)))
 \end{lstlisting}
 
-und es hat keinen negativen Einfluss auf die Klassen Element, Animal oder Pokemon. Der Wert wird einfach in die Methodenkombination mit aufgenommen.
+und es hat keinen negativen Einfluss auf die Klassen Element, Animal oder Pokemon. Der Wert wird lediglich in die Methodenkombination mit aufgenommen.
 
 \begin{lstlisting}
 > (send (new Pokemon) attack)
@@ -161,28 +161,35 @@ und es hat keinen negativen Einfluss auf die Klassen Element, Animal oder Pokemo
 Das Modul bietet damit einen deutlich einfacheren und intuitiveren Umgang mit Mehrfachvererbung als Mixins und Traits, wenngleich es einige Einschränkungen gibt.
 
 \section{Einschränkungen und Grenzen}
-Das Modul ist nur ein Prototyp. Das bedeutet, dass es  Einschränkungen und noch nicht implementierte Funktionalität gibt, die hier kurz angesprochen werden sollen.
+Das Modul ist ein Prototyp. Das bedeutet, dass es  Einschränkungen und noch nicht implementierte Funktionalität gibt, die hier kurz angesprochen werden sollen.
 
-Die Implementation beinhaltet noch keine Ergänzungsmethoden. Racket bietet bereits eine eigene Sammlung von Methoden, die geerbtes Verhalten überschreiben und ergänzen können. Das Verhalten der redefinierenden Methode lässt sich durch die Klassenoption \texttt{define/override} bereits erreichen. Vor- und Nachmethoden sind in Racket jedoch bisher nicht möglich und werden auch durch den Prototypen nicht abgedeckt.
+Die Implementation beinhaltet noch keine Ergänzungsmethoden. Racket bietet bereits eine eigene Sammlung von Methoden, die geerbtes Verhalten überschreiben und ergänzen können. Das Verhalten der redefinierenden Methode lässt sich durch die Klassenoption \texttt{define/override} erreichen. Vor- und Nachmethoden sind in Racket jedoch bisher nicht möglich und werden auch durch den Prototypen nicht abgedeckt.
 
 Bei Einfachvererbung ohne Methodenkombination verhalten sich die Klassen genauso wie in Racket. Ansonsten ergeben sich Einschränkungen in Bezug auf die erstellte Superklasse und Methodenkombination:
 
 Die Superklasse:
 \begin{itemize}
  \item Es werden nur die Klassenoptionen \texttt{field}, \texttt{init-field} und \texttt{define/public} übernommen.
+ \vspace{-0.3cm}
 %  \item Felder befinden sich vor den Methoden in der Definition, unabhängig von der Reihenfolge in den ursprünglichen Klassen.
 %  \item Die Reihenfolge von Methoden entspricht der Reihenfolge, in der sie geerbt werden.
  \item Die Superklasse enthält keine Methoden, zu denen es eine generische Funktion gibt.
+ \vspace{-0.3cm}
  \item Die direkte Superklasse der neuen Superklasse ist \texttt{object\%}.
 \end{itemize}
 
 Generische Methoden und Methodenkombination:
 \begin{itemize}
  \item Methoden, für die eine generische Funktion existiert, können im Gegensatz zu Racket beliebig mit \texttt{define/public} redefiniert werden.
+ \vspace{-0.3cm}
  \item Felder von Superklassen, die für die Kombination benötigt werden, müssen mit \texttt{inherit-field} in der Klasse sichtbar gemacht werden.
+ \vspace{-0.3cm}
  \item Es können nicht zwei generische Funktionen mit dem gleichen Namen definiert werden, auch nicht mit unterschiedlichen Parametern oder in voneinander unabhängigen Vererbungshierarchien.
+ \vspace{-0.3cm}
  \item Die Kombinationsmethoden werden nach allen anderen Klassenoptionen in die Klassendefinition eingefügt und damit insbesondere nach dem \texttt{super-new}-Aufruf.
+ \vspace{-0.8cm}
  \item Methodenkombination ist wie in CLOS nicht kompatibel mit ergänzenden Methoden wie \texttt{override} oder \texttt{augment}. Methoden, die nicht mit \texttt{define/public} definiert wurden, werden bei der Vererbung ignoriert.
+ \vspace{-0.3cm}
  \item Da generische Funktionen innerhalb von Klassen definiert werden, ist es im Gegensatz zu CLOS nicht möglich, sie auf mehr als eine Klasse zu spezialisieren.
 \end{itemize}
 
@@ -197,15 +204,15 @@ Vererbungshierarchien, in denen Methoden oft überschrieben und ergänzt werden 
 \section{Fazit}
 Es ist mit Hilfe von Makros und dem Metaobjektprotokoll gelungen, einen Prototypen für Mehrfachvererbung in Racket zu implementieren, der die im Entwurf formulierten Anforderungen erfüllt.
 
-Die Anforderung, dass die Erzeugung von Klassen und Objekten weiterhin von dem zugrundeligenden Objektsystem übernommen werden sollte, nimmt es uns ab, Klassen komplett neu definieren zu müssen. Stattdessen muss lediglich eine Superklasse erstellt werden, die die zu erbenden Eigenschaften vereinigt. Das Metaobjektprotokoll ließ sich leicht auf diesen Unterschied anpassen.
+Die Anforderung, dass die Erzeugung von Klassen und Objekten weiterhin von dem zugrundeligenden Objektsystem übernommen werden sollte, ermöglicht es, Klassen nicht komplett neu definieren zu müssen. Stattdessen muss lediglich eine Superklasse erstellt werden, welche die zu erbenden Eigenschaften vereinigt. Das Metaobjektprotokoll ließ sich leicht auf diesen Unterschied anpassen.
 
 Dadurch, dass sich die neue Funktionalität gut in das bestehende Objektsystem einpassen soll, müssen beispielsweise Felder im Gegensatz zu CLOS manuell in der Klassendefinition von erbenden Klassen sichtbar gemacht werden. Einschränkung dieser Art hatten jedoch keinen großen Einfluss auf die generelle Implementierung des Metaobjektprotokolls.
 
-Der Quelltext ist außerdem sehr kompakt; bis auf wenige Hilfsmethoden wurde er komplett im Kapitel Umsetzung abgedruckt.
+Der Quelltext ist außerdem sehr kompakt; bis auf wenige Hilfsmethoden wurde er komplett im Kapitel \ref{implementation} (Umsetzung) abgedruckt.
 
 CLOS hat im Gegensatz zu Racket jedoch nur eine sehr kleine Menge an Befehlen: es gibt Klassen mit Slots und Klassenoptionen, vier Arten von Methoden und generische Funktionen. Racket bietet etliche Klassenoptionen, sogar verschiedene Klassenmakros.
 
-Für den Prototyp wurden diese Optionen auf eine Teilmenge beschränkt, die sehr ähnlich zu dem Umfang von CLOS ist: Felder und mit \texttt{define/public} definierte Methoden. Eine Erweiterung um andere (oder gar alle) Klassenoptionen würde sehr wahrscheinlich sowohl die Metaobjekte als auch das Bestimmen der zu vererbenden Eigenschaften deutlich komplexer machen. 
+Für den Prototyp wurden diese Optionen auf eine Teilmenge beschränkt, die sehr ähnlich zu dem Umfang von CLOS ist: Felder und mit \texttt{define/public} definierte Methoden. Eine Erweiterung um andere (oder gar alle) Klassenoptionen würde sowohl die Metaobjekte als auch das Bestimmen der zu vererbenden Eigenschaften deutlich komplexer machen. 
 
 Die Implementierung folgt der in AMOP beschriebenen Implementierung von Closette, einem sehr vereinfachten CLOS-Interpreter, der die Verständnisgrundlage für die später im Buch vorgestellte, vollständige CLOS-Implementierung bildet. In den Worten der Autoren: ``Closette is simple, but it is woefully inefficient'' \cite[S.45]{amop}. 
 

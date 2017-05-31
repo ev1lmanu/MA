@@ -1,4 +1,5 @@
 \chapter{Zusammenfassung und Ausblick}
+\vspace{-0.5cm}
 Es wurde betrachtet, wie in Racket und CLOS mit Mehrfachvererbung umgegangen wird und darauf aufbauend untersucht, wie die zur Implementation von Mehrfachvererbung verwendeten Konzepte aus CLOS benutzt werden können, um Mehrfachvererbung auch in Racket zu ermöglichen.
 
 Entstanden ist dabei der Prototyp einer Racketerweiterung. Die Erweiterung erlaubt es, Felder und mit \texttt{define/public} definierte Methoden mehrerer Superklassen zu vererben, generische Funktionen zu definieren und Methoden zu kombinieren.
@@ -6,9 +7,10 @@ Entstanden ist dabei der Prototyp einer Racketerweiterung. Die Erweiterung erlau
 Der Prototyp löst das eingangs erwähnte Diamond-Problem durch Klassenpräzedenz und Methodenkombination und ermöglicht es, die in dieser Arbeit verwendete Beispiel-Vererbungshierarchie auf sehr einfache, CLOS-ähnliche Weise zu erreichen.
 
 Es wurden die Einschränkungen, die dabei auftreten, betrachtet und das Fazit ist: das Metaobjektprotokoll lässt sich auch verwenden, um andere Objektsysteme zu erweitern.
+\vspace{-1cm}
 
 \section{Erweiterungsvorschläge}
-
+\vspace{-0.5cm}
 Für mögliche Anschlussarbeiten sind an dieser Stelle Erweiterungsvorschläge zusammengefasst:
 \begin{itemize}
  \item Ergänzungsmethoden implementieren
@@ -16,6 +18,6 @@ Für mögliche Anschlussarbeiten sind an dieser Stelle Erweiterungsvorschläge z
  \item Evaluieren, welche anderen Klassenoptionen sich für Mehrfachvererbung eignen und diese implementieren
  \item Die Effizienz verbessern
  \item Die Erweiterung im Übungsbetrieb von ``Softwareentwicklung III'' testen
- \item Dafür Sorgen, dass in einer neueren Racketversion \texttt{compute-std-cpl} exportiert wird, damit der Quelltext nicht kopiert werden muss
- \item Dafür Sorgen, dass die Erweiterung zu einer zukünftigen Version von Racket hinzugefügt wird 
+ \item Veranlassen, dass in einer neueren Racketversion \texttt{compute-std-cpl} exportiert wird, damit der Quelltext nicht kopiert werden muss
+ \item Veranlassen, dass die Erweiterung zu einer zukünftigen Version von Racket hinzugefügt wird 
 \end{itemize}
