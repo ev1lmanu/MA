@@ -131,7 +131,7 @@ Objekte der Klasse Pokemon haben automatisch alle Felder und Methoden der beiden
 
 Die überschreibende Methode aus Element wird \emph{nicht} vererbt, da ausschließlich mit \texttt{define/public} definierte Methoden bei Mehrfachvererbung berücksichtigt werden. Pokemon zeigt daher das Standardverhalten aus der Klasse Thing. Die Klasse könnte die Methode natürlich selbst überschreiben.
 
-Schließlich ist anhnand eines Aufrufs der \texttt{attack}-Funktion das Ergebnis der Methodenkombination sichtbar:
+Schließlich ist anhand eines Aufrufs der \texttt{attack}-Funktion das Ergebnis der Methodenkombination sichtbar:
 
 \begin{lstlisting}
 > (send (new Pokemon) attack)
@@ -195,16 +195,16 @@ Generische Methoden und Methodenkombination:
 
 Diese Einschränkungen können dazu führen, dass einige der Klassenoptionen, die Racket bietet, nicht auf Klassen anwendbar sind, die durch Mehrfachvererbung entstanden sind oder für die eine generische Funktion definiert ist.
 
-Der Prototyp eigent sich bereits für die Verwendung in der Lehre, wenn anstelle der Ergänzungsmethoden von CLOS die überschreibenden und ergänzenden Methoden von Racket behandelt werden. Auch in CLOS werden nur primäre Methoden kombiniert und in der Lehre verwendete Übungsaufgaben sind daran angepasst. Daher ist eine Einschränkung auf mit \texttt{define/public} definierte Methoden für die Lehre nicht problematisch. Die Angabe der Kombinationsart und die Definition eigener Kombinationen ist in dem Prototypen sogar deutlich einfacher als in CLOS.
+Der Prototyp eignet sich bereits für die Verwendung in der Lehre, wenn anstelle der Ergänzungsmethoden von CLOS die überschreibenden und ergänzenden Methoden von Racket behandelt werden. Auch in CLOS werden nur primäre Methoden kombiniert und in der Lehre verwendete Übungsaufgaben sind daran angepasst. Daher ist eine Einschränkung auf mit \texttt{define/public} definierte Methoden für die Lehre nicht problematisch. Die Angabe der Kombinationsart und die Definition eigener Kombinationen ist in dem Prototypen sogar deutlich einfacher als in CLOS.
 
 Darüber hinaus lässt sich der Prototyp gut in Projekten nutzen, in denen Felder und Methoden überwiegend mit den unterstützten Schlüsselwörtern definiert werden. 
 
-Vererbungshierarchien, in denen Methoden oft überschrieben und ergänzt werden oder in denen ein Großteil der Funktionalität außerhalb der Feld- und Methodendefinitionen stattfindet (zum Beispiel durch Nutzen von \texttt{init} oder \texttt{set!}), sind für die hier entstandene Implentierung von Mehrfachvererbung weniger gut geeignet. Eine Klasse, die in einer solchen Hierarchie durch Mehrfachvererbung entsteht, wird nur Zugriff auf einen sehr geringen Teil der Funktionalität ihrer Superklassen haben.
+Vererbungshierarchien, in denen Methoden oft überschrieben und ergänzt werden oder in denen ein Großteil der Funktionalität außerhalb der Feld- und Methodendefinitionen stattfindet (zum Beispiel durch Nutzen von \texttt{init} oder \texttt{set!}), sind für die hier entstandene Implementierung von Mehrfachvererbung weniger gut geeignet. Eine Klasse, die in einer solchen Hierarchie durch Mehrfachvererbung entsteht, wird nur Zugriff auf einen sehr geringen Teil der Funktionalität ihrer Superklassen haben.
 
 \section{Fazit}
 Es ist mit Hilfe von Makros und dem Metaobjektprotokoll gelungen, einen Prototypen für Mehrfachvererbung in Racket zu implementieren, der die im Entwurf formulierten Anforderungen erfüllt.
 
-Die Anforderung, dass die Erzeugung von Klassen und Objekten weiterhin von dem zugrundeligenden Objektsystem übernommen werden sollte, ermöglicht es, Klassen nicht komplett neu definieren zu müssen. Stattdessen muss lediglich eine Superklasse erstellt werden, welche die zu erbenden Eigenschaften vereinigt. Das Metaobjektprotokoll ließ sich leicht auf diesen Unterschied anpassen.
+Die Anforderung, dass die Erzeugung von Klassen und Objekten weiterhin von dem zugrundeliegenden Objektsystem übernommen werden sollte, ermöglicht es, Klassen nicht komplett neu definieren zu müssen. Stattdessen muss lediglich eine Superklasse erstellt werden, welche die zu erbenden Eigenschaften vereinigt. Das Metaobjektprotokoll ließ sich leicht auf diesen Unterschied anpassen.
 
 Dadurch, dass sich die neue Funktionalität gut in das bestehende Objektsystem einpassen soll, müssen beispielsweise Felder im Gegensatz zu CLOS manuell in der Klassendefinition von erbenden Klassen sichtbar gemacht werden. Einschränkung dieser Art hatten jedoch keinen großen Einfluss auf die generelle Implementierung des Metaobjektprotokolls.
 

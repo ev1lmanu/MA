@@ -190,11 +190,11 @@ Es wurden automatisch der Name und die \texttt{attack}-Methode einer der beiden 
 
 Überschüssige Parameter werden ignoriert.
 
-Die Liste von Superklassen in einer Klassendefnition wird auch Klassenpräzedenzliste genannt. Sie bestimmt im Zweifel bei Konflikten, welche Slots oder Methoden (im Standardfall) vererbt werden. Die am weitesten links stehende Klasse ist die spezifischste, die am weitesten rechts stehende die unspezifischste. Bei Slots kann die Vererbung nicht beeinflusst werden, es wird immer der Slot der am weitesten links in der Liste stehenden Klasse (die diesen Slot bereitstellt) genommen. Auf die Klassenpräzedenz wird noch im Detail im Kapitel \ref{cpl} eingegangen.
+Die Liste von Superklassen in einer Klassendefinition wird auch Klassenpräzedenzliste genannt. Sie bestimmt im Zweifel bei Konflikten, welche Slots oder Methoden (im Standardfall) vererbt werden. Die am weitesten links stehende Klasse ist die spezifischste, die am weitesten rechts stehende die unspezifischste. Bei Slots kann die Vererbung nicht beeinflusst werden, es wird immer der Slot der am weitesten links in der Liste stehenden Klasse (die diesen Slot bereitstellt) genommen. Auf die Klassenpräzedenz wird noch im Detail im Kapitel \ref{cpl} eingegangen.
 
 \subsection{Generische Funktionen und Methodenkombination}
 An die Klasse Pokemon wird, sofern nichts weiter festgelegt wurde, analog zu den Slots die spezifischste Methode vererbt, also die von Animal. Stattdessen sollen nun die Werte beider Oberklassen in einer Liste vereint werden. Eine Methode, die auf Pokemon spezialisiert ist, würde das Problem lösen, aber CLOS bietet für die Kombination der Methoden aller (Ober-)Klassen einen Automatismus: generische Funktionen und Methodenkombination. 
-
+ 
 Das Ergebnis einer generischen Funktion setzt sich aus den Rückgabewerten aller implementierenden Methoden in der Superklassenhierarchie zusammen. Der Vorgang zur Bestimmung des Ergebnisses der generischen Funktion wird Methodenkombination genannt.
 
 Generische Funktionen werden in CLOS mit \texttt{defgeneric} definiert. Tatsächlich gibt es zu jeder definierten Methode automatisch eine entsprechende generische Funktion, selbst wenn sie nicht explizit angeben wird. 
@@ -275,7 +275,7 @@ Eine spezifischere Methode hat somit die Möglichkeit, etwas vor beziehungsweise
 
 Natürlich kann jede der Vor- und Nachmethoden vorhanden sein oder nicht. Was zwingend vorhanden sein muss, ist eine anwendbare Primärmethode. Außerdem haben Vor- und Nachmethoden weder Wissen von, noch Einfluss auf das Ergebnis der Primärmethode. Sie eignen sich daher nur für Seiteneffekte. Dafür bieten sie der Klasse, die später erweitert wird, eine Möglichkeit, sicherzustellen, dass eine bestimmte Operation garantiert in allen Subklassen ausgeführt wird. Das kann zum Beispiel bei einer Methode zum Malen eines Bildes das Erstellen der Leinwand sein.
 
-Zusätzlich zu Vor- und Nachmethoden gibt es noch redefinierende Methoden. Sie bestimmen selbst, ob und an welcher Stelle in ihrem Rumpf mit \texttt{call-next-method} (das CLOS-Äquivalent zu super) die nächste Methode aufegrufen werden soll. Die Aufrufreihenfolge ist wie folgt (vgl. \cite[S.103]{keene}):
+Zusätzlich zu Vor- und Nachmethoden gibt es noch redefinierende Methoden. Sie bestimmen selbst, ob und an welcher Stelle in ihrem Rumpf mit \texttt{call-next-method} (das CLOS-Äquivalent zu super) die nächste Methode aufgerufen werden soll. Die Aufrufreihenfolge ist wie folgt (vgl. \cite[S.103]{keene}):
 \begin{itemize}
  \item CLOS ruft die spezifischste redefinierende Methode auf. Sie erhält die gleichen Parameter wie die generische Funktion bzw. Primärmethode.
  \item Falls eine redefinierende Methode \texttt{call-next-method} aufruft:
@@ -316,7 +316,7 @@ Da redefinierende Methoden entscheiden können, \texttt{call-next-method} nicht 
 
 Die redefinierende Methode verhindert alle weiteren Methodenaufrufe. 
 
-Bei mehreren Oberklassen beziehen sich die ``nächstspezifischste redefinierende Methode'' und ``alle Vor- bzw. Nachmethoden'' auf den kompletten Vererbungsbaum. Es ist möglich eine Klasse Lazyowl zu definieren, die sowohl von Nightowl als auch von Lazybum erbt:
+Bei mehreren Oberklassen beziehen sich die ``nächstspezifischste redefinierende Methode'' und ``alle Vor- beziehungsweise Nachmethoden'' auf den kompletten Vererbungsbaum. Es ist möglich eine Klasse Lazyowl zu definieren, die sowohl von Nightowl als auch von Lazybum erbt:
 
 \begin{lstlisting}
 (defclass Lazyowl (Nightowl Lazybum))
@@ -329,7 +329,7 @@ Bei mehreren Oberklassen beziehen sich die ``nächstspezifischste redefinierende
 
 Ein Aufruf von \texttt{daily-routine} zeigt, dass die redefinierende Methoden beider Oberklassen aufgerufen werden. 
 
-Im Gegensatz zu Racket sind Ergänungsmethoden jedoch nicht kompatibel mit Methodenkombination: Sobald eine Kombination in der generischen Funktion für die Methode angegeben wird, führt der Versuch der Definition einer Ergänzungsmethode zu einem Fehler:
+Im Gegensatz zu Racket sind Ergänzungsmethoden jedoch nicht kompatibel mit Methodenkombination: Sobald eine Kombination in der generischen Funktion für die Methode angegeben wird, führt der Versuch der Definition einer Ergänzungsmethode zu einem Fehler:
 
 \begin{lstlisting}
 (defgeneric daily-routine ((t Trainer))

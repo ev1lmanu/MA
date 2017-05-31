@@ -5,7 +5,7 @@ Makros sind ein Sprachmittel, mit dem die Syntax in vielen Programmiersprachen v
 
 Anschließend erfolgt eine Analyse der CLOS-Implementierung. CLOS ist dabei nicht nur ein Ratgeber zur Implementierung von Mehrfachvererbung. Es bietet außerdem einen Einblick, wie eine bestehende Sprache mithilfe von Makros und Metaobjekten um ein Objektsystem erweitert werden kann -- eine wichtige Grundlage für die Erweiterung von Racket. Die Implementierungsdetails von CLOS sind dem Buch ``The Art of the Metaobject Protocol'' (AMOP) \cite{amop} entnommen. Die CLOS-Implementierung in AMOP ist nicht in Racket, sondern in Common Lisp geschrieben und die Quelltextbeispiele wurden unverändert übernommen. Es wird daher zu leichten Abweichungen zu der bisher eingeführten Syntax von Racket oder Makros kommen; die grundlegende Funktionalität ist jedoch die gleiche.
 
-Im Folgenden wird eine Unterscheidung zwischen Funktionen, Methoden und generischen Funktionen gemacht. Methoden und generische Funktionen sind Bestandteil des Verhaltens von Objekten und werden innerhalb einer Klassendefinition durch eine entprechende Klassenoption angegeben. ``Funktionen'' sind die normalen Funktionen, die in Racket mit \texttt{$\lambda$} oder \texttt{define} auch außerhalb von Klassen definieret werden. Die Unterscheidung erleichtert es hervorzuheben, wann eine Methode behandelt wird, die Bestandteil einer Klassendefinition ist, und wann eine Funktion, die außerhalb definiert wurde.
+Im Folgenden wird eine Unterscheidung zwischen Funktionen, Methoden und generischen Funktionen gemacht. Methoden und generische Funktionen sind Bestandteil des Verhaltens von Objekten und werden innerhalb einer Klassendefinition durch eine entprechende Klassenoption angegeben. ``Funktionen'' sind die normalen Funktionen, die in Racket mit \texttt{$\lambda$} oder \texttt{define} auch außerhalb von Klassen definiert werden. Die Unterscheidung erleichtert es hervorzuheben, wann eine Methode behandelt wird, die Bestandteil einer Klassendefinition ist, und wann eine Funktion, die außerhalb definiert wurde.
 
 \section{Makros} 
 \label{makros}
@@ -210,10 +210,10 @@ Es gibt eine Tabelle von Klassenmetaobjekten, die bereits erstellt wurden, eine 
   (defun (setf find-class) (new-value symbol)
     (setf (gethash symbol class-table) new-value)))
 \end{lstlisting}
-
+     
 \texttt{make-instance} ist eine Funktion der untersten Schicht und führt noch einige notwendige Initialisierungen durch, wie das Hinzufügen des Objekts als Subklasse zu seinen Superklassen, Konvertieren der Liste von Sloteigenschaften in tatsächliche Slot-Definitionen oder die Definition von Accessormethoden. 
 
-Für eine Implementierung von Mehrfachvererbung in Racket werdeb ebenfalls Informationen darüber benötigt, welche Klassen mit welchen Superklassen, Feldern und Methoden bereits definiert wurden. Die Methodenkombination beispielsweise basiert auf den Ergebnissen aller Methoden in allen Superklassen -- darüber kann ein Klassenobjekt nach der Erstellung durch Racket jedoch keine Auskunft mehr geben; in ihm existiert jede Methode nur genau einmal.
+Für eine Implementierung von Mehrfachvererbung in Racket werden ebenfalls Informationen darüber benötigt, welche Klassen mit welchen Superklassen, Feldern und Methoden bereits definiert wurden. Die Methodenkombination beispielsweise basiert auf den Ergebnissen aller Methoden in allen Superklassen -- darüber kann ein Klassenobjekt nach der Erstellung durch Racket jedoch keine Auskunft mehr geben; in ihm existiert jede Methode nur genau einmal.
 
 Anstelle von CLOS-Metaobjekten über CLOS-Klassen werden also Racketmetaobjekte über Racketklassen erstellt. Um Mehrfachvererbung und Methodenkombination zu implementieren, ist es notwendig zu wissen, in welcher Vererbungshierarchie die Klassen stehen und welche Felder und Methoden sie definieren. Das sind genau die Informationen, die sich auch das Metaobjekt in CLOS merkt:
 
@@ -262,7 +262,7 @@ Die Klassenpräzedenzliste (nach \cite[S. 118ff]{keene}) beinhaltet die Klasse s
 Die erste Regel erlaubt es einer Klasse, Verhalten ihrer Superklasse zu überschreiben oder zu verändern.
 
 Die zweite Regel bewirkt, dass die Reihenfolge direkter Superklassen durch die Reihenfolge der Superklassen im \texttt{defclass}-Makro festgelegt ist. Das heißt, jede angegebene Klasse ist spezifischer als die Klassen, die weiter hinten in der Liste stehen.
-
+ 
 Anhand der ersten Regel ist sofort die spezifischste und unspezifischste Klasse jeder Klassenpräzedenzliste bekannt. Die Klasse selbst ist die spezifischste und die Wurzelklasse, in Common Lisp \texttt{t} (und noch eine Ebene tiefer \texttt{standard-object}), die unspezifischste in jeder Klassenpräzedenzliste.
 
 Wenn CLOS die Klassenpräzedenzliste einer Klasse bestimmt, startet es bei der Definition der Klasse. Es wendet beide Regeln auf die Klassendefinition an und erhält so eine Liste von Ordnungsconstraints -- Regeln für die Reihenfolge von jeweils zwei direkten Superklassen. Anschließend werden die Regeln auch auf jede direkte Superklasse angewendet, und so weiter, bis alle Pfade in der Wurzelklasse \texttt{t} enden. Das Ergebnis ist eine Menge von Ordnungsconstraints aller beteiligten Klassen.
@@ -344,7 +344,7 @@ Es ergeben sich dann zwei widersprüchliche Constraints:
 
 In dem Fall signalisiert CLOS einen Fehler, da es keine Klassenpräzedenzliste erstellen kann, die konsistent mit allen Constraints ist.
 
-Eine Beispielimplementierung des Algorithmus' für die Berechnung der Klassenpräzedenzliste kann in \cite[S.24f,291f]{amop} nachgelesen werden. Eine der Anforderungen an die Implementierung von Mehrfachbererbung in Racket war, dass sie möglichst ähnlich zu der von CLOS funktionieren soll. Es wird daher die gleiche topologische Sortierung verwendet.
+Eine Beispielimplementierung des Algorithmus' für die Berechnung der Klassenpräzedenzliste kann in \cite[S.24f,291f]{amop} nachgelesen werden. Eine der Anforderungen an die Implementierung von Mehrfachvererbung in Racket war, dass sie möglichst ähnlich zu der von CLOS funktionieren soll. Es wird daher die gleiche topologische Sortierung verwendet.
 
 CLOS nutzt dann die Klassenpräzedenzliste, um die effektiven Slots zu berechnen:
 
@@ -360,10 +360,10 @@ CLOS nutzt dann die Klassenpräzedenzliste, um die effektiven Slots zu berechnen
 \end{lstlisting}
 
 Es werden die direkten Slots aller Klassen in der Reihenfolge der Präzedenzliste gesammelt und anschließend gleichbenannte Slots entfernt. Dadurch verbleibt nur der Slot der Klasse mit der höchsten Präzedenz in der Liste. Das lässt sich auch leicht auf Definitionen von Racketfeldern abbilden.
-
+ 
 CLOS wandelt die Slotdefinition anschließend noch in Slotobjekte um. %Diese Umwandlung wird Racket für uns übernehmen.
 
-Mit den CLOS-Konzepten, die bisher betrachtet wurden, lässt sich das im Rahmen dieser Arbeit entstehende Makro erweitern um Funktionen, die Informationen über die Klasse in Form eines Metaobjektes speichern, die Klassenpräzedenzliste bestimmen und  die effektiven Felder ermitteln. Die Vererbung von Feldern ist damit bereits abgedeckt. Was fehlt, ist die Vererbung von Methoden.
+Mit den CLOS-Konzepten, die bisher betrachtet wurden, lässt sich das im Rahmen dieser Arbeit entstehende Makro erweitern um Funktionen, die Informationen über die Klasse in Form eines Metaobjekts speichern, die Klassenpräzedenzliste bestimmen und  die effektiven Felder ermitteln. Die Vererbung von Feldern ist damit bereits abgedeckt. Was fehlt, ist die Vererbung von Methoden.
 
 \section{Mehrfachvererbung und Methodenkombination}
 Analog zu Klassen gibt es auch für Methoden und generische Funktionen Metaobjekte, um eine Übersicht über die relevanten Informationen zu behalten. Eine generische Funktion fasst eine Menge von Methoden mit der gleichen Signatur zusammen und das zugehörige Metaobjekt merkt sich genau diese Dinge: den Namen, die Parameterliste sowie die Methoden, die die generische Funktion implementieren.

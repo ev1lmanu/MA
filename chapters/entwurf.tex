@@ -87,7 +87,7 @@ Außerdem existieren anschließend zwei Objektsysteme: das von Object-Racket und
 
 Das bedeutet, dass Objekte in Modulen, die das hier definierte Objektsystem nutzen, nicht mit Objekten in Modulen kommunizieren könnten, die es nicht benutzen. Sobald ein Modul eines bestehenden Racketsystems das erweiterte Objektsystem nutzt, müssten alle Module es benutzen. Das steht im Widerspruch zu der Anforderung, dass bestehende Racketimplementierung durch das Benutzen der Erweiterung nicht beeinflusst werden sollen.
 
-Option 2b, eine simple Veränderung der Klassenoptionen, die an das Makro übergeben werden, löst all diese Probleme, erzeugt jedoch eine andere Herausforderung: Mehrfachvererbung und Methodenkombination rein auf Syntaxebene zu implementieren. Felder oder Methoden können nicht einfach ausgewertet werden; die Erzeugung all dieser Dinge übernimmt Object-Racket schließlich. Das heißt, allein anhand der Sytax, in das \texttt{class}-Makro injiziert wird (oder daraus entfernen), muss Mehrfachvererbung erreicht werden.
+Option 2b, eine simple Veränderung der Klassenoptionen, die an das Makro übergeben werden, löst all diese Probleme, erzeugt jedoch eine andere Herausforderung: Mehrfachvererbung und Methodenkombination rein auf Syntaxebene zu implementieren. Felder oder Methoden können nicht einfach ausgewertet werden; die Erzeugung all dieser Dinge übernimmt Object-Racket schließlich. Das heißt, allein anhand der Syntax, in das \texttt{class}-Makro injiziert wird (oder daraus entfernen), muss Mehrfachvererbung erreicht werden.
 
 Die Vor- und Nachteile der drei Optionen sind noch einmal in Tabelle \ref{einbindung} zusammengefasst.
 
@@ -96,7 +96,7 @@ Die Vor- und Nachteile der drei Optionen sind noch einmal in Tabelle \ref{einbin
 \begin{tabular}{|l|c|c|c|}
  \hline
  & \textbf{1} & \textbf{2a} & \textbf{2b}\\\hline
- Direkter Zugriff auf Implemtierungsdetails   & \cmark & \cmark & \xmark \\\hline
+ Direkter Zugriff auf Implementierungsdetails   & \cmark & \cmark & \xmark \\\hline
  Angemessener Zeitaufwand                     & \xmark & \cmark & \cmark \\\hline
  Gute Wartbarkeit                             & \xmark & \cmark & \cmark \\\hline 
  Bestehende Objektsysteme bleiben unverändert & \xmark & \xmark & \cmark \\\hline

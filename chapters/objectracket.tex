@@ -1,11 +1,11 @@
 \section{Das Objektsystem von Racket}
 Als Grundlage für dieses Kapitel dient die Racketdokumentation \cite{racketguide-classes} und -Referenz \cite{racketref-classes} für Klassen und Objekte.
 
-Racket ist eine Multipurpose-Sprache und erlaubt die Auswahl der Syntax auf Sprachebene. Eine einzelne Codezeile bestimmt die Sprache eines Moduls, also beispielsweise, ob Funktionen vorgezogen ausgewertet werden (\texttt{\#lang racket}) oder verzögert (\texttt{\#lang lazy}). Da das Objektsystem in die Sprache Racket integiert ist, ist es direkt in jedem Racketmodul verwendbar.
+Racket ist eine Multipurpose-Sprache und erlaubt die Auswahl der Syntax auf Sprachebene. Eine einzelne Codezeile bestimmt die Sprache eines Moduls, also beispielsweise, ob Funktionen vorgezogen ausgewertet werden (\texttt{\#lang racket}) oder verzögert (\texttt{\#lang lazy}). Da das Objektsystem in die Sprache Racket integriert ist, ist es direkt in jedem Racketmodul verwendbar.
 
 Die wichtigsten Werkzeuge, die ein Programmierer in einer objektorientierten Sprache benötigt, sind das Definieren von Klassen, Feldern und Funktionen sowie das Erzeugen von Objekten. Auf diese soll deshalb im Folgenden kurz eingegangen werden, bevor die bereits vorhandenen Möglichkeiten in Bezug auf Mehrfachvererbung im Objektsystem von Racket betrachtet werden.
 
-Alle Codebeispiele befinden sich auch auf der beiligenden CD und sind noch einmal zusammenhängend in Anhang \ref{or-example} aufgeführt. 
+Alle Codebeispiele befinden sich auch auf der beiliegenden CD und sind noch einmal zusammenhängend in Anhang \ref{or-example} aufgeführt. 
 
 \subsection{Einfache Klassen}
 
@@ -78,7 +78,7 @@ Die Methode lässt sich anschließend mittels \texttt{send} aufrufen.
 
 Attribute, die keinen Standardwert haben, müssen bei der Initialisierung angegeben werden. Da das Attribut \texttt{name} den Wert  \texttt{{\qq}a Thing{\qq}} als Standardwert hat, ist eine Angabe bei der Objekterzeugung optional. 
 
-Um von Thing zu erben, ist es lediglich notwendif in der Klassendefinition Thing statt \texttt{object\%} als Superklasse anzugeben. So lässt sich beispielweise eine Klasse namens Element definieren, die von Thing erbt:
+Um von Thing zu erben, ist es lediglich notwendig in der Klassendefinition Thing statt \texttt{object\%} als Superklasse anzugeben. So lässt sich beispielsweise eine Klasse namens Element definieren, die von Thing erbt:
 
 \begin{lstlisting}
 (define Element (class Thing (super-new)
@@ -225,7 +225,7 @@ Das ist noch keine sonderlich nützliche Subklasse, da sie sich genauso verhält
 % \end{lstlisting}
 % {\rsymbol water}
 % 
-Nun könnten in der in \texttt{generate-} \texttt{subclass} definierten Klasse natürlich auch noch weitere Felder und Methoden hinzufüget werden. Die Klasse fügt dann Verhalten zu einer bestehenden, aber noch unbekannten Klasse hinzu. Erst beim Methodenaufruf wird der Platzhalter mit einer tatsächlichen Superklasse gefüllt. Eine solche Klasse wird in Racket Mixin genannt. Als Platzhalter für die Superklasse wird per Konvention \texttt{\%} genommen:
+Nun könnten in der in \texttt{generate-} \texttt{subclass} definierten Klasse natürlich auch noch weitere Felder und Methoden hinzugefügt werden. Die Klasse fügt dann Verhalten zu einer bestehenden, aber noch unbekannten Klasse hinzu. Erst beim Methodenaufruf wird der Platzhalter mit einer tatsächlichen Superklasse gefüllt. Eine solche Klasse wird in Racket Mixin genannt. Als Platzhalter für die Superklasse wird per Konvention \texttt{\%} genommen:
 
 \begin{lstlisting}
 (define (a-mixin %)
@@ -234,7 +234,7 @@ Nun könnten in der in \texttt{generate-} \texttt{subclass} definierten Klasse n
     ))
 \end{lstlisting}
 
-Um das Verhalten beider Klassen Element und Animal zu vereinen, kann eine von ohnen, oder beide, als Mixin definieret werden. Beide Klassen als Mixin zu definieren kommt am nächsten an die Idee von Mehrfachvererbung:
+Um das Verhalten beider Klassen Element und Animal zu vereinen, kann eine von ihnen, oder beide, als Mixin definiert werden. Beide Klassen als Mixin zu definieren kommt am nächsten an die Idee von Mehrfachvererbung:
 
 \begin{lstlisting}
 (define (Element-Mixin %)
@@ -260,7 +260,7 @@ Und aus diesen lasseb sich dann alle drei Klassen Element, Animal und Pokemon er
 (define Pokemon (Element-Mixin (Animal-Mixin Thing)))
 \end{lstlisting}
 
-Es fällt auf, dass die zwei Mixins nicht gleichwertig sind; der Programmierer muss entscheiden, welches von beiden zuerst angewendet werden soll. Genau genommen handelt es sich hier auch nicht um Mehrfachvererbung, sondern um zweifache Einfachvererbung -- mit dem Vorteil jedoch, dass die zwei Klassen auch unabhängig voneinander verwendet werdenkönnen. Die Hierarchie sieht also wie folgt aus:
+Es fällt auf, dass die zwei Mixins nicht gleichwertig sind; der Programmierer muss entscheiden, welches von beiden zuerst angewendet werden soll. Genau genommen handelt es sich hier auch nicht um Mehrfachvererbung, sondern um zweifache Einfachvererbung -- mit dem Vorteil jedoch, dass die zwei Klassen auch unabhängig voneinander verwendet werden können. Die Hierarchie sieht also wie folgt aus:
 
 \texttt{Pokemon $\rightarrow$ Element $\rightarrow$ Animal $\rightarrow$ Thing $\rightarrow$ object\%}
 
@@ -415,7 +415,7 @@ Um einen Pokemontrait aus diesen beiden Traits zu definieren, muss den Konflikt 
  \item \texttt{trait-sum}, welches die Methoden von zwei Traits kombiniert.
 \end{itemize}
 
-Das Vorgehen bei einem Konflikt lässt sich generalisieren. Zunächst wird dafür gesorgt, dass es keinen Namenskonflikt mehr gibt. Dafür wird aus den zwei Traits mit kollidierender Methode jeweils ein neuer Trait erstellt, in dem diese Methode einen neuen, eindeutigen Namen erhält. Dafür würde beispielweise zum Trait Element mit \texttt{trait-alias} einen Alias namens \texttt{element-attack} für die \texttt{attack}-Methode hinzugefügt. Der Trait hat anschließend \emph{zwei} Funktionen für den Angriff, \texttt{attack} und \texttt{element-attack}, die beide das gleiche tun. Anschließend lässt sich mit \texttt{trait-exclude} die ursprüngliche \texttt{attack}-Methode von der Vererbung ausschließen. Es wird also nur die Aliasmethode \texttt{element-attack} vererbt.
+Das Vorgehen bei einem Konflikt lässt sich generalisieren. Zunächst wird dafür gesorgt, dass es keinen Namenskonflikt mehr gibt. Dafür wird aus den zwei Traits mit kollidierender Methode jeweils ein neuer Trait erstellt, in dem diese Methode einen neuen, eindeutigen Namen erhält. Dafür würde beispielsweise zum Trait Element mit \texttt{trait-alias} einen Alias namens \texttt{element-attack} für die \texttt{attack}-Methode hinzugefügt. Der Trait hat anschließend \emph{zwei} Funktionen für den Angriff, \texttt{attack} und \texttt{element-attack}, die beide das gleiche tun. Anschließend lässt sich mit \texttt{trait-exclude} die ursprüngliche \texttt{attack}-Methode von der Vererbung ausschließen. Es wird also nur die Aliasmethode \texttt{element-attack} vererbt.
 
 Dieser Schritt wird für jeden Konflikt durchgeführt. Sobald alle Methoden einen eindeutigen Namen haben, können sie mit \texttt{trait-sum} kombiniert werden.
 
@@ -569,7 +569,7 @@ Um eine Methode zu ergänzen, muss sie in der Superklasse mit einer Methode des 
 
 Das erste Argument von \texttt{inner} ist der Standardwert. Er wird ausgewertet, wenn es keine ergänzende Methode gibt. In diesem Beispiel soll nichts geschehen. Das zweite Argument ist der Name der ergänzenden Methode. Er muss mit dem Funktionsnamen übereinstimmen. Anschließend können noch Funktionsargumente übergeben werden. Der \texttt{inner}-Aufruf kann prinzipiell an einer beliebigen Stelle im Methodenrumpf stehen. Falls die Methode einen Wert zurückgibt, so muss dies nach dem letzten \texttt{inner}-Aufruf geschehen. Es ist möglich, mehrere \texttt{inner}-Aufrufe zu platzieren, dann wird die Methode der Subklasse mehrmals ausgeführt. 
 
-Liefert die Sublasse einen Rückgabewert, so kann dieser weiter verwendet werden:
+Liefert die Subklasse einen Rückgabewert, so kann dieser weiter verwendet werden:
 
 \begin{lstlisting}
 (define TheNumber (class object% (super-new)
@@ -590,7 +590,7 @@ Liefert die Sublasse einen Rückgabewert, so kann dieser weiter verwendet werden
 \end{lstlisting}
 {\routput The number is 42}
 
-Durch \texttt{overment} ist eine Methode in der Lage, gleichzeitig das Ergebnis der Superklasse und das Ergebnisse der Subklasse abzufragen und weiterzuverweneden. In einer größeren Vererbungshierarchie können  lange Ketten von sich überschreibenden und ergänzenden Methoden entstehen. Je abwechslungreicher die verwendeten Methodenoptionen in einer Vererbungshierarchie sind, desto schwieriger kann es sein nachzuvollziehen, was die effektive Methode für ein Objekt der untersten Subklasse in welcher Reihenfolge bewirkt.
+Durch \texttt{overment} ist eine Methode in der Lage, gleichzeitig das Ergebnis der Superklasse und das Ergebnisse der Subklasse abzufragen und weiterzuverwenden. In einer größeren Vererbungshierarchie können  lange Ketten von sich überschreibenden und ergänzenden Methoden entstehen. Je abwechslungsreicher die verwendeten Methodenoptionen in einer Vererbungshierarchie sind, desto schwieriger kann es sein nachzuvollziehen, was die effektive Methode für ein Objekt der untersten Subklasse in welcher Reihenfolge bewirkt.
 
 Es wurde gezeigt, dass Object-Racket keine direkte Möglichkeit für Mehrfachvererbung bietet. Es gibt Mixins und Traits, doch beide werden intern auf Einfachvererbung abgebildet und damit für kompliziertere Vererbungshierarchien schnell unübersichtlich. Dafür gibt es sehr umfangreiche Möglichkeiten, die Redefinition und Erweiterung von Methoden zu kontrollieren. Dabei sind alle  Methodenoptionen kompatibel mit Mixins und Traits. 
 
