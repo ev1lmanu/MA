@@ -9,7 +9,7 @@ Ein wichtiges Kernkonzept von objektorientierter Programmierung ist Vererbung: d
 
 \begin{figure}[h]
 \centering
- \includegraphics[scale = 0.3]{pictures/inheritance}
+ \includegraphics[scale = 0.27]{pictures/inheritance}
  \caption{Vererbung einer Methode.}
  \label{inheritance}
 \end{figure}
@@ -19,7 +19,7 @@ Eine Klasse \texttt{D} erbt von zwei anderen Klassen \texttt{B} und \texttt{C}, 
 
 \begin{figure}[h]
 \centering
- \includegraphics[scale = 0.3]{pictures/diamond}
+ \includegraphics[scale = 0.27]{pictures/diamond}
  \caption{Das Diamond-Problem.}
  \label{diamond}
 \end{figure}
@@ -42,7 +42,7 @@ Racket nutzt die erste Strategie. Mehrfachvererbung wird nicht unterstützt.
 
 Das Common Lisp Object System (CLOS) \cite{keene} vereint die Ansätze 6 und 7: Wird nichts anderes angegeben, so wird die Eigenschaft der Klasse mit der höchsten Präzedenz vererbt; der Programmierer hat jedoch für Methoden alternativ auch die Möglichkeit, eine Kombinationsart anzugeben. Diese Art der Mehrfachvererbung bietet auch einen einfachen Einstieg für die Lehre. Die Konfliktlösung ist automatisiert. Es reicht, eine Vererbungshierarchie anzugeben und den Rest übernimmt die Sprache. Gleichzeitig erhält der Programmierer durch Angabe einer Kombinationsart auch selbst die Möglichkeit der Kontrolle.
 
-Die Funktionsweise von CLOS ist sehr ausführlich in dem Buch ``Object-oriented programming in Common Lisp. A programmer's guide to CLOS'' von Sonya E. Keene \cite{keene} dokumentiert. Einen Blick hinter die Implementierung werfen Gregor Kiczales, Jim Des Rivieres und Daniel Gureasko Bobrow mit dem Werk ``The art of the metaobject protocol'' (AMOP) \cite{amop}. Sie zeigen wie eine objektorientierte Sprache auf Basis von Lisp, Makros und Metaobjekten implementiert werden kann. 
+Die Funktionsweise von CLOS ist sehr ausführlich in dem Buch ``Object-oriented programming in Common Lisp. A programmer's guide to CLOS'' von Sonya E. Keene \cite{keene} dokumentiert. Einen Blick auf die Implementierung werfen Gregor Kiczales, Jim Des Rivieres und Daniel Gureasko Bobrow mit dem Werk ``The art of the metaobject protocol'' (AMOP) \cite{amop}. Sie zeigen, wie eine objektorientierte Sprache auf Basis von Lisp, Makros und Metaobjekten implementiert werden kann. 
 
 Das Hinzufügen von Mehrfachvererbung zu einer bestehenden objektorientierten Sprache ist jedoch bisher wenig dokumentiert. 
 
@@ -57,14 +57,15 @@ Racket bietet zwei Arten, objektorientiert zu programmieren: ein integriertes Ob
 
 Da die Studierenden bereits aus ``Softwareentwicklung I'' und ``Softwareentwicklung II'' mit Java vertraut sind, bietet das Objektsystem von Racket kaum neue Lehrinhalte. Aus diesem Grund wird bisher CLOS, das in dem Racketdialekt Swindle implementiert ist, als Lehrinhalt behandelt. 
 
-\section{Problemstellung} 
+\section{Problemstellung} \vspace{-0.4cm}
 Für die Implementation von CLOS wird ein so genanntes Metaobjektprotokoll verwendet, in dem Informationen über Klassen und Objekte durch interne Objekte verwaltet werden. In dieser Arbeit soll untersucht werden, ob das Metaobjektprotokoll auch genutzt werden kann, um Verhalten von CLOS zu dem bestehenden Objektsystem von Racket hinzuzufügen. Falls dies möglich ist, soll eine Spracherweiterung von Racket entwickelt werden. 
 
 Die Spracherweiterung kann zukünftig im Rahmen der Lehre des Moduls ``Softwareentwicklung III'' genutzt werden, um Mehrfachvererbung direkt anhand des Objektsystems von Racket zu behandeln. Der Fokus liegt auf lehrrelaventen Konzepten: 
 \begin{itemize}
- \item Mehrfachvererbung
- \item Klassenpräzedenz
- \item Methodenkombination
+ \vspace{0cm}
+ \item Mehrfachvererbung\vspace{-0.5cm}
+ \item Klassenpräzedenz\vspace{-0.5cm}
+ \item Methodenkombination\vspace{-0.5cm}
  \item Ergänzungsmethoden
 \end{itemize}
 

@@ -163,7 +163,7 @@ Das Modul bietet damit einen deutlich einfacheren und intuitiveren Umgang mit Me
 \section{Einschränkungen und Grenzen}
 Das Modul ist ein Prototyp. Das bedeutet, dass es  Einschränkungen und noch nicht implementierte Funktionalität gibt, die hier kurz angesprochen werden sollen.
 
-Die Implementation beinhaltet noch keine Ergänzungsmethoden. Racket bietet bereits eine eigene Sammlung von Methoden, die geerbtes Verhalten überschreiben und ergänzen können. Das Verhalten der redefinierenden Methode lässt sich durch die Klassenoption \texttt{define/override} erreichen. Vor- und Nachmethoden sind in Racket jedoch bisher nicht möglich und werden auch durch den Prototypen nicht abgedeckt.
+Die Implementierung beinhaltet noch keine Ergänzungsmethoden. Racket bietet bereits eine eigene Sammlung von Methoden, die geerbtes Verhalten überschreiben und ergänzen können. Das Verhalten der redefinierenden Methode lässt sich durch die Klassenoption \texttt{define/override} erreichen. Vor- und Nachmethoden sind in Racket jedoch bisher nicht möglich und werden auch durch den Prototypen nicht abgedeckt.
 
 Bei Einfachvererbung ohne Methodenkombination verhalten sich die Klassen genauso wie in Racket. Ansonsten ergeben sich Einschränkungen in Bezug auf die erstellte Superklasse und Methodenkombination:
 
@@ -195,7 +195,7 @@ Generische Methoden und Methodenkombination:
 
 Diese Einschränkungen können dazu führen, dass einige der Klassenoptionen, die Racket bietet, nicht auf Klassen anwendbar sind, die durch Mehrfachvererbung entstanden sind oder für die eine generische Funktion definiert ist.
 
-Der Prototyp eignet sich bereits für die Verwendung in der Lehre, wenn anstelle der Ergänzungsmethoden von CLOS die überschreibenden und ergänzenden Methoden von Racket behandelt werden. Auch in CLOS werden nur primäre Methoden kombiniert und in der Lehre verwendete Übungsaufgaben sind daran angepasst. Daher ist eine Einschränkung auf mit \texttt{define/public} definierte Methoden für die Lehre nicht problematisch. Die Angabe der Kombinationsart und die Definition eigener Kombinationen ist in dem Prototypen sogar deutlich einfacher als in CLOS.
+Der Prototyp eignet sich bereits für die Verwendung in der Lehre, wenn anstelle der Ergänzungsmethoden von CLOS die überschreibenden und ergänzenden Methoden von Racket behandelt werden. Auch in CLOS werden nur primäre Methoden kombiniert und die in der Lehre verwendeten Übungsaufgaben sind daran angepasst. Daher ist eine Einschränkung auf mit \texttt{define/public} definierte Methoden für die Lehre nicht problematisch. Die Angabe der Kombinationsart und die Definition eigener Kombinationen ist in dem Prototypen sogar deutlich einfacher als in CLOS.
 
 Darüber hinaus lässt sich der Prototyp gut in Projekten nutzen, in denen Felder und Methoden überwiegend mit den unterstützten Schlüsselwörtern definiert werden. 
 

@@ -9,7 +9,7 @@ In Common Lisp wird die Syntax schnell sehr komplex und ist zudem abhängig von 
 Um Common Lisp zu lernen, wurde daher Scheme entwickelt. Analog zu BlueJ, einer Entwicklungsumgebung für das Lernen von objektorientierter Programmierung in Java, war DrScheme das Einsteigertool zu Common Lisp. Im Jahr 2010 wurde Scheme umbenannt zu Racket. Racket bildet einen guten Kompromiss für die Lehre, da es einen leicht verständlichen Einstieg in die Welt von Common Lisp bietet.
 %----------------------
 
-Die Syntax von Racket ist sehr ähnlich zu Common Lisp. Ausdrücke werden im Präfixnotation notiert, Kommentare mit einem Semikolon eingeleitet. Einige Standardfunktionen haben leicht abgewandelte Namen. So werden in Racket beispielsweise sowohl Funktionen als auch Variablen mit dem Schlüsselwort \texttt{define} definiert, anstelle von \texttt{defun}, \texttt{defvar} und \texttt{defparameter} in Common Lisp. Prädikate enden auf \texttt{?} (zum Beispiel \texttt{equal?}) und Methoden, die Variablen oder Objekte verändern auf \texttt{!} (zum Beispiel \texttt{set!}). Einer der größeren Unterschiede liegt in der Art, wie Makros definiert werden; darauf wird im Kapitel \ref{makros} noch näher eingegangen.
+Die Syntax von Racket ist sehr ähnlich zu Common Lisp. Ausdrücke werden in Präfixnotation notiert, Kommentare mit einem Semikolon eingeleitet. Einige Standardfunktionen haben leicht abgewandelte Namen. So werden in Racket beispielsweise sowohl Funktionen als auch Variablen mit dem Schlüsselwort \texttt{define} definiert, anstelle von \texttt{defun}, \texttt{defvar} und \texttt{defparameter} in Common Lisp. Prädikate enden auf \texttt{?} (zum Beispiel \texttt{equal?}) und Methoden, die Variablen oder Objekte verändern auf \texttt{!} (zum Beispiel \texttt{set!}). Einer der größeren Unterschiede liegt in der Art, wie Makros definiert werden; darauf wird im Kapitel \ref{makros} noch näher eingegangen.
 
 Racket unterstützt auch objektorientierte Programmierung auf zwei verschiedene Arten. Zunächst gibt es das Racketobjektsystem. Racketklassen sind sehr ähnlich zu Klassen in Java, C\# oder den meisten objektorientierten Programmiersprachen. Ein Programm kann Klassen definieren, instanziieren, mit den erzeugten Objekten interagieren und Klassen erweitern. Besonders ist, dass Klassen auch wie Funktionswerte behandelt werden können. Es ist möglich, eine Klasse zur Laufzeit zu erweitern, eine Klasse an eine Funktion zu geben oder in einer Datenstruktur zu speichern und anschließend abzufragen \cite{neu-edu}. 
 
@@ -27,7 +27,7 @@ Um beide Ansätze in Hinblick auf Syntax, Benutzung und Vererbung miteinander zu
 
 \begin{figure}[h]
  \centering
- \includegraphics[scale=0.3]{pictures/pokemon}
+ \includegraphics[scale=0.27]{pictures/pokemon}
  \caption{Vererbungshierarchie für die Klasse Pokemon.}
  \label{pokemon}
 \end{figure}
@@ -39,3 +39,5 @@ Schließlich muss die Hierarchie so vervollständigt werden, dass mit möglichst
 In jedem Schritt soll betrachtet werden, was passiert, wenn Methoden redefiniert werden, wie disjunkte Mengen von Feldern und Methoden vererbt werden, wie mit gleichbenannten Merkmalen umgegangen wird und wie ein Programmierer die Vererbung bei gleichbenannten Merkmalen beeinflussen kann.
 
 Zusätzlich soll beleuchtet werden, welche Möglichkeiten es gibt, Methoden einer Superklasse in einer Subklasse zu ergänzen und ob diese kompatibel mit Mehrfachvererbung sind.
+
+Alle Codebeispiele befinden sich auch auf der beiliegenden CD und sind noch einmal zusammenhängend in Anhang \ref{or-example} und \ref{clos-example} aufgeführt.

@@ -1,11 +1,12 @@
 \chapter{Umsetzung}  
 \label{implementation}
 
-\vspace{-1em}
+\vspace{-0.4cm}
 Im Rahmen dieser Arbeit ist ein Prototyp entstanden, der das Racketobjektsystem um Mehrfachvererbung und Methodenkombination erweitert. Ein redefiniertes \texttt{class}-Makro nimmt die übergebene Syntax, hält wichtige Informationen in Form von Metaobjekten fest und generiert schließlich die Syntax, die vom eigentlichen \texttt{class}-Makro ausgewertet wird.
+\vspace{-0.2cm}
 
 \section{eval im Definitionsfenster}
-
+\vspace{-0.4cm}
 Das erste Problem, das sich dabei stellt, ist, dass Racket es nicht erlaubt, mehrere Superklassen anzugeben. Es ist zwar möglich ein Makro zu schreiben, das mehrere Superklassen akzeptiert, aber der Makroaufruf, zu dem schlussendlich expandiert wird, darf nur eine Superklasse beinhalten. Das bedeutet, es muss aus den angegebenen Klassen per Hand eine Superklasse erzeugt werden, die alle Eigenschaften der Klassen in sich vereinigt. Diese Klasse wird dann als offizielle Superklasse angeben. Wie genau das funktioniert, wird später in diesem Kapitel erläutert. Die Grundidee ist, dass dafür die Klassenoptionen ebenjener Superklasse zusammengebaut, in einen \texttt{class}-Aufruf gesteckt und dann ausgewertet werden müssen.
 
 \texttt{class} ist jedoch ein Makro, keine Funktion. Es lässt sich nicht einfach mit \texttt{apply} auf eine zusammengestellte Liste von Klassenoptionen anwenden. Die andere naheliegende Option ist \texttt{eval}, welche jedoch nicht ohne weiteres außerhalb der Interaktionskonsole benutzt werden kann. Das Bereitstellen von \texttt{eval} auch innerhalb des Definitionsfensters geschieht noch vor der eigentlichen Expansion des Makros, deshalb soll hier zuerst darauf eingegangen werden.
@@ -37,7 +38,7 @@ Wird im Definitionsfenster versucht, den gleichen Ausdruck auszuwerten, so wird 
 
 \texttt{eval} kann die Bindungen des Kontextes, in dem es aufgerufen wird, nicht sehen. Das beinhaltet auch alle importierten Racketfunktionen, selbst \texttt{+}. Damit \texttt{eval} Zugriff auf die Umgebung hat, in der es aufgerufen wird, muss der Namensraum mitgeteilt werden. In der Interaktionskonsole passiert das automatisch; im Definitionsfenster muss es manuell geschehen. Dafür kann als zweiter Parameter ein Namensraumwert übergeben werden. 
 
-Die folgenden Definitionen und Beispiele sind dem Racketguide \cite{racketguide-namespace} entnommen.
+Die folgenden Definitionen und Beispiele sind dem Racketguide für Namensräume \cite{racketguide-namespace} entnommen.
 
 Ein Namensraum beinhaltet zwei Informationen:
 \begin{enumerate}
@@ -106,7 +107,7 @@ Wird der Namensraum nur innerhalb eines Moduls benötigt, so kann ein Name\-spac
 \end{lstlisting}
 {\routput 3}
 
-Das hier entstehende Modul definiert jedoch ein Makro, das in einem anderen Modul expandiert wird; und somit auch in einem anderen Namensraum. Soll auf diesen Namensraum innerhalb unseres Moduls zugegriffen, so ist es notwendig die Funktion \texttt{my-eval} innerhalb der Makroexpansion zu definieren. Dafür wird die vorhergehende Methode mit \texttt{namespace-attach-module} und \texttt{parameterize} benutzt. Um später in der eigentlichen Expansion des \texttt{class}-Makros drei Fälle unterscheiden zu können, wurde die ``Zwischenexpansion'' in ein eigenes Makro ausgelagert:
+Das hier entstehende Modul definiert jedoch ein Makro, das in einem anderen Modul expandiert wird; und somit auch in einem anderen Namensraum. Soll auf diesen Namensraum innerhalb unseres Moduls zugegriffen, so ist es notwendig die Funktion \texttt{my-eval} innerhalb der Makroexpansion zu definieren. Dafür wird die vorhergehende Vorgehensweise mit \texttt{namespace-attach-module} und \texttt{parameterize} benutzt. Um später in der eigentlichen Expansion des \texttt{class}-Makros drei Fälle unterscheiden zu können, wurde die ``Zwischenexpansion'' in ein eigenes Makro ausgelagert:
 
 \begin{lstlisting}
 (define-syntax my-class
@@ -130,7 +131,7 @@ Das hier entstehende Modul definiert jedoch ein Makro, das in einem anderen Modu
        (my-eval-class (lambda (x) (eval x ns)) arg . args))]))
 \end{lstlisting}
 
-Das Makro matcht Aufrufe von \texttt{my-class}. Es erzeugt einen neuen Namensraum, hängt dann die im Kontext des Makroaufrufes gebundenen Module \texttt{racket/class}, \texttt{racket/list} und \texttt{racket/function} an und bindet sie anschließend ein. Der resultierende Namensraum wird für die Definition einer \texttt{eval}-Funktion benutzt, die zu der Syntax des \texttt{my-class}-Aufrufes hinzugefügt wird. Anschließend wird das Makro \texttt{my-eval-class} aufgerufen, das die eigentliche Expansion übernimmt.
+Das Makro matcht Aufrufe von \texttt{my-class}. Es erzeugt einen neuen Namensraum, hängt dann die im Kontext des Makroaufrufes gebundenen Module \texttt{racket/class}, \texttt{racket/list} und \texttt{racket/function} an und bindet sie anschließend ein. Der resultierende Namensraum wird für die Definition einer \texttt{eval}-Funktion benutzt, die zu der Syntax des \texttt{my-class}-Aufrufes hinzugefügt wird. Das anschließend aufgerufene Makro \texttt{my-eval-class} übernimmt die eigentliche Expansion.
 
 Der Name des Makros ist \texttt{my-class}, damit intern weiterhin Racketklassen mittels \texttt{class} erzeugt werden können. Erst beim Export wird das Makro umbenannt:
 
@@ -139,10 +140,11 @@ Der Name des Makros ist \texttt{my-class}, damit intern weiterhin Racketklassen 
 \end{lstlisting}
 
 \section{Redefinition des class-Makros}
-Das Makro \texttt{my-eval-class} übernimmt die eigentliche Expansion des \texttt{class}-Makros. Es werden drei Fälle unterschieden, je nachdem welche Superklassen angegeben wurden:
+\vspace{-0.3cm}
+In dem Makro \texttt{my-eval-class} werden drei Fälle unterschieden, je nachdem welche Superklassen angegeben wurden:\vspace{-0.3cm}
 \begin{itemize}
- \item Eine einzelne Superklasse 
- \item Die leere Liste \texttt{()} - wir interpretieren sie als \texttt{object\%}
+ \item Eine einzelne Superklasse \vspace{-0.3cm}
+ \item Die leere Liste \texttt{()} - wir interpretieren sie als \texttt{object\%}\vspace{-0.3cm}
  \item Eine Liste von Superklassen \texttt{($<$superclass1$>$ $<$superclass2$>$ ...)}
 \end{itemize}
 
@@ -159,7 +161,7 @@ Bei allen drei Optionen wird die Funktion \texttt{expand!} mit der \texttt{my-ev
      (expand! my-eval (list super) 'rest)]))
 \end{lstlisting}
 
-In \texttt{expand!} wird analog zu CLOS zu der Klassendefinition ein Metaobjekt und ein Klassenobjekt erzeugt. Die Klasse wird zur Liste der beobachteten Klassen hinzugefügt und anschließend das Klassenobjekt zurückgegeben. Da Klassen in Racket jedoch keine Namen haben, wird das Objekt selbst als Schlüssel in der Klassenliste benutzt.
+In \texttt{expand!} wird analog zu CLOS ein Metaobjekt und ein Klassenobjekt anhand der angegebenen Klassendefinition erzeugt. Die Klasse wird zur Liste der erzeugten Klassen hinzugefügt und anschließend das Klassenobjekt zurückgegeben. Da Klassen in Racket  keine Namen haben, wird das Objekt selbst als Schlüssel in der Klassenliste benutzt.
 
 \begin{lstlisting}
 (define (expand! my-eval supers args)
@@ -185,10 +187,10 @@ In \texttt{expand!} wird analog zu CLOS zu der Klassendefinition ein Metaobjekt 
 \end{lstlisting}
 
 
-Das passiert in drei Schritten:
+Das passiert in drei Schritten: \vspace{-0.1cm}
 \begin{enumerate}
- \item Es wird ein Metaobjekt mit den angegebenen Superklassen, Feldern, Methoden und generischen Funktionen erzeugt.
- \item \texttt{finalize-inheritance} fügt die Klassenpräzedenzliste, geerbte Felder und Methoden hinzu.
+ \item Es wird ein Metaobjekt mit den angegebenen Superklassen, Feldern, Methoden und generischen Funktionen erzeugt.\vspace{-0.1cm}
+ \item \texttt{finalize-inheritance} fügt die Klassenpräzedenzliste, geerbte Felder und Methoden hinzu.\vspace{-0.1cm}
  \item \texttt{ensure-generic-functions} aktualisiert die Liste der generischen Funktionen. Neue generische Funktionen, die in der aktuellen Klasse definiert sind, werden hinzugefügt und Methoden, zu denen eine generische Funktion existiert, werden zu der generischen Funktion hinzugefügt.
 \end{enumerate}
 
@@ -197,7 +199,7 @@ Das erzeugte Klassenmetaobjekt wird anschließend zurückgegeben, denn das tats�
 \section{Klassenmetaobjekte}
 Klassenmetaobjekte werden analog zu CLOS definiert. Es gibt eine interne Racketklasse für Metaobjekte, hier \texttt{meta-class\%} genannt, die sich alle wichtigen Informationen über Superklassen, Felder und Methoden in Form von Feldern merkt.
 
-Im Gegensatz zu CLOS geschieht jedoch nur eine Manipulation der Syntax. Anstelle von Feld- und Methodenobjekten merkt sich die Metaklasse die Definitionen der Felder und Methoden. Sie werden erst zum Schluss von Racket ausgewertet, als Teil der Definition des Klassenobjekts, das an den Nutzer zurückgegeben wird.
+Im Gegensatz zu CLOS geschieht jedoch nur eine Manipulation der Syntax. Anstelle von Feld- und Methodenobjekten sind in der Metaklasse die Definitionen der Felder und Methoden abgelegt. Sie werden erst zum Schluss von Racket ausgewertet, als Teil der Definition des Klassenobjekts, das an den Nutzer zurückgegeben wird.
 
 Für die Klasse Thing aus dem Object-Racketkapitel
 
@@ -250,13 +252,13 @@ In einer Hashtabelle werden die bereits erzeugen Klassen als Paar (Klassenobjekt
 
 Die Superklassen, direkten Felder und Methoden lassen sich aus der Syntax der Klassendefinition extrahieren. Um Felder später unabhängig voneinander vererben zu können, werden \texttt{field}- und \texttt{init-field}-Optionen, die mehr als ein Feld definieren, gesplittet. 
 
-\texttt{(field [a 1] [b 2])}
+\texttt{(field [a 1] [b 2])} 
 
-wird beispielsweise zu
+wird beispielsweise durch
 
 \texttt{(field [a 1]) (field [b 2])}
 
-umgewandelt. Die Methode \texttt{compute-direct-fields} übernimmt diese Konversion.
+ersetzt. Die Methode \texttt{compute-direct-fields} übernimmt diese Konversion.
 
 Die Eigenschaften, die sich durch Einfach- oder Mehrfachvererbung ergeben, werden durch die Methode \texttt{finalize-inheritance} zu dem Metaobjekt hinzugefügt. Sie berechnet die Klassenpräzedenzliste und anhand dieser die geerbten Felder und Methoden und bestückt die entsprechenden Felder des Metaobjekts.
 
@@ -265,7 +267,7 @@ Für die Berechnung der Klassenpräzedenzliste wird die Funktion \texttt{compute
 Die Methoden \texttt{compute-inherited-fields} und \texttt{compute-inherited-methods} nutzen dann die Klassenpräzedenzliste, um die geerbten Felder und Methoden zu berechnen. Sie führen damit insbesondere die \textit{standard method combination} (ohne Ergänzungsmethoden) durch.
 
 Für jedes Objekt in der Klassenpräzedenzliste sammeln sie die dort definierten direkten Eigenschaften und fügen diese zu einer Liste zusammen. Anschließend werden Duplikate, also Felder und Methoden mit gleichem Namen, aus der Liste entfernt. Nur das erste Auftreten, das Feld oder die Methode der Klasse mit der höchsten Präzedenz, verbleibt in der Liste. Da das Vorgehen bei Methoden und Feldern sich nur geringfügig unterscheidet, wird die Logik in der Methode \texttt{compute-inherited-stuff} zusammengefasst. Der Parameter \texttt{direct-stuff} ist entweder \texttt{{\textquotesingle}direct-fields} oder \texttt{{\textquotesingle}direct-methods}:
-
+\newpage
 \begin{lstlisting}
 (define (compute-inherited-stuff direct-stuff cpl)
   (let ([stuff '()])
@@ -290,7 +292,7 @@ Mit der bisher eingeführten Funktionalität werden bereits alle notwendigen Inf
 \section{Generische-Funktionen-Metaobjekte}
 Für generische Funktionen gibt es ebenfalls eine Struktur aus Metaobjekten. Die Metaklasse für generische Funktionen heißt \texttt{meta-generic-function\%} und merkt sich für eine generische Funktion den Namen, die Parameterliste, das Klassenmetaobjekt, in der sie definiert wurde, die Methodenkombination sowie die Liste der Definitionen von implementierenden Methoden. Bis auf die Liste der implementierenden Methoden können diese Informationen aus der Syntax der Klassendefinition abgeleitet werden.
 
-Die implementierenden Methoden werden in der Form (Metaklasse, Methodendefinition) in einer Hashtabelle abgelegt. Die Verwaltung dieser Tabelle wird ebenfalls von der Generische-Funktionen-Metaklasse übernommen. Sie bietet Methoden zum Hinzufügen einer implementierenden Methode sowie zur Berechnung der anwendbaren Methoden für ein Klassenmetaobjekt.
+Die implementierenden Methoden werden in der Form (Metaklasse, Methodendefinitionen) in einer Hashtabelle abgelegt. Die Verwaltung dieser Tabelle wird ebenfalls von der Generische-Funktionen-Metaklasse übernommen. Sie bietet Methoden zum Hinzufügen einer implementierenden Methode sowie zur Berechnung der anwendbaren Methoden für ein Klassenmetaobjekt.
 
 Die anwendbaren Methoden (\emph{applicable methods}) werden anhand der Klassenpräzedenzliste des Klassenmetaobjekts bestimmt: die Liste der Methoden wird nach denjenigen Methoden gefiltert, die auf ein Objekt aus der Klassenpräzedenzliste spezialisiert sind. Falls keine anwendbaren Methoden existieren, so wird eine Fehlermethode zurückgegeben. 
 
@@ -316,9 +318,9 @@ Analog zu Klassen gibt es auch für generische Funktionen eine Tabelle mit dem S
 
 Die Verwaltung der Liste geschieht durch die Funktion \texttt{ensure-generic-functions}. 
 
-Sie erhält das neu erzeugte Metaobjekt zu einer Klasse. Falls in der Klasse generische Funktionen definiert wurden, so werden sie zu der Liste hinzugefügt. Ist die generische Funktion bereits vorhanden, so wird ein Fehler signalisiert.
+Sie erhält das neu erzeugte Metaobjekt zu einer Klasse. Falls in der Klasse generische Funktionen definiert wurden, so werden sie zu der Liste hinzugefügt. Ist eine generische Funktion mit dem Namen bereits vorhanden, so wird ein Fehler signalisiert.
 
-Anschließend werden die Methodendefinitionen verarbeitet. Wie bei Klas\-sen-Me\-ta\-ob\-jek\-ten werden auch Methoden und generische Funktionen über die Syntax ihrer Definition repräsentiert. Da Methoden darüber hinaus keine weiteren Informationen benötigen, gibt es für sie keine eigene Metaklasse. 
+Anschließend werden die Methodendefinitionen verarbeitet. Wie bei Klas\-sen\-me\-ta\-ob\-jek\-ten werden auch Methoden und generische Funktionen über die Syntax ihrer Definition repräsentiert. Da Methoden darüber hinaus keine weiteren Informationen benötigen, gibt es für sie keine eigene Metaklasse. 
 
 Falls eine generische Funktion für eine Methode existiert, die auf eine Klasse in der Präzedenzliste spezialisiert ist und die richtige Anzahl an Parametern besitzt, so wird die Methode zu der generischen Funktion in Form einer quotierten Lambdafunktion hinzugefügt. 
 
@@ -360,12 +362,13 @@ Es lässt sich damit die Funktion \texttt{enure-generic-functions} definieren:
 \end{lstlisting}
 
 Die Funktion benutzt drei Hilfsfunktionen:
+\begin{description}
+\item[\texttt{make-generic-function}] erstellt ein Metaobjekt für die generische Funktion und fügt es zur Liste hinzu. Falls eine generische Funktion mit dem Namen bereits existiert, wird ein Fehler signalisiert. Im Klassenmetaobjekt wird anschließend die Definition der generischen Funktion durch das entprechende Metaobjekt ersetzt.
 
-\texttt{make-generic-function} erstellt ein Metaobjekt für die generische Funktion und fügt es zur Liste hinzu. Falls eine generische Funktion mit dem Namen bereits existiert, wird ein Fehler signalisiert. Im Klassenmetaobjekt wird anschließend die Definition der generischen Funktion durch das entprechende Metaobjekt ersetzt.
+\item[\texttt{method-$>\lambda$}] wandelt die Methodendefinition in eine quotierte Lambdafunktion um.
 
-\texttt{method-$>\lambda$} wandelt die Methodendefinition in eine quotierte Lambdafunktion um.
-
-\texttt{compute-applicable-generic-functions} ermittelt alle anwendbaren generischen Funktionen. Dafür werden die generischen Funktionen, die einer in der Klassenpräzedenzliste auftauchenden Klasse definiert werden, in einer Liste zusammengefügt.
+\item[\texttt{compute-applicable-generic-functions}] ermittelt alle anwendbaren generischen Funktionen. Dafür werden die generischen Funktionen, die einer in der Klassenpräzedenzliste auftauchenden Klasse definiert werden, in einer Liste zusammengefügt.
+\end{description}
 
 Mit dem Aktualisieren der generischen Funktionen ist die Erzeugung des Klassenmetaobjekts abgeschlossen.
 
@@ -386,7 +389,7 @@ offenbart, dass noch der zweite Teil fehlt: die Erzeugung des eigentlichen Klass
 Zunächst müssen die \texttt{define/generic}-Ausdrücke aus der Klassendefinition entfernt werden, denn Racket kennt keine solche Klassenoption. Danach gibt es zwei Fälle zu unterscheiden:
 \begin{itemize}
  \item Falls die zu definierende Klasse nur eine einzelne Superklasse besitzt und keine generischen Funktionen beteiligt sind, so können die Klassenoptionen unverändert weiterverwendet und Racket die Vererbung überlassen werden. Das soll sicherstellen, dass bestehende Module, die das Objektsystem benutzen, von der Erweiterung nicht beeinflusst werden.
- \item Ansonsten wird eine neue Klasse erstellt, welche die Eigenschaften der Superklassen vereint und nutzen sie als Superklasse für die neu definierte Klasse. Außerdem werden an  Methodenkombinationen beteiligte Methoden aus beiden Klassen entfernt und die kombinierten Methoden in die neue Klasse eingefügt.
+ \item Ansonsten wird eine neue Klasse erstellt, welche die Eigenschaften der Superklassen vereint und dannals Superklasse für die neu definierte Klasse genutzt. Außerdem werden an  Methodenkombinationen beteiligte Methoden aus beiden Klassen entfernt und die kombinierten Methoden in die neue Klasse eingefügt.
 \end{itemize}
 
 Auch bei Methodenkombination wird eine eigene Superklasse erstellt, selbst wenn in der Vererbungshierarchie keine Mehrfachvererbung auftritt. Der Grund hierfür ist, dass  für die Methodenkombination die implementierenden Methoden aus den Superklassen entfernt und die Kombinationsmethode in die neue Klasse eingefügt werden muss. Es wird demnach eine Superklasse benötigt, die Methoden, die in die Kombination eingehen, nicht beinhaltet.
@@ -414,7 +417,7 @@ Die zusammengesetzte Syntax des \texttt{class}-Aufrufes muss nur noch mit \textt
                                        meta)))))))
 \end{lstlisting}
 
-\texttt{racket-only?} erledigt die Überprüfung auf Anzahl der Superklassen und Beteiligung von generischen Funktionen. Beides lässt sich aus dem entsprechenden Feld der Metaklasse ermitteln. 
+Die Hilfsfunktion \texttt{racket-only?} erledigt die Überprüfung auf Anzahl der Superklassen und Beteiligung von generischen Funktionen. Beides lässt sich aus dem entsprechenden Feld der Metaklasse ermitteln. 
 
 \begin{lstlisting}
 (define (racket-only? meta)
