@@ -10,3 +10,6 @@
 *.bbl
 *.blg
 *#
+*.nav
+*.snm
+*.vrb
